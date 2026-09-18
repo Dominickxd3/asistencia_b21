@@ -1,0 +1,16 @@
+export enum SessionType {
+  OBLIGATORIA = 'OBLIGATORIA',
+  VOLUNTARIA = 'VOLUNTARIA',
+}
+
+export enum SessionOrigin {
+  PROGRAMADA = 'PROGRAMADA',
+  EXTRAORDINARIA = 'EXTRAORDINARIA',
+}
+
+export enum JornadaStatus {
+  PROGRAMADA = 'PROGRAMADA',
+  ABIERTA = 'ABIERTA',
+  CERRADA = 'CERRADA',
+  CANCELADA = 'CANCELADA',
+}

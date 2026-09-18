@@ -1,0 +1,114 @@
+<app-page-header titulo="Personas" subtitulo="Una sola persona, todo su historial de etapas" />
+
+@if (ok(); as msg) {
+  <div class="alert alert-success py-2 small">{{ msg }}</div>
+}
+@if (error(); as msg) {
+  <div class="alert alert-danger py-2 small">{{ msg }}</div>
+}
+
+@if (auth.tienePermiso('formation.manage_people')) {
+  <div class="r21-card">
+    <div class="r21-card-header"><h2>Registrar persona</h2></div>
+    <div class="r21-card-body">
+      <div class="row g-2">
+        <div class="col-12 col-md-2">
+          <input class="form-control form-control-sm" placeholder="DNI" [(ngModel)]="form.dni" maxlength="8" />
+        </div>
+        <div class="col-12 col-md-3">
+          <input class="form-control form-control-sm" placeholder="Nombres" [(ngModel)]="form.nombres" />
+        </div>
+        <div class="col-6 col-md-3">
+          <input class="form-control form-control-sm" placeholder="Apellido paterno" [(ngModel)]="form.apellidoPaterno" />
+        </div>
+        <div class="col-6 col-md-3">
+          <input class="form-control form-control-sm" placeholder="Apellido materno" [(ngModel)]="form.apellidoMaterno" />
+        </div>
+        <div class="col-12 col-md-1 d-grid">
+          <button class="btn btn-sm btn-r21" (click)="crear()" [disabled]="!form.nombres || !form.apellidoPaterno">
+            Registrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<div class="r21-card">
+  <div class="r21-card-header">
+    <h2>Personas registradas</h2>
+    <input
+      class="form-control form-control-sm w-auto"
+      placeholder="Buscar…"
+      [ngModel]="busqueda()"
+      (ngModelChange)="busqueda.set($event); cargar()"
+    />
+  </div>
+  <div class="r21-card-body p-0 table-responsive">
+    @if (cargando()) {
+      <div class="p-4 text-center text-muted">Cargando…</div>
+    } @else if (personas().length === 0) {
+      <app-empty-state mensaje="Sin resultados" icono="bi-person-x" />
+    } @else {
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr><th>DNI</th><th>Persona</th><th class="text-center">Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+          @for (p of personas(); track p.id) {
+            <tr>
+              <td class="text-muted">{{ p.dni ?? '—' }}</td>
+              <td>
+                <span class="fw-semibold">{{ p.apellidoPaterno }} {{ p.apellidoMaterno }}</span>
+                {{ p.nombres }}
+              </td>
+              <td class="text-center">
+                <span class="r21-badge" [class.ok]="p.estado === 'ACTIVO'" [class.neutro]="p.estado !== 'ACTIVO'">
+                  {{ p.estado }}
+                </span>
+              </td>
+              <td class="text-end">
+                <button class="btn btn-sm btn-r21-outline me-1" (click)="verHistorial(p)">Historial</button>
+                @if (auth.tienePermiso('formation.promote')) {
+                  <button class="btn btn-sm btn-r21-outline" (click)="promoviendo.set(p)">Promover</button>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</div>
+
+<app-modal [titulo]="'Historial de ' + (historialDe()?.apellidoPaterno ?? '')" [visible]="!!historialDe()" (cerrar)="historialDe.set(null)">
+  @if (historial().length === 0) {
+    <div class="text-muted small">Sin historial de etapas</div>
+  }
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Etapa</th><th>Grupo</th><th>Desde</th><th>Hasta</th><th>Estado</th></tr></thead>
+    <tbody>
+      @for (h of historial(); track h.id) {
+        <tr>
+          <td>{{ h.etapaNombre }}</td>
+          <td>{{ h.grupo }}</td>
+          <td>{{ h.fechaInicio }}</td>
+          <td>{{ h.fechaFin ?? '—' }}</td>
+          <td><span class="r21-badge" [class.ok]="h.estado === 'ACTIVO'" [class.neutro]="h.estado !== 'ACTIVO'">{{ h.estado }}</span></td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</app-modal>
+
+<app-modal [titulo]="'Promover a ' + (promoviendo()?.apellidoPaterno ?? '')" [visible]="!!promoviendo()" (cerrar)="promoviendo.set(null)">
+  <p class="small text-muted">Selecciona la etapa destino. La persona no se duplica: se cierra su etapa activa y se abre la nueva con historial.</p>
+  <div class="d-flex flex-column gap-2">
+    <button class="btn btn-sm btn-r21-outline text-start" (click)="promover('ASPIRANTE_COMPANIA')">
+      → Aspirante de compañía
+    </button>
+    <button class="btn btn-sm btn-r21-outline text-start" (click)="promover('ASPIRANTE_ESBAS')">
+      → Aspirante en formación ESBAS
+    </button>
+  </div>
+</app-modal>

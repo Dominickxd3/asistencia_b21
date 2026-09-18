@@ -1,0 +1,592 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@import 'bootstrap-icons/font/bootstrap-icons.css';
+
+/* ============================================================
+   Rímac 21 — Sistema de Instrucción
+   Identidad: carbón + rojo institucional + blanco.
+   Bootstrap solo para grid/spacing/flex. La identidad es propia.
+   ============================================================ */
+
+:root {
+  --r21-rojo: #c8102e;
+  --r21-rojo-oscuro: #9c0c25;
+  --r21-carbon: #1e2126;
+  --r21-carbon-2: #262a31;
+  --r21-fondo: #f3f4f6;
+  --r21-tarjeta: #ffffff;
+  --r21-borde: #e2e5ea;
+  --r21-texto: #24272c;
+  --r21-texto-suave: #6b7280;
+  --r21-verde: #1e7e34;
+  --r21-verde-fondo: #e6f4ea;
+  --r21-ambar: #b8860b;
+  --r21-ambar-fondo: #fdf3d7;
+  --r21-rojo-fondo: #fbe6e9;
+  --r21-sombra: 0 1px 3px rgba(20, 22, 26, 0.06);
+  --r21-radio: 10px;
+  --r21-sidebar-w: 248px;
+  --r21-font: 'Inter', 'Segoe UI', system-ui, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: var(--r21-font);
+  background: var(--r21-fondo);
+  color: var(--r21-texto);
+  font-size: 14.5px;
+}
+
+/* ---------- Layout con sidebar ---------- */
+.r21-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.r21-content {
+  flex: 1;
+  min-width: 0;
+  padding: 24px 28px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.r21-main {
+  margin-left: var(--r21-sidebar-w);
+}
+
+/* ---------- Sidebar ---------- */
+.r21-sidebar {
+  width: var(--r21-sidebar-w);
+  background: var(--r21-carbon);
+  color: #e7e9ec;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 1040;
+  transition: transform 0.25s ease;
+}
+
+.r21-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.r21-sidebar-brand img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 8px;
+  padding: 3px;
+}
+
+.r21-sidebar-brand .org {
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+}
+
+.r21-sidebar-brand .area {
+  font-size: 11px;
+  color: #9aa0a8;
+}
+
+.r21-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.r21-nav a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: #c9ccd2;
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.r21-nav a:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.r21-nav a.active {
+  background: var(--r21-rojo);
+  color: #fff;
+}
+
+.r21-nav a i {
+  font-size: 15px;
+  width: 18px;
+  text-align: center;
+}
+
+.r21-nav .nav-seccion {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7d828b;
+  padding: 14px 12px 5px;
+}
+
+.r21-sidebar-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 14px;
+}
+
+.r21-sidebar-footer .nombre {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.r21-sidebar-footer .cargo {
+  font-size: 11.5px;
+  color: #9aa0a8;
+}
+
+.r21-sidebar-footer .salir {
+  margin-top: 8px;
+  width: 100%;
+}
+
+/* Botón hamburguesa (móvil) */
+.r21-burger {
+  display: none;
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 1050;
+  background: var(--r21-carbon);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 11px;
+}
+
+.r21-backdrop {
+  display: none;
+}
+
+/* ---------- Tarjetas y bloques ---------- */
+.r21-card {
+  background: var(--r21-tarjeta);
+  border: 1px solid var(--r21-borde);
+  border-radius: var(--r21-radio);
+  box-shadow: var(--r21-sombra);
+}
+
+.r21-card-header {
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--r21-borde);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.r21-card-header h2 {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: 0.01em;
+}
+
+.r21-card-body {
+  padding: 16px 18px;
+}
+
+/* ---------- Encabezado de página ---------- */
+.r21-page-header h1 {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.r21-page-header .fecha {
+  color: var(--r21-texto-suave);
+  font-size: 13px;
+}
+
+/* ---------- Bloque operativo principal ---------- */
+.r21-resumen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px 36px;
+  align-items: center;
+}
+
+.r21-resumen .principal {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding-right: 26px;
+  border-right: 1px solid var(--r21-borde);
+}
+
+.r21-resumen .principal .numero {
+  font-size: 44px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--r21-rojo);
+}
+
+.r21-resumen .principal .etiqueta {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.r21-resumen .secundario {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
+}
+
+.r21-resumen .secundario .numero {
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.r21-resumen .secundario .etiqueta {
+  font-size: 12px;
+  color: var(--r21-texto-suave);
+}
+
+/* ---------- Badges de estado ---------- */
+.r21-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.r21-badge.ok { background: var(--r21-verde-fondo); color: var(--r21-verde); }
+.r21-badge.warn { background: var(--r21-ambar-fondo); color: var(--r21-ambar); }
+.r21-badge.peligro { background: var(--r21-rojo-fondo); color: var(--r21-rojo); }
+.r21-badge.neutro { background: #eceef2; color: #5b6068; }
+
+/* ---------- Jornadas ---------- */
+.r21-jornada {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr auto;
+  gap: 14px;
+  padding: 13px 4px;
+  border-bottom: 1px solid var(--r21-borde);
+  align-items: center;
+}
+
+.r21-jornada:last-child {
+  border-bottom: none;
+}
+
+.r21-jornada .titulo {
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.r21-jornada .sub {
+  font-size: 12px;
+  color: var(--r21-texto-suave);
+}
+
+.r21-progreso {
+  height: 6px;
+  background: #eceef2;
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.r21-progreso > div {
+  height: 100%;
+  background: var(--r21-rojo);
+  border-radius: 3px;
+  transition: width 0.4s ease;
+}
+
+.r21-jornada .cifras {
+  text-align: right;
+  font-size: 12px;
+  color: var(--r21-texto-suave);
+}
+
+.r21-jornada .cifras strong {
+  display: block;
+  font-size: 15px;
+  color: var(--r21-texto);
+}
+
+/* ---------- Actividad en vivo ---------- */
+.r21-actividad {
+  display: flex;
+  flex-direction: column;
+}
+
+.r21-actividad-item {
+  display: flex;
+  gap: 12px;
+  padding: 9px 2px;
+  border-bottom: 1px solid var(--r21-borde);
+  font-size: 13px;
+  align-items: baseline;
+}
+
+.r21-actividad-item:last-child {
+  border-bottom: none;
+}
+
+.r21-actividad .hora {
+  font-variant-numeric: tabular-nums;
+  color: var(--r21-texto-suave);
+  font-size: 12px;
+  min-width: 48px;
+}
+
+.r21-actividad .detalle .quien-registro {
+  color: var(--r21-texto-suave);
+  font-size: 12px;
+}
+
+/* ---------- Modales ---------- */
+.r21-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 17, 20, 0.5);
+  z-index: 1050;
+}
+
+.r21-modal-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 1051;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 48px 16px;
+  overflow-y: auto;
+}
+
+.r21-modal {
+  background: #fff;
+  border-radius: var(--r21-radio);
+  width: 100%;
+  max-width: 440px;
+  box-shadow: 0 18px 50px rgba(15, 17, 20, 0.25);
+}
+
+.r21-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--r21-borde);
+}
+
+.r21-modal-header h3 {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.r21-modal-body {
+  padding: 16px 18px;
+  font-size: 13.5px;
+}
+
+.r21-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 18px 14px;
+  border-top: 1px solid var(--r21-borde);
+}
+
+/* ---------- Pizarra de asistencia ---------- */
+.r21-board-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--r21-borde);
+  align-items: center;
+}
+
+.r21-board-row:last-child {
+  border-bottom: none;
+}
+
+.r21-board-row .nombre {
+  font-weight: 600;
+  font-size: 13.5px;
+}
+
+.r21-board-row .meta {
+  font-size: 12px;
+  color: var(--r21-texto-suave);
+}
+
+.r21-board-row .acciones {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ---------- Estado vacío ---------- */
+.r21-empty {
+  text-align: center;
+  color: var(--r21-texto-suave);
+  padding: 26px 12px;
+  font-size: 13px;
+}
+
+.r21-empty i {
+  font-size: 26px;
+  display: block;
+  margin-bottom: 8px;
+  color: #c3c7ce;
+}
+
+/* ---------- Botones ---------- */
+.btn-r21 {
+  background: var(--r21-rojo);
+  border-color: var(--r21-rojo);
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-r21:hover,
+.btn-r21:focus {
+  background: var(--r21-rojo-oscuro);
+  border-color: var(--r21-rojo-oscuro);
+  color: #fff;
+}
+
+.btn-r21-outline {
+  background: transparent;
+  border: 1px solid var(--r21-borde);
+  color: var(--r21-texto);
+  font-weight: 500;
+}
+
+.btn-r21-outline:hover {
+  border-color: var(--r21-rojo);
+  color: var(--r21-rojo);
+}
+
+/* ---------- Login ---------- */
+.r21-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--r21-carbon);
+  padding: 20px;
+}
+
+.r21-login-card {
+  width: 100%;
+  max-width: 380px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 34px 32px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.r21-login-card .logo-wrap {
+  text-align: center;
+  margin-bottom: 18px;
+}
+
+.r21-login-card .logo-wrap img {
+  height: 72px;
+}
+
+.r21-login-card h1 {
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.r21-login-card .sub {
+  text-align: center;
+  color: var(--r21-texto-suave);
+  font-size: 12.5px;
+  margin-bottom: 22px;
+}
+
+/* ---------- Live dot ---------- */
+.r21-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--r21-verde);
+}
+
+.r21-live::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--r21-verde);
+  animation: r21-pulse 1.6s ease infinite;
+}
+
+@keyframes r21-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 991.98px) {
+  .r21-sidebar {
+    transform: translateX(-100%);
+  }
+  .r21-sidebar.open {
+    transform: translateX(0);
+  }
+  .r21-burger {
+    display: block;
+  }
+  .r21-content {
+    padding: 64px 16px 32px;
+  }
+  .r21-main {
+    margin-left: 0;
+  }
+  .r21-backdrop.show {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 17, 20, 0.55);
+    z-index: 1039;
+  }
+  .r21-jornada {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  .r21-jornada .cifras {
+    text-align: left;
+  }
+}

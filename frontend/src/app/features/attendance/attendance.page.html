@@ -1,0 +1,83 @@
+<app-page-header titulo="Asistencia" subtitulo="Registro operativo de la jornada" />
+
+@if (mensaje(); as m) {
+  <div
+    class="alert py-2 small d-flex align-items-center gap-2"
+    [class.alert-success]="m.tipo === 'ok'"
+    [class.alert-danger]="m.tipo === 'error'"
+  >
+    <i class="bi" [class]="m.tipo === 'ok' ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
+    {{ m.texto }}
+  </div>
+}
+
+@if (jornadas().length > 1) {
+  <div class="d-flex align-items-center gap-2">
+    <label class="small fw-semibold text-muted">Jornada:</label>
+    <select
+      class="form-select form-select-sm w-auto"
+      [ngModel]="jornadaId()"
+      (ngModelChange)="cambiarJornada($event)"
+    >
+      @for (j of jornadas(); track j.id) {
+        <option [ngValue]="j.id">{{ j.grupo }} — {{ j.estado }}</option>
+      }
+    </select>
+  </div>
+}
+
+@if (cargando()) {
+  <div class="r21-card r21-card-body p-4 text-center text-muted">Cargando…</div>
+} @else if (jornadaActual(); as j) {
+  <app-attendance-board
+    [jornada]="j"
+    [items]="pizarra()"
+    [procesandoId]="procesandoId()"
+    [puedeAjustar]="puedeAjustar()"
+    [puedeAnular]="puedeAnular()"
+    (accion)="ejecutar($event)"
+    (cerrar)="intentarCierre()"
+  />
+} @else {
+  <div class="r21-card">
+    <div class="r21-card-body">
+      <app-empty-state
+        mensaje="No hay jornadas programadas para hoy"
+        icono="bi-calendar-x"
+      />
+    </div>
+  </div>
+}
+
+<!-- Diálogo de motivo (justificada / salida anticipada / observación / anular) -->
+<app-motivo-dialog
+  [visible]="dialogo() === 'motivo'"
+  [titulo]="configMotivo().titulo"
+  [etiqueta]="configMotivo().etiqueta"
+  [textoBoton]="configMotivo().boton"
+  [destructivo]="configMotivo().destructivo"
+  [persona]="solicitud()?.item?.nombreCompleto ?? ''"
+  [procesando]="procesandoId() !== null"
+  (confirmado)="confirmarMotivo($event)"
+  (cancelar)="cerrarDialogos()"
+/>
+
+<!-- Diálogo de hora manual (registro o ajuste) -->
+<app-hora-manual-dialog
+  [visible]="dialogo() === 'horaManual'"
+  [titulo]="solicitud()?.accion === 'ajustar' ? 'Modificar horas' : 'Registrar hora manual'"
+  [modoAjuste]="solicitud()?.accion === 'ajustar'"
+  [persona]="solicitud()?.item?.nombreCompleto ?? ''"
+  [procesando]="procesandoId() !== null"
+  (confirmado)="confirmarHoraManual($event)"
+  (cancelar)="cerrarDialogos()"
+/>
+
+<!-- Cierre de jornada -->
+<app-cierre-dialog
+  [visible]="dialogo() === 'cierre'"
+  [pendientes]="pendientesCierre()"
+  [procesando]="false"
+  (confirmar)="confirmarCierre()"
+  (cancelar)="cerrarDialogos()"
+/>

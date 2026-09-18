@@ -1,0 +1,84 @@
+/* ============================================================
+   Rímac 21 — Utilities y Microinteracciones
+   ============================================================ */
+
+/* Pulso suave de actividad en vivo (solo verde funcional) */
+.r21-live-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--r21-green);
+  background-color: var(--r21-green-bg);
+  padding: 2px 8px;
+  border-radius: 999px;
+
+  &::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--r21-green);
+    animation: r21-pulse 1.8s infinite ease-in-out;
+  }
+}
+
+@keyframes r21-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.35);
+    opacity: 0.4;
+  }
+}
+
+/* Punto indicador de jornada activa */
+.r21-active-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--r21-green);
+}
+
+/* Tarjeta estándar institucional */
+.r21-card {
+  background-color: var(--r21-surface);
+  border: 1px solid var(--r21-border);
+  border-radius: var(--r21-radius-md);
+  box-shadow: var(--r21-shadow-sm);
+  transition: border-color var(--r21-transition-fast), box-shadow var(--r21-transition-fast);
+}
+
+.r21-card-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--r21-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  h2, h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 650;
+    color: var(--r21-text-primary);
+  }
+}
+
+.r21-card-body {
+  padding: 16px 18px;
+}
+
+/* Enlaces y botones de navegación microinteractivos */
+.r21-interactive {
+  cursor: pointer;
+  transition: background-color var(--r21-transition-fast), color var(--r21-transition-fast), transform var(--r21-transition-fast);
+
+  &:hover {
+    background-color: #F8F9FA;
+  }
+}

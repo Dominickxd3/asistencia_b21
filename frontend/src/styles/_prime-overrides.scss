@@ -1,0 +1,186 @@
+/* ============================================================
+   Rímac 21 — PrimeNG v17 Overrides
+   Adaptación estricta de componentes PrimeNG al design system
+   ============================================================ */
+
+/* --- Botones --- */
+.p-button {
+  font-family: var(--r21-font);
+  font-size: 13.5px;
+  font-weight: 600;
+  border-radius: var(--r21-radius-sm);
+  padding: 8px 16px;
+  gap: 8px;
+  transition: background-color var(--r21-transition-fast), border-color var(--r21-transition-fast), box-shadow var(--r21-transition-fast);
+  box-shadow: none;
+
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--r21-surface), 0 0 0 4px rgba(200, 16, 46, 0.35);
+  }
+
+  /* Primario: Rojo institucional Rímac 21 */
+  &.p-button-primary,
+  &:not(.p-button-outlined):not(.p-button-text):not(.p-button-secondary):not(.p-button-success):not(.p-button-info):not(.p-button-warning):not(.p-button-help):not(.p-button-danger) {
+    background-color: var(--r21-red);
+    border: 1px solid var(--r21-red);
+    color: #FFFFFF;
+
+    &:hover {
+      background-color: var(--r21-red-dark);
+      border-color: var(--r21-red-dark);
+    }
+
+    &:active {
+      background-color: #87091E;
+      border-color: #87091E;
+    }
+  }
+
+  /* Outlined / Secundario */
+  &.p-button-outlined {
+    background-color: transparent;
+    border: 1px solid var(--r21-border);
+    color: var(--r21-text-primary);
+
+    &:hover {
+      background-color: var(--r21-bg);
+      border-color: #D0D5DD;
+      color: var(--r21-text-primary);
+    }
+  }
+
+  &.p-button-sm {
+    font-size: 12.5px;
+    padding: 6px 12px;
+  }
+}
+
+/* --- Barra de Progreso (6px) --- */
+.p-progressbar {
+  height: 6px;
+  background-color: var(--r21-border);
+  border-radius: 3px;
+  overflow: hidden;
+
+  .p-progressbar-value {
+    background-color: var(--r21-red);
+    border-radius: 3px;
+    transition: width 200ms ease;
+  }
+
+  .p-progressbar-label {
+    display: none;
+  }
+}
+
+/* --- Tags / Badges --- */
+.p-tag {
+  font-family: var(--r21-font);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  &.p-tag-danger,
+  &.tag-obligatoria {
+    background-color: var(--r21-red-light);
+    color: var(--r21-red-dark);
+  }
+
+  &.p-tag-success,
+  &.tag-activa {
+    background-color: var(--r21-green-bg);
+    color: var(--r21-green);
+  }
+
+  &.p-tag-warning,
+  &.tag-pendiente {
+    background-color: var(--r21-amber-bg);
+    color: var(--r21-amber);
+  }
+
+  &.p-tag-secondary,
+  &.p-tag-info,
+  &.tag-voluntaria,
+  &.tag-programada {
+    background-color: var(--r21-gray-badge);
+    color: var(--r21-gray-badge-text);
+  }
+}
+
+/* --- Avatar --- */
+.p-avatar {
+  background-color: #EAEFF5;
+  color: var(--r21-text-primary);
+  font-weight: 600;
+  font-size: 12px;
+  border-radius: var(--r21-radius-sm);
+
+  &.p-avatar-circle {
+    border-radius: 50%;
+  }
+}
+
+/* --- Skeletons de Carga --- */
+.p-skeleton {
+  background-color: #EAECEF;
+  border-radius: 4px;
+
+  &::after {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0));
+  }
+}
+
+/* --- Drawer / Sidebar Móvil PrimeNG --- */
+.p-sidebar {
+  background: var(--r21-sidebar);
+  color: #FFFFFF;
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+
+  .p-sidebar-header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--r21-sidebar-border);
+
+    .p-sidebar-close {
+      color: #FFFFFF;
+      &:hover {
+        background-color: var(--r21-sidebar-hover);
+      }
+    }
+  }
+
+  .p-sidebar-content {
+    padding: 0;
+  }
+}
+
+.r21-mobile-drawer {
+  width: 260px !important;
+  max-width: 85vw !important;
+
+  .p-sidebar-content {
+    height: 100%;
+    .r21-sidebar {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      z-index: auto;
+      border-right: none;
+    }
+  }
+}
+
+/* --- Tooltip --- */
+.p-tooltip .p-tooltip-text {
+  font-family: var(--r21-font);
+  font-size: 12px;
+  background-color: var(--r21-sidebar);
+  color: #FFFFFF;
+  border-radius: 4px;
+  padding: 6px 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}

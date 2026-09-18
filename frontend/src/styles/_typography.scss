@@ -1,0 +1,55 @@
+/* ============================================================
+   Rímac 21 — Tipografía
+   Jerarquía sobria e institucional con Inter
+   ============================================================ */
+
+body {
+  font-family: var(--r21-font);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--r21-text-primary);
+  background-color: var(--r21-bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, .r21-page-title {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--r21-text-primary);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+h2, .r21-section-title {
+  font-size: 18px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--r21-text-primary);
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+h3, .r21-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--r21-text-primary);
+  margin: 0;
+}
+
+.r21-text-body {
+  font-size: 14px;
+  color: var(--r21-text-primary);
+}
+
+.r21-text-secondary {
+  font-size: 13px;
+  color: var(--r21-text-secondary);
+}
+
+.r21-text-meta {
+  font-size: 12px;
+  color: var(--r21-text-muted);
+}

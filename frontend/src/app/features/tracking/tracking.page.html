@@ -1,0 +1,77 @@
+<app-page-header titulo="Seguimiento" subtitulo="Métricas reales por integrante — sin calificaciones artificiales" />
+
+<div class="r21-card">
+  <div class="r21-card-body">
+    <div class="row g-2 align-items-end">
+      <div class="col-12 col-md-3">
+        <label class="form-label small fw-semibold">Grupo</label>
+        <select class="form-select form-select-sm" [(ngModel)]="grupoId" (change)="cargar()">
+          @for (g of grupos(); track g.id) {
+            <option [ngValue]="g.id">{{ g.nombre }} ({{ g.etapa }})</option>
+          }
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-semibold">Desde</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="desde" (change)="cargar()" />
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label small fw-semibold">Hasta</label>
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="hasta" (change)="cargar()" />
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label small fw-semibold">Ordenar por</label>
+        <select class="form-select form-select-sm" [(ngModel)]="orden" (change)="cargar()">
+          <option value="faltas_injustificadas">Más faltas injustificadas</option>
+          <option value="menor_asistencia">Menor asistencia</option>
+          <option value="salidas_anticipadas">Más salidas anticipadas</option>
+          <option value="horas">Más horas</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="r21-card">
+  <div class="r21-card-header">
+    <h2>Integrantes <span class="text-muted fw-normal small">— {{ jornadasEsperadas() }} jornadas obligatorias en el periodo</span></h2>
+  </div>
+  <div class="r21-card-body p-0 table-responsive">
+    @if (cargando()) {
+      <div class="p-4 text-center text-muted">Cargando…</div>
+    } @else if (filas().length === 0) {
+      <app-empty-state mensaje="Sin integrantes o sin datos en el periodo" icono="bi-binoculars" />
+    } @else {
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Persona</th>
+            <th class="text-center">DNI</th>
+            <th class="text-center">Asistencias</th>
+            <th class="text-center">F. justificadas</th>
+            <th class="text-center">F. injustificadas</th>
+            <th class="text-center">Salidas antic.</th>
+            <th class="text-center">Horas</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filas(); track f.personaId) {
+            <tr>
+              <td class="fw-semibold">{{ f.nombreCompleto }}</td>
+              <td class="text-center text-muted">{{ f.dni ?? '—' }}</td>
+              <td class="text-center">{{ f.asistencias }}</td>
+              <td class="text-center">{{ f.faltasJustificadas }}</td>
+              <td class="text-center">
+                <span [class.text-danger]="f.faltasInjustificadas > 0" [class.fw-bold]="f.faltasInjustificadas > 0">
+                  {{ f.faltasInjustificadas }}
+                </span>
+              </td>
+              <td class="text-center">{{ f.salidasAnticipadas }}</td>
+              <td class="text-center">{{ f.horas }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</div>

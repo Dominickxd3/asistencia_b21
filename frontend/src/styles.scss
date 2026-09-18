@@ -1,0 +1,337 @@
+/* ============================================================
+   Rímac 21 — Sistema de Instrucción
+   Hoja de estilos principal
+   ============================================================ */
+
+/* 1. Tokens, Tipografía, Overrides y Utilidades */
+@use './styles/tokens' as *;
+@use './styles/typography' as *;
+@use './styles/prime-overrides' as *;
+@use './styles/utilities' as *;
+
+/* 2. Reset y Grid */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+/* 3. PrimeNG y PrimeIcons */
+@import 'primeicons/primeicons.css';
+@import 'primeng/resources/themes/lara-light-blue/theme.css';
+@import 'primeng/resources/primeng.min.css';
+
+/* ============================================================
+   Layout Institucional
+   Desktop: Sidebar (240px) + Contenido fluido (sin navbar superior)
+   ============================================================ */
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--r21-bg);
+  color: var(--r21-text-primary);
+}
+
+.r21-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* Área de contenido principal fluido */
+.r21-main-area {
+  flex: 1;
+  min-width: 0;
+  margin-left: var(--r21-sidebar-width);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--r21-bg);
+  transition: margin-left var(--r21-transition-fast);
+}
+
+.r21-content {
+  flex: 1;
+  width: 100%;
+  padding: 28px 32px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ============================================================
+   Sidebar Institucional
+   ============================================================ */
+
+.r21-sidebar {
+  width: var(--r21-sidebar-width);
+  background-color: var(--r21-sidebar);
+  color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 1020;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Cabecera del Sidebar con Logo Real */
+.r21-sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 18px;
+  border-bottom: 1px solid var(--r21-sidebar-border);
+
+  .brand-logo {
+    width: 42px;
+    height: 42px;
+    object-fit: contain;
+    background: #FFFFFF;
+    border-radius: var(--r21-radius-sm);
+    padding: 3px;
+    flex-shrink: 0;
+  }
+
+  .brand-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    .org-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+    }
+
+    .org-unit {
+      font-size: 11.5px;
+      font-weight: 500;
+      color: #9AA0A8;
+      margin-top: 2px;
+    }
+  }
+}
+
+/* Navegación del Sidebar */
+.r21-nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+
+  .nav-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #6C727D;
+    padding: 16px 12px 6px;
+  }
+
+  a.r21-nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 12px;
+    border-radius: var(--r21-radius-sm);
+    color: var(--r21-sidebar-text);
+    text-decoration: none;
+    font-size: 13.5px;
+    font-weight: 500;
+    border-left: 3px solid transparent;
+    transition: background-color var(--r21-transition-fast), color var(--r21-transition-fast), border-color var(--r21-transition-fast);
+
+    i {
+      font-size: 17px;
+      width: 20px;
+      text-align: center;
+      color: inherit;
+    }
+
+    &:hover {
+      background-color: var(--r21-sidebar-hover);
+      color: #FFFFFF;
+    }
+
+    &.active {
+      background-color: var(--r21-sidebar-hover);
+      color: var(--r21-sidebar-text-active);
+      border-left-color: var(--r21-red);
+      font-weight: 600;
+
+      i {
+        color: #FFFFFF;
+      }
+    }
+  }
+}
+
+/* Pie del Sidebar: Usuario activo y salida */
+.r21-sidebar-footer {
+  border-top: 1px solid var(--r21-sidebar-border);
+  padding: 16px 14px;
+  background-color: rgba(0, 0, 0, 0.15);
+
+  .user-profile {
+    margin-bottom: 10px;
+
+    .user-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #FFFFFF;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .user-role {
+      font-size: 11.5px;
+      color: #9AA0A8;
+      margin-top: 1px;
+    }
+  }
+
+  .btn-logout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--r21-radius-sm);
+    color: #D0D5DD;
+    font-size: 12.5px;
+    font-weight: 500;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background-color var(--r21-transition-fast), color var(--r21-transition-fast), border-color var(--r21-transition-fast);
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: #FFFFFF;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+  }
+}
+
+/* ============================================================
+   Cabecera Móvil Compacta (Solo Móvil/Tablet)
+   ============================================================ */
+
+.r21-mobile-bar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 1010;
+  height: 54px;
+  background-color: var(--r21-sidebar);
+  color: #FFFFFF;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--r21-sidebar-border);
+
+  .mobile-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    img {
+      width: 30px;
+      height: 30px;
+      object-fit: contain;
+      background: #FFFFFF;
+      border-radius: 4px;
+      padding: 2px;
+    }
+
+    span {
+      font-size: 13px;
+      font-weight: 600;
+    }
+  }
+
+  .btn-toggle-menu {
+    background: transparent;
+    border: none;
+    color: #FFFFFF;
+    font-size: 20px;
+    padding: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* ============================================================
+   Login institucional
+   ============================================================ */
+
+.r21-login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--r21-sidebar);
+  padding: 20px;
+}
+
+.r21-login-card {
+  width: 100%;
+  max-width: 390px;
+  background: #FFFFFF;
+  border-radius: var(--r21-radius-lg);
+  padding: 36px 32px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+
+  .logo-wrap {
+    text-align: center;
+    margin-bottom: 20px;
+
+    img {
+      height: 72px;
+    }
+  }
+
+  h1 {
+    font-size: 18px;
+    font-weight: 700;
+    text-align: center;
+    color: var(--r21-text-primary);
+    margin-bottom: 4px;
+  }
+
+  .sub {
+    text-align: center;
+    color: var(--r21-text-secondary);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+}
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+
+@media (max-width: 767.98px) {
+  .r21-sidebar.desktop-sidebar {
+    display: none;
+  }
+
+  .r21-mobile-bar {
+    display: flex;
+  }
+
+  .r21-main-area {
+    margin-left: 0;
+  }
+
+  .r21-content {
+    padding: 16px 14px 32px;
+  }
+}

@@ -1,0 +1,98 @@
+<app-page-header titulo="Reportes" subtitulo="PDF generado en el servidor con datos de SQL Server" />
+
+<div class="row g-3">
+  <div class="col-12 col-lg-5">
+    <div class="r21-card">
+      <div class="r21-card-header"><h2>Parámetros</h2></div>
+      <div class="r21-card-body">
+        <label class="form-label small fw-semibold">Tipo de reporte</label>
+        <select class="form-select form-select-sm mb-3" [(ngModel)]="tipo">
+          <option value="ESTADO_GENERAL">Estado general (consolidado)</option>
+          <option value="DETALLE_INDIVIDUAL">Detalle individual</option>
+          <option value="JORNADA">Jornada específica</option>
+        </select>
+
+        <label class="form-label small fw-semibold">Periodo</label>
+        <div class="btn-group btn-group-sm mb-2 w-100">
+          @for (p of ['Q1', 'Q2', 'MES', 'PERSONALIZADO']; track p) {
+            <button
+              type="button"
+              class="btn"
+              [class.btn-r21]="periodoRapido === p"
+              [class.btn-r21-outline]="periodoRapido !== p"
+              (click)="aplicarPeriodo($any(p))"
+            >
+              {{ p === 'Q1' ? '1ra quincena' : p === 'Q2' ? '2da quincena' : p === 'MES' ? 'Mes' : 'Personalizado' }}
+            </button>
+          }
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <input type="date" class="form-control form-control-sm" [(ngModel)]="desde" />
+          </div>
+          <div class="col-6">
+            <input type="date" class="form-control form-control-sm" [(ngModel)]="hasta" />
+          </div>
+        </div>
+
+        @if (tipo !== 'JORNADA') {
+          <label class="form-label small fw-semibold">Grupos (consolidado)</label>
+          <div class="border rounded p-2 mb-3" style="max-height: 150px; overflow-y: auto">
+            @for (g of gruposDisponibles(); track g.id) {
+              <div class="form-check form-check-sm">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  [id]="'g' + g.id"
+                  [checked]="gruposSeleccionados().includes(g.id)"
+                  (change)="toggleGrupo(g.id)"
+                />
+                <label class="form-check-label small" [for]="'g' + g.id">
+                  {{ g.nombre }} <span class="text-muted">({{ g.etapa }})</span>
+                </label>
+              </div>
+            }
+          </div>
+        }
+
+        @if (tipo === 'DETALLE_INDIVIDUAL') {
+          <label class="form-label small fw-semibold">Persona</label>
+          <select class="form-select form-select-sm mb-3" [(ngModel)]="personaId">
+            @for (p of personas(); track p.personaId) {
+              <option [ngValue]="p.personaId">{{ p.nombreCompleto }}</option>
+            }
+          </select>
+        }
+
+        @if (tipo === 'JORNADA') {
+          <label class="form-label small fw-semibold">Jornada</label>
+          <p class="small text-muted">Usa Seguimiento para ver jornadas; por ahora el id numérico de la jornada.</p>
+          <input type="number" class="form-control form-control-sm mb-3" [(ngModel)]="jornadaId" placeholder="Ej. 12" />
+        }
+
+        @if (mensaje(); as m) {
+          <div class="small mb-2" [class.text-success]="m.includes('descargado')" [class.text-danger]="!m.includes('descargado')">
+            {{ m }}
+          </div>
+        }
+
+        <button
+          class="btn btn-r21 w-100"
+          (click)="generar()"
+          [disabled]="generando() || gruposSeleccionados().length === 0"
+        >
+          <i class="bi bi-file-earmark-pdf"></i> {{ generando() ? 'Generando…' : 'Generar PDF' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12 col-lg-7">
+    <div class="r21-card">
+      <div class="r21-card-header"><h2>Últimos reportes</h2></div>
+      <div class="r21-card-body">
+        <app-empty-state mensaje="Los reportes generados aparecen aquí (registro en reportes_generados)" icono="bi-file-earmark-text" />
+      </div>
+    </div>
+  </div>
+</div>

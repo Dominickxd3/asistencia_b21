@@ -1,0 +1,54 @@
+{
+  "name": "rimac21-backend",
+  "version": "0.1.0",
+  "description": "Backend del sistema de instrucción - Compañía de Bomberos Voluntarios Rímac N.21",
+  "private": true,
+  "license": "UNLICENSED",
+  "scripts": {
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
+    "seed": "ts-node -r tsconfig-paths/register src/database/seeds/run-seed.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.0.0",
+    "@nestjs/config": "^4.0.0",
+    "@nestjs/core": "^11.0.0",
+    "@nestjs/jwt": "^11.0.0",
+    "@nestjs/platform-express": "^11.0.0",
+    "@nestjs/platform-socket.io": "^11.0.0",
+    "@nestjs/swagger": "^11.0.0",
+    "@nestjs/throttler": "^6.2.1",
+    "@nestjs/typeorm": "^11.0.0",
+    "@nestjs/websockets": "^11.0.0",
+    "argon2": "^0.41.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "cookie-parser": "^1.4.7",
+    "helmet": "^8.0.0",
+    "msnodesqlv8": "^4.5.0",
+    "mssql": "^11.0.1",
+    "pdfkit": "^0.20.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "typeorm": "^0.3.20"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.0",
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.0",
+    "@types/pdfkit": "^0.17.6",
+    "socket.io-client": "^4.8.3",
+    "source-map-support": "^0.5.21",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.2"
+  },
+  "allowScripts": {
+    "argon2@0.41.1": true,
+    "msnodesqlv8@4.5.0": true
+  }
+}

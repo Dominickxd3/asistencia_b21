@@ -1,0 +1,75 @@
+<app-page-header titulo="Auditoría" subtitulo="Solo Jefe de Instrucción y Administrador" />
+
+<div class="r21-card">
+  <div class="r21-card-body">
+    <div class="row g-2">
+      <div class="col-6 col-md-2">
+        <select class="form-select form-select-sm" [(ngModel)]="filtroModulo" (change)="cargar()">
+          <option value="">Todos los módulos</option>
+          @for (m of MODULOS; track m) {
+            <option [value]="m">{{ m }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <select class="form-select form-select-sm" [(ngModel)]="filtroAccion" (change)="cargar()">
+          <option value="">Todas las acciones</option>
+          @for (a of ACCIONES; track a) {
+            <option [value]="a">{{ a }}</option>
+          }
+        </select>
+      </div>
+      <div class="col-6 col-md-2">
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="filtroDesde" (change)="cargar()" />
+      </div>
+      <div class="col-6 col-md-2">
+        <input type="date" class="form-control form-control-sm" [(ngModel)]="filtroHasta" (change)="cargar()" />
+      </div>
+      <div class="col-12 col-md-4 text-md-end small text-muted">
+        {{ total() }} registros
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="r21-card">
+  <div class="r21-card-body p-0 table-responsive">
+    @if (cargando()) {
+      <div class="p-4 text-center text-muted">Cargando…</div>
+    } @else if (items().length === 0) {
+      <app-empty-state mensaje="Sin registros con estos filtros" icono="bi-shield-lock" />
+    } @else {
+      <table class="table table-sm table-hover align-middle mb-0" style="font-size: 12.5px">
+        <thead class="table-light">
+          <tr>
+            <th>Fecha/hora</th><th>Usuario</th><th>Acción</th><th>Módulo</th><th>Entidad</th><th>Detalle</th><th>IP</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (r of items(); track r.id) {
+            <tr>
+              <td class="text-muted" style="white-space: nowrap">{{ r.fechaHora | date: 'dd/MM HH:mm:ss' }}</td>
+              <td class="fw-semibold">{{ r.usuario }}</td>
+              <td><span class="r21-badge neutro">{{ r.accion }}</span></td>
+              <td>{{ r.modulo }}</td>
+              <td>{{ r.entidad ?? '—' }} {{ r.entidadId ? '#' + r.entidadId : '' }}</td>
+              <td class="text-truncate" style="max-width: 240px" [title]="r.descripcion ?? r.valorNuevo">
+                {{ r.descripcion ?? (r.valorNuevo | json).slice(0, 80) ?? '—' }}
+              </td>
+              <td class="text-muted">{{ r.ip ?? '—' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      <div class="d-flex justify-content-between align-items-center p-2 border-top">
+        <button class="btn btn-sm btn-r21-outline" [disabled]="pagina() <= 1" (click)="cambiarPagina(-1)">
+          ← Anterior
+        </button>
+        <span class="small text-muted">Página {{ pagina() }}</span>
+        <button class="btn btn-sm btn-r21-outline" [disabled]="items().length < 25" (click)="cambiarPagina(1)">
+          Siguiente →
+        </button>
+      </div>
+    }
+  </div>
+</div>
