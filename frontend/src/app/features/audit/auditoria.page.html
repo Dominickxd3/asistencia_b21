@@ -37,7 +37,7 @@
     @if (cargando()) {
       <div class="p-4 text-center text-muted">Cargando…</div>
     } @else if (items().length === 0) {
-      <app-empty-state mensaje="Sin registros con estos filtros" icono="bi-shield-lock" />
+      <app-empty-state mensaje="Sin registros con estos filtros" icono="@tui.shield" />
     } @else {
       <table class="table table-sm table-hover align-middle mb-0" style="font-size: 12.5px">
         <thead class="table-light">

@@ -1,259 +1,56 @@
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TuiIcon } from '@taiga-ui/core';
 import { AtencionItem } from '../../core/models/api.models';
 
 @Component({
   selector: 'app-attention-panel',
-  imports: [RouterLink],
+  imports: [RouterLink, TuiIcon],
   template: `
-    <div class="r21-attention-panel">
-      <!-- Cabecera de Requieren atención -->
-      <div class="panel-header-row">
-        <h2 class="panel-title">Requieren atención</h2>
-        @if (items().length > 0) {
-          <span class="badge-alert-count">
-            {{ items().length }} alerta{{ items().length === 1 ? '' : 's' }}
-          </span>
-        }
+    <section class="attention-section" aria-labelledby="attention-title">
+      <div class="section-heading">
+        <h2 id="attention-title">Requieren atención</h2>
+        @if (items().length) { <span>{{ items().length }}</span> }
       </div>
 
-      <div class="panel-card-content">
+      <div class="attention-card">
         @if (items().length === 0) {
-          <div class="all-clear-state">
-            <div class="clear-icon-badge">
-              <i class="pi pi-check"></i>
-            </div>
-            <div class="clear-text-wrap">
-              <span class="clear-title">Pizarra Operativa al Día</span>
-              <span class="clear-sub">No se registran faltas injustificadas ni incidencias disciplinarias activas.</span>
-            </div>
-          </div>
-          <div class="clear-footer-row">
-            <i class="pi pi-shield"></i>
-            <span>Control de asistencia conforme a reglamento B-21</span>
+          <div class="all-clear">
+            <tui-icon icon="@tui.circle-check" />
+            <strong>Todo en orden</strong>
           </div>
         } @else {
-          <!-- Lista de incidencias reales -->
-          <div class="incidencias-list">
-            @for (item of items(); track $index) {
-              <a
-                [routerLink]="['/asistencia']"
-                class="incidencia-item"
-                [class.item-warning]="item.tipo === 'PENDIENTES'"
-              >
-                <span
-                  class="item-dot"
-                  [class.dot-amber]="item.tipo === 'PENDIENTES'"
-                  [class.dot-gray]="item.tipo !== 'PENDIENTES'"
-                ></span>
-                <div class="item-body">
-                  <div class="item-main-row">
-                    <strong class="item-title">{{ item.descripcion }}</strong>
-                    <span
-                      class="item-type-tag"
-                      [class.tag-amber]="item.tipo === 'PENDIENTES'"
-                    >
-                      {{ item.tipo === 'PENDIENTES' ? 'Pendiente' : 'Registrado' }}
-                    </span>
-                  </div>
-                  <span class="item-sub">Requiere verificación de asistencia</span>
-                </div>
-              </a>
-            }
-          </div>
-
-          <!-- Pie: Estado general -->
-          <div class="clear-footer-row">
-            <i class="pi pi-check-circle"></i>
-            <span>Sin incidencias críticas operativas</span>
-          </div>
+          @for (item of items(); track item.jornadaId + '-' + item.tipo) {
+            <a routerLink="/asistencia" class="attention-row">
+              <span class="alert-mark" [class.absence]="item.tipo !== 'PENDIENTES'"></span>
+              <span class="attention-copy">
+                <strong>{{ item.descripcion }}</strong>
+                <small>{{ item.grupo }}</small>
+              </span>
+              <tui-icon icon="@tui.chevron-right" />
+            </a>
+          }
         }
       </div>
-    </div>
+    </section>
   `,
   styles: [`
-    .r21-attention-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .panel-header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .panel-title {
-      font-size: 17px;
-      font-weight: 650;
-      color: var(--r21-text-primary);
-      margin: 0;
-    }
-
-    .badge-alert-count {
-      font-size: 11px;
-      font-weight: 600;
-      background-color: var(--r21-amber-bg);
-      border: 1px solid #FEDF89;
-      color: var(--r21-amber);
-      padding: 2px 8px;
-      border-radius: 4px;
-    }
-
-    .panel-card-content {
-      background-color: var(--r21-surface);
-      border: 1px solid var(--r21-border);
-      border-radius: var(--r21-radius-md);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      box-shadow: var(--r21-shadow-sm);
-    }
-
-    .all-clear-state {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      background-color: #F8FAF8;
-      border: 1px solid #E2EFE5;
-      border-radius: var(--r21-radius-sm);
-
-      .clear-icon-badge {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background-color: #ECFDF3;
-        color: var(--r21-green);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-
-        i {
-          font-size: 14px;
-          font-weight: 700;
-        }
-      }
-
-      .clear-text-wrap {
-        display: flex;
-        flex-direction: column;
-
-        .clear-title {
-          font-size: 13px;
-          font-weight: 650;
-          color: var(--r21-text-primary);
-        }
-
-        .clear-sub {
-          font-size: 11.5px;
-          color: var(--r21-text-secondary);
-        }
-      }
-    }
-
-    .incidencias-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .incidencia-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 12px;
-      border-radius: var(--r21-radius-sm);
-      background-color: #F9FAFB;
-      border: 1px solid var(--r21-border-subtle);
-      text-decoration: none;
-      transition: background-color var(--r21-transition-fast);
-
-      &:hover {
-        background-color: #F2F4F7;
-      }
-
-      &.item-warning {
-        background-color: #FEF7ED;
-        border-color: #FEDF89;
-
-        &:hover {
-          background-color: #FDE8D0;
-        }
-      }
-    }
-
-    .item-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      margin-top: 5px;
-      flex-shrink: 0;
-
-      &.dot-amber { background-color: var(--r21-amber); }
-      &.dot-gray { background-color: var(--r21-text-secondary); }
-    }
-
-    .item-body {
-      flex: 1;
-      min-width: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .item-main-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-
-      .item-title {
-        font-size: 12.5px;
-        font-weight: 600;
-        color: var(--r21-text-primary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .item-type-tag {
-        font-size: 11px;
-        font-weight: 500;
-        color: var(--r21-text-secondary);
-        flex-shrink: 0;
-
-        &.tag-amber {
-          color: var(--r21-amber);
-          font-weight: 600;
-        }
-      }
-    }
-
-    .item-sub {
-      font-size: 11px;
-      color: var(--r21-text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .clear-footer-row {
-      padding-top: 4px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11.5px;
-      color: var(--r21-green);
-
-      i {
-        font-size: 13px;
-      }
-    }
-  `]
+    .attention-section { display: flex; flex-direction: column; gap: 12px; }
+    .section-heading { display: flex; align-items: center; justify-content: space-between; }
+    h2 { margin: 0; color: var(--r21-text-primary); font-size: 17px; font-weight: 680; }
+    .section-heading > span { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: var(--r21-amber-bg); color: var(--r21-amber); font-size: 10.5px; font-weight: 700; }
+    .attention-card { overflow: hidden; background: var(--r21-surface); border: 1px solid var(--r21-border); border-radius: var(--r21-radius-md); box-shadow: var(--r21-shadow-sm); }
+    .all-clear { display: flex; align-items: center; gap: 10px; min-height: 72px; padding: 16px; color: var(--r21-green); font-size: 13px; }
+    .attention-row { display: flex; align-items: center; gap: 11px; min-height: 68px; padding: 12px 14px; color: inherit; text-decoration: none; transition: background var(--r21-transition-fast); }
+    .attention-row + .attention-row { border-top: 1px solid var(--r21-border-subtle); }
+    .attention-row:hover { background: #fafafa; }
+    .attention-row > tui-icon { margin-left: auto; color: var(--r21-text-muted); font-size: 15px; }
+    .alert-mark { flex: 0 0 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--r21-amber); }
+    .alert-mark.absence { background: var(--r21-red); }
+    .attention-copy { display: flex; flex-direction: column; min-width: 0; gap: 4px; }
+    .attention-copy strong { color: var(--r21-text-primary); font-size: 12.5px; font-weight: 650; }
+    .attention-copy small { overflow: hidden; color: var(--r21-text-secondary); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+  `],
 })
 export class AttentionPanelComponent {
   readonly items = input.required<AtencionItem[]>();

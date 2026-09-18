@@ -1,3 +1,4 @@
+import { provideTaiga } from '@taiga-ui/core';
 import {
   ApplicationConfig,
   inject,
@@ -19,5 +20,6 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     // Restaurar sesión (cookie HttpOnly) antes de pintar la app
     provideAppInitializer(() => inject(AuthService).intentarRestaurar()),
+    provideTaiga(),
   ],
 };

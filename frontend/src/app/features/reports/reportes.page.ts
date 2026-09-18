@@ -1,6 +1,7 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { TuiIcon } from '@taiga-ui/core';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
@@ -10,7 +11,7 @@ type TipoReporte = 'ESTADO_GENERAL' | 'DETALLE_INDIVIDUAL' | 'JORNADA';
 
 @Component({
   selector: 'app-reportes-page',
-  imports: [FormsModule, PageHeaderComponent, EmptyStateComponent],
+  imports: [FormsModule, PageHeaderComponent, EmptyStateComponent, TuiIcon],
   templateUrl: './reportes.page.html',
 })
 export class ReportesPageComponent implements OnInit {

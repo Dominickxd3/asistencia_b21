@@ -7,6 +7,8 @@ export interface PerfilUsuario {
     apellidoPaterno: string;
     apellidoMaterno: string | null;
     nombreCompleto: string;
+    correo: string | null;
+    fotoUrl: string | null;
   };
   roles: { codigo: string; nombre: string }[];
   permisos: string[];
@@ -17,6 +19,7 @@ export interface ResumenHoy {
   ingresaronHoy: number;
   pendientes: number;
   justificados: number;
+  faltas: number;
   salidasAnticipadas: number;
 }
 
@@ -33,11 +36,15 @@ export interface JornadaHoy {
   finalizados: number;
   pendientes: number;
   justificados: number;
+  primeraEntrada: string | null;
+  ultimaSalida: string | null;
 }
 
 export interface AtencionItem {
   tipo: string;
   descripcion: string;
+  grupo: string;
+  cantidad: number;
   jornadaId: number;
 }
 
@@ -52,6 +59,8 @@ export interface ActividadItem {
 
 export interface DashboardHoy {
   fecha: string;
+  fechaFin?: string;
+  periodo: 'dia' | 'mes' | 'rango';
   resumen: ResumenHoy;
   jornadas: JornadaHoy[];
   requierenAtencion: AtencionItem[];

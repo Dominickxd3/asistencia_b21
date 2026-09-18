@@ -6,16 +6,10 @@
 /* 1. Tokens, Tipografía, Overrides y Utilidades */
 @use './styles/tokens' as *;
 @use './styles/typography' as *;
-@use './styles/prime-overrides' as *;
 @use './styles/utilities' as *;
+@use './styles/prime-overrides' as *;
 
-/* 2. Reset y Grid */
-@import 'bootstrap/dist/css/bootstrap.min.css';
-
-/* 3. PrimeNG y PrimeIcons */
-@import 'primeicons/primeicons.css';
-@import 'primeng/resources/themes/lara-light-blue/theme.css';
-@import 'primeng/resources/primeng.min.css';
+/* Taiga UI es la única biblioteca visual. La identidad vive en nuestros tokens. */
 
 /* ============================================================
    Layout Institucional
@@ -30,6 +24,9 @@ body {
   background-color: var(--r21-bg);
   color: var(--r21-text-primary);
 }
+
+*, *::before, *::after { box-sizing: border-box; }
+button, input, select, textarea { font: inherit; }
 
 .r21-layout {
   display: flex;
@@ -75,6 +72,7 @@ body {
 
 /* Cabecera del Sidebar con Logo Real */
 .r21-sidebar-brand {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -333,5 +331,292 @@ body {
 
   .r21-content {
     padding: 16px 14px 32px;
+  }
+}
+
+/* ============================================================
+   Sidebar claro y contraíble
+   ============================================================ */
+.r21-sidebar {
+  width: var(--r21-sidebar-width);
+  padding: 14px 12px 12px;
+  background: #fff;
+  color: var(--r21-text-primary);
+  border-right: 1px solid var(--r21-border);
+  box-shadow: 8px 0 28px rgba(16, 24, 40, 0.04);
+  transition: width 180ms ease, transform 180ms ease;
+}
+
+.r21-sidebar-brand {
+  min-height: 68px;
+  padding: 8px;
+  gap: 10px;
+  border: 1px solid var(--r21-border);
+  border-radius: 10px;
+  background: #f8f9fa;
+}
+
+.r21-sidebar-brand .brand-logo {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.r21-sidebar-brand .brand-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.r21-sidebar-brand .brand-info .org-name {
+  color: var(--r21-text-primary);
+  font-size: 13px;
+  line-height: 1.2;
+}
+
+.r21-sidebar-brand .brand-info .org-unit {
+  color: var(--r21-text-secondary);
+  font-size: 11px;
+}
+
+.sidebar-toggle {
+  flex: 0 0 auto;
+  color: var(--r21-text-secondary) !important;
+}
+
+.r21-nav {
+  padding: 22px 2px 16px;
+  gap: 4px;
+}
+
+.r21-nav .nav-section-title {
+  padding: 18px 12px 7px;
+  color: var(--r21-text-muted);
+  font-size: 10px;
+}
+
+.r21-nav a.r21-nav-link {
+  min-height: 44px;
+  padding: 10px 12px;
+  gap: 12px;
+  border: 0;
+  border-radius: 8px;
+  color: #4f5b64;
+  font-size: 13.5px;
+}
+
+.r21-nav a.r21-nav-link tui-icon {
+  width: 20px;
+  font-size: 19px;
+  color: #53616a;
+}
+
+.r21-nav a.r21-nav-link:hover {
+  background: #f4f5f6;
+  color: var(--r21-text-primary);
+}
+
+.r21-nav a.r21-nav-link.active {
+  background: var(--r21-red-light);
+  color: var(--r21-red-dark);
+  border: 0;
+  font-weight: 650;
+}
+
+.r21-nav a.r21-nav-link.active tui-icon {
+  color: var(--r21-red);
+}
+
+.r21-sidebar-footer {
+  padding: 14px 4px 2px;
+  border-top: 1px solid var(--r21-border);
+  background: #fff;
+}
+
+.user-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 6px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--r21-transition-fast);
+}
+
+.user-summary:hover,
+.user-summary:focus-visible {
+  background: #f4f5f6;
+  outline: none;
+}
+
+.user-menu-chevron {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--r21-text-muted);
+  font-size: 16px;
+}
+
+.user-avatar {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--r21-red-light);
+  color: var(--r21-red-dark);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .03em;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.r21-sidebar-footer .user-profile {
+  min-width: 0;
+  margin: 0;
+}
+
+.r21-sidebar-footer .user-profile .user-name {
+  color: var(--r21-text-primary);
+  font-size: 12.5px;
+}
+
+.r21-sidebar-footer .user-profile .user-role {
+  overflow: hidden;
+  color: var(--r21-text-secondary);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.r21-sidebar-footer .btn-logout {
+  min-height: 34px;
+  color: var(--r21-text-secondary) !important;
+  border-color: transparent;
+}
+
+.r21-sidebar-footer .btn-logout:hover {
+  color: var(--r21-red) !important;
+  background: var(--r21-red-light) !important;
+}
+
+.r21-sidebar.collapsed {
+  width: var(--r21-sidebar-collapsed-width);
+  padding-inline: 10px;
+}
+
+.r21-sidebar.collapsed .r21-sidebar-brand {
+  justify-content: center;
+  padding: 8px 4px;
+}
+
+.r21-sidebar.collapsed .brand-info,
+.r21-sidebar.collapsed .nav-section-title,
+.r21-sidebar.collapsed .r21-nav-link span,
+.r21-sidebar.collapsed .user-profile,
+.r21-sidebar.collapsed .user-menu-chevron,
+.r21-sidebar.collapsed .btn-logout span {
+  display: none;
+}
+
+.r21-sidebar.collapsed .brand-logo {
+  width: 36px;
+  height: 36px;
+}
+
+.r21-sidebar.collapsed .sidebar-toggle {
+  position: absolute;
+  top: 50%;
+  right: -19px;
+  transform: translateY(-50%);
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--r21-border);
+  border-radius: 50%;
+  background: #fff !important;
+  box-shadow: var(--r21-shadow-sm);
+}
+
+.r21-sidebar.collapsed .r21-nav {
+  padding-top: 32px;
+}
+
+.r21-sidebar.collapsed .r21-nav a.r21-nav-link,
+.r21-sidebar.collapsed .btn-logout {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.r21-sidebar.collapsed .user-summary {
+  justify-content: center;
+  padding-inline: 0;
+}
+
+.profile-menu {
+  display: flex;
+  flex-direction: column;
+  min-width: 176px;
+  padding: 6px;
+}
+
+/* El portal de Taiga se monta fuera del sidebar y puede heredar tema oscuro. */
+tui-dropdown:has(.profile-menu) {
+  --tui-background-elevation-1: #fff;
+  --tui-text-primary: var(--r21-text-primary);
+  --tui-text-secondary: var(--r21-text-secondary);
+  --tui-border-normal: var(--r21-border);
+  background: #fff !important;
+  color: var(--r21-text-primary) !important;
+  border-color: var(--r21-border) !important;
+  box-shadow: 0 12px 30px rgba(16, 24, 40, .14) !important;
+}
+
+tui-dropdown:has(.profile-menu) .t-primitive {
+  padding: 0 !important;
+}
+
+.profile-menu .profile-menu-action {
+  justify-content: flex-start;
+  width: 100%;
+  margin: 0;
+  color: var(--r21-red) !important;
+}
+
+.profile-menu .profile-menu-settings {
+  color: var(--r21-text-primary) !important;
+  text-decoration: none;
+}
+
+.r21-layout:has(.r21-sidebar.collapsed) .r21-main-area {
+  margin-left: var(--r21-sidebar-collapsed-width);
+}
+
+.r21-mobile-bar {
+  background: #fff;
+  color: var(--r21-text-primary);
+  border-bottom-color: var(--r21-border);
+  box-shadow: var(--r21-shadow-sm);
+}
+
+.r21-mobile-bar .btn-toggle-menu {
+  color: var(--r21-text-primary);
+}
+
+@media (max-width: 767.98px) {
+  .r21-sidebar {
+    width: min(290px, 88vw);
+    box-shadow: 16px 0 40px rgba(16, 24, 40, 0.14);
   }
 }

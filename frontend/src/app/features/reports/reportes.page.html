@@ -81,7 +81,7 @@
           (click)="generar()"
           [disabled]="generando() || gruposSeleccionados().length === 0"
         >
-          <i class="bi bi-file-earmark-pdf"></i> {{ generando() ? 'Generando…' : 'Generar PDF' }}
+          <tui-icon icon="@tui.file-down" /> {{ generando() ? 'Generando…' : 'Generar PDF' }}
         </button>
       </div>
     </div>
@@ -91,7 +91,7 @@
     <div class="r21-card">
       <div class="r21-card-header"><h2>Últimos reportes</h2></div>
       <div class="r21-card-body">
-        <app-empty-state mensaje="Los reportes generados aparecen aquí (registro en reportes_generados)" icono="bi-file-earmark-text" />
+        <app-empty-state mensaje="Los reportes generados aparecen aquí (registro en reportes_generados)" icono="@tui.file-text" />
       </div>
     </div>
   </div>

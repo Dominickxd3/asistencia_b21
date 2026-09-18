@@ -4,7 +4,6 @@
    ============================================================ */
 
 :root {
-  /* Paleta base institucional */
   --r21-bg: #F5F6F8;
   --r21-surface: #FFFFFF;
   --r21-sidebar: #171B21;
@@ -12,42 +11,29 @@
   --r21-sidebar-border: rgba(255, 255, 255, 0.08);
   --r21-sidebar-text: #9AA0A8;
   --r21-sidebar-text-active: #FFFFFF;
-
-  /* Textos */
   --r21-text-primary: #181C23;
   --r21-text-secondary: #667085;
   --r21-text-muted: #8B949E;
-
-  /* Bordes y separadores */
   --r21-border: #E4E7EC;
   --r21-border-subtle: #EDF0F2;
-
-  /* Firma institucional (Rojo) */
   --r21-red: #C8102E;
   --r21-red-dark: #9F0B24;
   --r21-red-light: #FBECEE;
-
-  /* Estados funcionales (NO decorativos) */
-  --r21-green: #14804A;           /* Únicamente estado activo / presente / correcto */
+  --r21-green: #14804A;
   --r21-green-bg: #E7F6ED;
-  --r21-amber: #B76E00;           /* Advertencia / pendientes / justificados */
+  --r21-amber: #B76E00;
   --r21-amber-bg: #FEF6E7;
   --r21-gray-badge: #ECEFF3;
   --r21-gray-badge-text: #475467;
-
-  /* Dimensiones y estructura */
   --r21-sidebar-width: 240px;
+  --r21-sidebar-collapsed-width: 76px;
   --r21-radius-sm: 6px;
   --r21-radius-md: 8px;
   --r21-radius-lg: 10px;
-
-  /* Sombras sobrias */
   --r21-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04);
   --r21-shadow-card: 0 1px 3px rgba(16, 24, 40, 0.05), 0 1px 2px rgba(16, 24, 40, 0.03);
-
-  /* Transiciones micro (120ms - 200ms) */
   --r21-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* Tipografía */
-  --r21-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --r21-font: Arial, Helvetica, sans-serif;
+  --tui-font-text: var(--r21-font);
+  --tui-font-heading: var(--r21-font);
 }

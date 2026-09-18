@@ -1,13 +1,14 @@
 import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TuiIcon } from '@taiga-ui/core';
 
 @Component({
   selector: 'app-empty-state',
-  imports: [RouterLink],
+  imports: [RouterLink, TuiIcon],
   template: `
     <div class="r21-empty-state" [class.compact]="compacto()">
       <div class="empty-icon-wrap">
-        <i [class]="icono()"></i>
+        <tui-icon [icon]="icono()" />
       </div>
       <div class="empty-content">
         <span class="empty-title">{{ mensaje() }}</span>
@@ -17,7 +18,7 @@ import { RouterLink } from '@angular/router';
       </div>
       @if (accionTexto() && accionRuta()) {
         <a [routerLink]="accionRuta()" class="empty-action">
-          {{ accionTexto() }} <i class="pi pi-arrow-right"></i>
+          {{ accionTexto() }} <tui-icon icon="@tui.arrow-right" />
         </a>
       }
     </div>
@@ -108,7 +109,7 @@ import { RouterLink } from '@angular/router';
 export class EmptyStateComponent {
   readonly mensaje = input.required<string>();
   readonly descripcion = input<string>('');
-  readonly icono = input<string>('pi pi-inbox');
+  readonly icono = input<string>('@tui.inbox');
   readonly compacto = input<boolean>(false);
   readonly accionTexto = input<string>('');
   readonly accionRuta = input<string>('');

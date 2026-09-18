@@ -3,13 +3,18 @@ import {
   Controller,
   Get,
   HttpCode,
+  Patch,
   Post,
   Req,
   Res,
   UnauthorizedException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiConsumes, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { AuthService } from './services/auth.service';
@@ -17,6 +22,8 @@ import { LoginDto } from './dto/login.dto';
 import { Public } from './decorators/auth.decorators';
 import { CurrentUser, CurrentUserData } from './decorators/current-user.decorator';
 import { REFRESH_COOKIE } from '../../common/constants/auth.constants';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { UploadedImage } from './dto/uploaded-image.type';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -92,6 +99,21 @@ export class AuthController {
   @Get('me')
   async me(@CurrentUser() user: CurrentUserData) {
     return this.authService.perfil(user.id);
+  }
+
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @Patch('me')
+  @UseInterceptors(FileInterceptor('foto', {
+    storage: memoryStorage(),
+    limits: { fileSize: 3 * 1024 * 1024, files: 1 },
+  }))
+  async actualizarPerfil(
+    @CurrentUser() user: CurrentUserData,
+    @Body() dto: UpdateProfileDto,
+    @UploadedFile() foto?: UploadedImage,
+  ) {
+    return this.authService.actualizarPerfil(user.id, dto, foto);
   }
 
   private setRefreshCookie(res: Response, refreshToken: string) {

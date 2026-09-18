@@ -12,12 +12,13 @@ import { AuthzService } from '../roles/authz.service';
 import { AuditModule } from '../audit/audit.module';
 import { Usuario } from '../users/entities/usuario.entity';
 import { Sesion } from './entities/sesion.entity';
+import { Persona } from '../persons/entities/persona.entity';
 
 @Global()
 @Module({
   imports: [
     JwtModule.register({}),
-    TypeOrmModule.forFeature([Usuario, Sesion]),
+    TypeOrmModule.forFeature([Usuario, Sesion, Persona]),
     AuditModule,
   ],
   controllers: [AuthController],

@@ -1,296 +1,58 @@
-import { Component, computed, input } from '@angular/core';
 import { DatePipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
-import { AvatarModule } from 'primeng/avatar';
+import { Component, computed, input } from '@angular/core';
+import { TuiIcon } from '@taiga-ui/core';
 import { ActividadItem } from '../../core/models/api.models';
 
 @Component({
   selector: 'app-recent-activity',
-  imports: [DatePipe, RouterLink, AvatarModule],
+  imports: [DatePipe, TuiIcon],
   template: `
-    <div class="r21-recent-activity">
-      <!-- Cabecera -->
-      <div class="activity-header-row">
-        <h2 class="activity-title">Actividad reciente</h2>
-        @if (actividad().length > 0) {
-          <span class="activity-count-badge">
-            {{ actividad().length }} registro{{ actividad().length === 1 ? '' : 's' }}
-          </span>
-        }
-      </div>
-
-      <!-- Tarjeta de Contenido -->
-      <div class="activity-card-content">
-        @if (actividad().length === 0) {
-          <div class="empty-activity-box">
-            <div class="standby-icon-badge">
-              <i class="pi pi-history"></i>
-            </div>
-            <div class="standby-text-wrap">
-              <span class="standby-title">Bitácora en Espera</span>
-              <span class="standby-desc">Las marcas de asistencia de las jornadas programadas se reflejarán aquí en tiempo real.</span>
-            </div>
-          </div>
-          <div class="activity-footer-standby">
-            <span class="pulse-dot-green"></span>
-            <span>Canal de sincronización de cuartel activo</span>
+    <section class="activity-section" aria-labelledby="activity-title">
+      <div class="activity-heading"><h2 id="activity-title">Últimos movimientos</h2><span>Top 5</span></div>
+      <div class="activity-card">
+        @if (actividadVisible().length === 0) {
+          <div class="empty-state">
+            <tui-icon icon="@tui.history" />
+            <span>Sin actividad registrada hoy</span>
           </div>
         } @else {
-          <div class="activity-items-list">
-            @for (item of actividadVisible(); track item.asistencia_id) {
-              <div class="activity-row">
-                <div class="activity-left-wrap">
-                  <span class="time-col">{{ item.fechaHora | date: 'HH:mm' }}</span>
-                  <p-avatar
-                    [label]="obtenerIniciales(item.persona)"
-                    shape="circle"
-                    styleClass="r21-item-avatar"
-                  />
-                  <div class="details-col">
-                    <span class="person-name">{{ item.persona }}</span>
-                    <span class="action-and-group">
-                      {{ etiquetaAccion(item.accion) }} · {{ item.grupo }}
-                    </span>
-                  </div>
-                </div>
-                <span class="live-status-dot"></span>
+          @for (item of actividadVisible(); track $index) {
+            <article class="activity-row">
+              <time>{{ item.fechaHora | date: 'HH:mm' }}</time>
+              <div class="activity-data">
+                <strong>{{ item.persona }}</strong>
+                <span>{{ etiquetaAccion(item.accion) }}</span>
+                <small>{{ item.grupo }}</small>
               </div>
-            }
-          </div>
-
-          <!-- Pie: Ver actividad completa si hay registros -->
-          <div class="activity-footer-row">
-            <a [routerLink]="['/asistencia']" class="btn-full-activity">
-              <span>Ver actividad completa</span>
-              <i class="pi pi-arrow-right"></i>
-            </a>
-          </div>
+            </article>
+          }
         }
       </div>
-    </div>
+    </section>
   `,
   styles: [`
-    .r21-recent-activity {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .activity-header-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .activity-title {
-      font-size: 17px;
-      font-weight: 650;
-      color: var(--r21-text-primary);
-      margin: 0;
-    }
-
-    .activity-count-badge {
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--r21-text-secondary);
-      font-variant-numeric: tabular-nums;
-    }
-
-    .activity-card-content {
-      background-color: var(--r21-surface);
-      border: 1px solid var(--r21-border);
-      border-radius: var(--r21-radius-md);
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      box-shadow: var(--r21-shadow-sm);
-    }
-
-    .empty-activity-box {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px;
-      background-color: #FAFAFA;
-      border: 1px solid var(--r21-border-subtle);
-      border-radius: var(--r21-radius-sm);
-
-      .standby-icon-badge {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background-color: #F2F4F7;
-        color: var(--r21-text-secondary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-
-        i {
-          font-size: 14px;
-        }
-      }
-
-      .standby-text-wrap {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-
-        .standby-title {
-          font-size: 13px;
-          font-weight: 650;
-          color: var(--r21-text-primary);
-        }
-
-        .standby-desc {
-          font-size: 11.5px;
-          color: var(--r21-text-secondary);
-          line-height: 1.35;
-        }
-      }
-    }
-
-    .activity-footer-standby {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11.5px;
-      color: var(--r21-text-secondary);
-      padding-top: 4px;
-
-      .pulse-dot-green {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background-color: var(--r21-green);
-        box-shadow: 0 0 0 2px rgba(20, 128, 74, 0.2);
-        flex-shrink: 0;
-      }
-    }
-
-    .activity-items-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .activity-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .activity-left-wrap {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      min-width: 0;
-    }
-
-    .time-col {
-      font-size: 11.5px;
-      font-weight: 600;
-      color: var(--r21-text-secondary);
-      font-variant-numeric: tabular-nums;
-      width: 36px;
-      flex-shrink: 0;
-    }
-
-    :host ::ng-deep .r21-item-avatar {
-      width: 28px;
-      height: 28px;
-      font-size: 10px;
-      font-weight: 700;
-      background-color: #F2F4F7;
-      color: #344054;
-      border: 1px solid var(--r21-border);
-      flex-shrink: 0;
-    }
-
-    .details-col {
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-
-      .person-name {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--r21-text-primary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .action-and-group {
-        font-size: 11px;
-        color: var(--r21-text-secondary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-    }
-
-    .live-status-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: var(--r21-green);
-      flex-shrink: 0;
-    }
-
-    .activity-footer-row {
-      padding-top: 10px;
-      border-top: 1px solid #F2F4F7;
-      display: flex;
-      justify-content: flex-end;
-    }
-
-    .btn-full-activity {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--r21-text-secondary);
-      text-decoration: none;
-      transition: color var(--r21-transition-fast);
-
-      i {
-        font-size: 11px;
-        transition: transform var(--r21-transition-fast);
-      }
-
-      &:hover {
-        color: var(--r21-text-primary);
-
-        i {
-          transform: translateX(2px);
-        }
-      }
-    }
-  `]
+    .activity-section { display: flex; flex-direction: column; gap: 12px; }
+    h2 { margin: 0; color: var(--r21-text-primary); font-size: 17px; font-weight: 680; }
+    .activity-heading{display:flex;align-items:center;justify-content:space-between}.activity-heading>span{padding:3px 7px;border-radius:99px;background:#eef1f5;color:var(--r21-text-secondary);font-size:10px;font-weight:700;text-transform:uppercase}
+    .activity-card { overflow: hidden; background: var(--r21-surface); border: 1px solid var(--r21-border); border-radius: var(--r21-radius-md); box-shadow: var(--r21-shadow-sm); }
+    .activity-row { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; padding: 12px 14px; }
+    .activity-row + .activity-row { border-top: 1px solid var(--r21-border-subtle); }
+    time { padding-top: 2px; color: var(--r21-text-secondary); font-size: 11.5px; font-weight: 650; font-variant-numeric: tabular-nums; }
+    .activity-data { display: grid; min-width: 0; gap: 2px; }
+    .activity-data strong { overflow: hidden; color: var(--r21-text-primary); font-size: 12.5px; font-weight: 650; text-overflow: ellipsis; white-space: nowrap; }
+    .activity-data span { color: var(--r21-text-secondary); font-size: 11.5px; }
+    .activity-data small { overflow: hidden; color: var(--r21-text-muted); font-size: 10.5px; text-overflow: ellipsis; white-space: nowrap; }
+    .empty-state { display: flex; align-items: center; gap: 9px; min-height: 72px; padding: 16px; color: var(--r21-text-secondary); font-size: 12px; }
+  `],
 })
 export class RecentActivityComponent {
   readonly actividad = input.required<ActividadItem[]>();
-
-  // Máximo 4-5 elementos visibles como solicitó el usuario
-  protected readonly actividadVisible = computed(() => {
-    return this.actividad().slice(0, 5);
-  });
-
-  obtenerIniciales(nombre: string): string {
-    if (!nombre) return '';
-    const partes = nombre.trim().split(/\s+/);
-    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
-    return (partes[0][0] + partes[1][0]).toUpperCase();
-  }
+  readonly actividadVisible = computed(() => this.actividad().slice(0, 5));
 
   etiquetaAccion(accion: string): string {
     const mapa: Record<string, string> = {
-      PRESENTE: 'Entrada registrada',
-      FINALIZADO: 'Jornada concluida',
+      ENTRADA: 'Entrada registrada',
+      SALIDA: 'Salida registrada',
       FALTA_JUSTIFICADA: 'Falta justificada',
       FALTA_INJUSTIFICADA: 'Falta injustificada',
       SALIDA_ANTICIPADA: 'Salida anticipada',

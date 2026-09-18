@@ -65,6 +65,14 @@ export class AuthService {
     return this.perfil()?.roles.some((r) => r.codigo === codigo) ?? false;
   }
 
+  async actualizarPerfil(datos: FormData): Promise<PerfilUsuario> {
+    const perfil = await firstValueFrom(
+      this.http.patch<PerfilUsuario>(`${this.base}/me`, datos),
+    );
+    this.perfil.set(perfil);
+    return perfil;
+  }
+
   private async cargarPerfil(): Promise<void> {
     const perfil = await firstValueFrom(this.http.get<PerfilUsuario>(`${this.base}/me`));
     this.perfil.set(perfil);

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -11,6 +12,12 @@ import { SesionesService } from './sesiones.service';
 import { AuthzService } from '../../roles/authz.service';
 import { AuditoriaService } from '../../audit/auditoria.service';
 import { AUTH_ERRORS } from '../../../common/constants/auth.constants';
+import { Persona } from '../../persons/entities/persona.entity';
+import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { UploadedImage } from '../dto/uploaded-image.type';
+import { mkdir, unlink, writeFile } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { basename, join, resolve } from 'node:path';
 
 export interface LoginResult {
   accessToken: string;
@@ -23,6 +30,8 @@ export class AuthService {
   constructor(
     @InjectRepository(Usuario)
     private readonly usuarioRepo: Repository<Usuario>,
+    @InjectRepository(Persona)
+    private readonly personaRepo: Repository<Persona>,
     private readonly tokenService: TokenService,
     private readonly sesionesService: SesionesService,
     private readonly authz: AuthzService,
@@ -136,10 +145,91 @@ export class AuthService {
         apellidoPaterno: usuario.persona.apellidoPaterno,
         apellidoMaterno: usuario.persona.apellidoMaterno,
         nombreCompleto: usuario.persona.nombreCompleto,
+        correo: usuario.persona.correo,
+        fotoUrl: usuario.persona.fotoUrl,
       },
       roles: rolesActivos,
       permisos: [...permisos],
     };
+  }
+
+  async actualizarPerfil(
+    usuarioId: number,
+    dto: UpdateProfileDto,
+    foto?: UploadedImage,
+  ) {
+    const usuario = await this.usuarioRepo.findOneOrFail({
+      where: { id: usuarioId },
+      relations: { persona: true },
+    });
+    const persona = usuario.persona;
+    const anterior = {
+      nombres: persona.nombres,
+      apellidoPaterno: persona.apellidoPaterno,
+      apellidoMaterno: persona.apellidoMaterno,
+      correo: persona.correo,
+      fotoUrl: persona.fotoUrl,
+    };
+
+    let nuevaFotoUrl = persona.fotoUrl;
+    if (foto) nuevaFotoUrl = await this.guardarFotoPerfil(foto);
+
+    persona.nombres = dto.nombres.trim();
+    persona.apellidoPaterno = dto.apellidoPaterno.trim();
+    persona.apellidoMaterno = dto.apellidoMaterno?.trim() || null;
+    persona.correo = dto.correo?.trim().toLowerCase() || null;
+    persona.fotoUrl = nuevaFotoUrl;
+    await this.personaRepo.save(persona);
+    if (foto && anterior.fotoUrl && anterior.fotoUrl !== nuevaFotoUrl) {
+      await this.eliminarFotoGestionada(anterior.fotoUrl);
+    }
+
+    await this.auditoria.registrar({
+      usuarioId,
+      accion: 'PROFILE_UPDATED',
+      modulo: 'auth',
+      entidad: 'personas',
+      entidadId: persona.id,
+      valorAnterior: anterior,
+      valorNuevo: {
+        nombres: persona.nombres,
+        apellidoPaterno: persona.apellidoPaterno,
+        apellidoMaterno: persona.apellidoMaterno,
+        correo: persona.correo,
+        fotoUrl: persona.fotoUrl,
+      },
+    });
+
+    return this.perfil(usuarioId);
+  }
+
+  private async guardarFotoPerfil(foto: UploadedImage): Promise<string> {
+    const tipo = this.detectarTipoImagen(foto.buffer);
+    if (!tipo) throw new BadRequestException('La foto debe ser JPG, PNG o WEBP válida');
+
+    const carpeta = resolve(process.cwd(), 'public', 'imagenes', 'perfiles');
+    await mkdir(carpeta, { recursive: true });
+    const nombre = `${randomUUID()}.${tipo}`;
+    await writeFile(join(carpeta, nombre), foto.buffer, { flag: 'wx', mode: 0o644 });
+
+    return `/imagenes/perfiles/${nombre}`;
+  }
+
+  private async eliminarFotoGestionada(ruta: string): Promise<void> {
+    if (ruta.startsWith('/imagenes/perfiles/')) {
+      const archivoAnterior = basename(ruta);
+      if (/^[a-f0-9-]+\.(?:jpg|png|webp)$/i.test(archivoAnterior)) {
+        const carpeta = resolve(process.cwd(), 'public', 'imagenes', 'perfiles');
+        await unlink(join(carpeta, archivoAnterior)).catch(() => undefined);
+      }
+    }
+  }
+
+  private detectarTipoImagen(buffer: Buffer): 'jpg' | 'png' | 'webp' | null {
+    if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'jpg';
+    if (buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))) return 'png';
+    if (buffer.length >= 12 && buffer.toString('ascii', 0, 4) === 'RIFF' && buffer.toString('ascii', 8, 12) === 'WEBP') return 'webp';
+    return null;
   }
 
   private async emitirTokens(

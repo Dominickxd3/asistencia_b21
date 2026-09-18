@@ -1,13 +1,15 @@
-import { Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { TuiButton, TuiDropdown, TuiIcon } from '@taiga-ui/core';
 import { AuthService } from '../../core/auth/auth.service';
 import { MENU, MenuItem, ROL_SIDEBAR_NOMBRE } from '../menu.config';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-sidebar',
-  imports: [RouterLink, RouterLinkActive],
+  imports: [RouterLink, RouterLinkActive, TuiButton, TuiDropdown, TuiIcon],
   template: `
-    <aside class="r21-sidebar" [class.desktop-sidebar]="isDesktop()">
+    <aside class="r21-sidebar" [class.desktop-sidebar]="isDesktop()" [class.collapsed]="isDesktop() && colapsado()">
       <!-- Cabecera Institucional -->
       <div class="r21-sidebar-brand">
         <img src="assets/brand/logo.svg" alt="Escudo Bomberos Rímac 21" class="brand-logo" />
@@ -15,6 +17,19 @@ import { MENU, MenuItem, ROL_SIDEBAR_NOMBRE } from '../menu.config';
           <span class="org-name">Cía. de Bomberos<br />Rímac N.º 21</span>
           <span class="org-unit">Área de Instrucción</span>
         </div>
+        @if (isDesktop()) {
+          <button
+            tuiIconButton
+            appearance="flat"
+            size="xs"
+            type="button"
+            class="sidebar-toggle"
+            [attr.aria-label]="colapsado() ? 'Expandir menú' : 'Contraer menú'"
+            (click)="colapsado.update(value => !value)"
+          >
+            <tui-icon [icon]="colapsado() ? '@tui.chevron-right' : '@tui.chevron-left'" />
+          </button>
+        }
       </div>
 
       <!-- Navegación -->
@@ -28,9 +43,10 @@ import { MENU, MenuItem, ROL_SIDEBAR_NOMBRE } from '../menu.config';
               [routerLink]="item.ruta"
               routerLinkActive="active"
               class="r21-nav-link"
+              [attr.title]="colapsado() ? item.etiqueta : null"
               (click)="cerrar.emit()"
             >
-              <i [class]="item.icono"></i>
+              <tui-icon [icon]="item.icono" />
               <span>{{ item.etiqueta }}</span>
             </a>
           }
@@ -40,14 +56,47 @@ import { MENU, MenuItem, ROL_SIDEBAR_NOMBRE } from '../menu.config';
       <!-- Pie: Usuario Activo y Salida -->
       @if (perfil(); as p) {
         <div class="r21-sidebar-footer">
-          <div class="user-profile">
-            <div class="user-name" [title]="p.persona.nombreCompleto">{{ p.persona.nombreCompleto }}</div>
-            <div class="user-role">{{ cargoPrincipal() }}</div>
-          </div>
-          <button type="button" class="btn-logout" (click)="salir.emit()">
-            <i class="pi pi-sign-out"></i>
-            <span>Cerrar sesión</span>
+          <button
+            type="button"
+            class="user-summary"
+            [tuiDropdown]="profileMenu"
+            [tuiDropdownOpen]="perfilAbierto()"
+            (tuiDropdownOpenChange)="perfilAbierto.set($event)"
+            [attr.title]="colapsado() ? p.persona.nombreCompleto : null"
+            aria-label="Abrir opciones de usuario"
+          >
+            <span class="user-avatar" aria-hidden="true">
+              @if (fotoUsuarioUrl()) {
+                <img [src]="fotoUsuarioUrl()" alt="" />
+              } @else {
+                {{ inicialesUsuario() }}
+              }
+            </span>
+            <div class="user-profile">
+              <div class="user-name" [title]="p.persona.nombreCompleto">{{ p.persona.nombreCompleto }}</div>
+              <div class="user-role">{{ cargoPrincipal() }}</div>
+            </div>
+            <tui-icon class="user-menu-chevron" [icon]="perfilAbierto() ? '@tui.chevron-down' : '@tui.chevron-up'" />
           </button>
+          <ng-template #profileMenu>
+            <div class="profile-menu">
+              <a
+                tuiButton
+                appearance="flat"
+                size="s"
+                class="profile-menu-action profile-menu-settings"
+                routerLink="/perfil"
+                (click)="perfilAbierto.set(false)"
+              >
+                <tui-icon icon="@tui.settings" />
+                Configuración
+              </a>
+              <button tuiButton appearance="flat" size="s" type="button" class="profile-menu-action" (click)="cerrarSesionDesdeMenu()">
+                <tui-icon icon="@tui.log-out" />
+                Cerrar sesión
+              </button>
+            </div>
+          </ng-template>
         </div>
       }
     </aside>
@@ -61,6 +110,18 @@ export class SidebarComponent {
   readonly salir = output<void>();
 
   readonly perfil = this.auth.perfil;
+  readonly colapsado = signal(false);
+  readonly perfilAbierto = signal(false);
+  readonly fotoUsuarioUrl = computed(() => {
+    const ruta = this.perfil()?.persona.fotoUrl;
+    return ruta ? `${environment.apiUrl.replace(/\/api\/?$/, '')}${ruta}` : null;
+  });
+
+  readonly inicialesUsuario = computed(() => {
+    const persona = this.perfil()?.persona;
+    if (!persona) return 'U';
+    return `${persona.nombres?.[0] ?? ''}${persona.apellidoPaterno?.[0] ?? ''}`.toUpperCase();
+  });
 
   readonly bloquesNavegacion = computed(() => {
     const visibles = MENU.filter((m) => !m.permiso || this.auth.tienePermiso(m.permiso));
@@ -76,6 +137,11 @@ export class SidebarComponent {
     }
     return bloques;
   });
+
+  cerrarSesionDesdeMenu(): void {
+    this.perfilAbierto.set(false);
+    this.salir.emit();
+  }
 
   cargoPrincipal(): string {
     const p = this.perfil();

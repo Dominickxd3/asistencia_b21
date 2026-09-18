@@ -13,7 +13,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
     <app-page-header titulo="Grupos" subtitulo="Cohortes por etapa y periodo" />
     @if (grupos().length === 0) {
       <div class="r21-card"><div class="r21-card-body">
-        <app-empty-state mensaje="No hay grupos registrados" icono="bi-collection" />
+        <app-empty-state mensaje="No hay grupos registrados" icono="@tui.library" />
       </div></div>
     } @else {
       <div class="row g-3">

@@ -13,7 +13,7 @@ import { EmptyStateComponent } from '../../shared/components/empty-state.compone
     <div class="r21-card">
       <div class="r21-card-body p-0 table-responsive">
         @if (filas().length === 0) {
-          <app-empty-state mensaje="Sin historial aún" icono="bi-clock-history" />
+          <app-empty-state mensaje="Sin historial aún" icono="@tui.history" />
         } @else {
           <table class="table table-sm table-hover align-middle mb-0">
             <thead class="table-light">

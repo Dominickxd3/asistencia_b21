@@ -12,17 +12,17 @@ export interface MenuItem {
  * Iconos PrimeIcons v17
  */
 export const MENU: MenuItem[] = [
-  { ruta: '/inicio', icono: 'pi pi-home', etiqueta: 'Inicio', permiso: 'inicio.view' },
-  { ruta: '/asistencia', icono: 'pi pi-check-square', etiqueta: 'Asistencia', permiso: 'attendance.view' },
-  { ruta: '/mi-grupo', icono: 'pi pi-id-card', etiqueta: 'Mi grupo', permiso: 'attendance.view_assigned_group' },
-  { ruta: '/seguimiento', icono: 'pi pi-chart-line', etiqueta: 'Seguimiento', permiso: 'tracking.view' },
-  { ruta: '/formacion/grupos', icono: 'pi pi-th-large', etiqueta: 'Grupos', permiso: 'formation.view', seccion: 'Formación' },
-  { ruta: '/formacion/personas', icono: 'pi pi-users', etiqueta: 'Personas', permiso: 'formation.view', seccion: 'Formación' },
-  { ruta: '/formacion/historial', icono: 'pi pi-history', etiqueta: 'Historial', permiso: 'formation.view', seccion: 'Formación' },
-  { ruta: '/reportes', icono: 'pi pi-file', etiqueta: 'Reportes', permiso: 'reports.view' },
-  { ruta: '/auditoria', icono: 'pi pi-shield', etiqueta: 'Auditoría', permiso: 'audit.view_full' },
-  { ruta: '/admin/usuarios', icono: 'pi pi-cog', etiqueta: 'Usuarios y permisos', permiso: 'users.manage' },
-  { ruta: '/admin/config', icono: 'pi pi-sliders-h', etiqueta: 'Configuración', permiso: 'settings.manage' },
+  { ruta: '/inicio', icono: '@tui.house', etiqueta: 'Inicio', permiso: 'inicio.view' },
+  { ruta: '/asistencia', icono: '@tui.square-check', etiqueta: 'Asistencia', permiso: 'attendance.view' },
+  { ruta: '/mi-grupo', icono: '@tui.id-card', etiqueta: 'Mi grupo', permiso: 'attendance.view_assigned_group' },
+  { ruta: '/seguimiento', icono: '@tui.chart-line', etiqueta: 'Seguimiento', permiso: 'tracking.view' },
+  { ruta: '/formacion/grupos', icono: '@tui.layout-grid', etiqueta: 'Grupos', permiso: 'formation.view', seccion: 'Formación' },
+  { ruta: '/formacion/personas', icono: '@tui.users', etiqueta: 'Personas', permiso: 'formation.view', seccion: 'Formación' },
+  { ruta: '/formacion/historial', icono: '@tui.history', etiqueta: 'Historial', permiso: 'formation.view', seccion: 'Formación' },
+  { ruta: '/reportes', icono: '@tui.file-text', etiqueta: 'Reportes', permiso: 'reports.view' },
+  { ruta: '/auditoria', icono: '@tui.shield', etiqueta: 'Auditoría', permiso: 'audit.view_full' },
+  { ruta: '/admin/usuarios', icono: '@tui.settings', etiqueta: 'Usuarios y permisos', permiso: 'users.manage' },
+  { ruta: '/admin/config', icono: '@tui.sliders-horizontal', etiqueta: 'Configuración', permiso: 'settings.manage' },
 ];
 
 export const ROL_SIDEBAR_NOMBRE: Record<string, string> = {

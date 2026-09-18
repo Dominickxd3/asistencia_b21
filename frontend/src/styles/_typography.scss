@@ -3,9 +3,13 @@
    Jerarquía sobria e institucional con Inter
    ============================================================ */
 
+html, body, button, input, select, textarea, tui-root {
+  font-family: var(--r21-font);
+}
+
 body {
   font-family: var(--r21-font);
-  font-size: 14px;
+  font-size: 11px;
   line-height: 1.5;
   color: var(--r21-text-primary);
   background-color: var(--r21-bg);

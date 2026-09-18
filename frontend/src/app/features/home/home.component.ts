@@ -1,70 +1,72 @@
 import { Component, OnDestroy, OnInit, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { SkeletonModule } from 'primeng/skeleton';
-import { ButtonModule } from 'primeng/button';
+import { FormsModule } from '@angular/forms';
+import { CalendarModule } from 'primeng/calendar';
+import { TuiButton, TuiIcon } from '@taiga-ui/core';
+import { TuiSkeleton } from '@taiga-ui/kit';
 import { environment } from '../../../environments/environment';
-import { DashboardHoy, JornadaHoy } from '../../core/models/api.models';
+import { DashboardHoy } from '../../core/models/api.models';
 import { AuthService } from '../../core/auth/auth.service';
 import { RealtimeService } from '../../core/services/realtime.service';
-import { PageHeaderComponent } from '../../shared/components/page-header.component';
-import { DateSelectorComponent } from './date-selector.component';
 import { DailySummaryComponent } from './daily-summary.component';
-import { GroupSelectorComponent } from './group-selector.component';
-import { SessionPanelComponent } from './session-panel.component';
 import { AttentionPanelComponent } from './attention-panel.component';
 import { RecentActivityComponent } from './recent-activity.component';
-import { GroupMetricsDeckComponent } from './group-metrics-deck.component';
+import { TodaySessionsComponent } from './today-sessions.component';
 
 @Component({
   selector: 'app-home',
   imports: [
-    SkeletonModule,
-    ButtonModule,
-    PageHeaderComponent,
-    DateSelectorComponent,
+    TuiButton,
+    TuiIcon,
+    TuiSkeleton,
+    FormsModule,
+    CalendarModule,
     DailySummaryComponent,
-    GroupSelectorComponent,
-    SessionPanelComponent,
+    TodaySessionsComponent,
     AttentionPanelComponent,
     RecentActivityComponent,
-    GroupMetricsDeckComponent,
   ],
   template: `
-    <!-- CABECERA INSTITUCIONAL CON SELECTOR DE FECHA -->
-    <app-page-header
-      titulo="Inicio"
-      [descripcion]="saludoUsuario()"
-    >
-      <app-date-selector
-        [fechaIso]="fechaActual()"
-        (fechaSeleccionada)="onFechaSeleccionada($event)"
-      />
-    </app-page-header>
+    <header class="home-header">
+      <div class="home-header-copy">
+        <span class="home-eyebrow">Panel operativo</span>
+        <h1>Hola, {{ nombreUsuario() }}</h1>
+        <p>{{ textoPeriodo() }}</p>
+      </div>
+      <div class="calendar-wrapper">
+        <p-calendar 
+          [(ngModel)]="rangeDates" 
+          selectionMode="range" 
+          [readonlyInput]="true"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          placeholder="Seleccionar fecha o rango"
+          (onSelect)="alSeleccionarFecha()"
+          (onClose)="alCerrarCalendario()" />
+      </div>
+    </header>
 
     <!-- ESTADO 1: CARGANDO (SKELETONS DE ALTA FIDELIDAD) -->
     @if (cargando()) {
       <div class="home-page-container">
         <!-- Skeleton Resumen Diario -->
         <div class="skeleton-summary-box">
-          <p-skeleton width="100%" height="80px" borderRadius="8px" />
+          <div tuiSkeleton class="skeleton-block summary"></div>
         </div>
 
         <!-- Skeleton Grid 2 Columnas -->
         <div class="home-columns-grid">
           <div class="column-left">
-            <p-skeleton width="100%" height="48px" borderRadius="8px" styleClass="mb-3" />
-            <p-skeleton width="100%" height="280px" borderRadius="8px" />
+            <div tuiSkeleton class="skeleton-block heading"></div>
+            <div tuiSkeleton class="skeleton-block panel"></div>
           </div>
           <div class="column-right">
-            <p-skeleton width="100%" height="150px" borderRadius="8px" styleClass="mb-3" />
-            <p-skeleton width="100%" height="240px" borderRadius="8px" />
+            <div tuiSkeleton class="skeleton-block attention"></div>
+            <div tuiSkeleton class="skeleton-block activity"></div>
           </div>
         </div>
 
         <!-- Skeleton Deck Inferior -->
-        <div class="skeleton-deck-box">
-          <p-skeleton width="100%" height="200px" borderRadius="8px" />
-        </div>
       </div>
     }
 
@@ -72,19 +74,15 @@ import { GroupMetricsDeckComponent } from './group-metrics-deck.component';
     @else if (errorCarga()) {
       <div class="r21-card error-card-box">
         <div class="error-circle-icon">
-          <i class="pi pi-exclamation-circle"></i>
+          <tui-icon icon="@tui.circle-alert" />
         </div>
         <div class="error-text-content">
           <h3 class="error-heading">No se pudo cargar la información operativa</h3>
           <p class="error-paragraph">Ocurrió un inconveniente al conectar con el servidor. Verifica tu conexión e intenta nuevamente.</p>
         </div>
-        <button
-          pButton
-          label="Reintentar"
-          icon="pi pi-refresh"
-          class="p-button-sm p-button-outlined"
-          (click)="cargar()"
-        ></button>
+        <button tuiButton size="s" appearance="outline" iconStart="@tui.refresh-cw" (click)="cargar()">
+          Reintentar
+        </button>
       </div>
     }
 
@@ -92,28 +90,17 @@ import { GroupMetricsDeckComponent } from './group-metrics-deck.component';
     @else if (datos(); as d) {
       <div class="home-page-container">
         <!-- BLOQUE ESTADO DE HOY (DailySummary) -->
-        <app-daily-summary [resumen]="d.resumen" />
+        <app-daily-summary
+          [resumen]="d.resumen"
+          [jornadaActiva]="jornadaActiva()"
+          [modoMes]="esModoRango()"
+        />
 
         <!-- GRILLA OPERATIVA (Izquierda 62%, Derecha 38%) -->
         <div class="home-columns-grid">
           <!-- COLUMNA IZQUIERDA: Jornadas de hoy -->
           <div class="column-left">
-            <div class="left-section-title-row">
-              <h2 class="section-heading">Jornadas de hoy</h2>
-            </div>
-
-            <!-- Selector de Grupos -->
-            <app-group-selector
-              [grupoActivo]="grupoActivo()"
-              (grupoCambiado)="grupoActivo.set($event)"
-            />
-
-            <!-- Panel de la Jornada del Grupo Seleccionado -->
-            <app-session-panel
-              [jornada]="jornadaSeleccionada()"
-              [grupoId]="grupoActivo()"
-              [incidencias]="incidenciasGrupo()"
-            />
+            <app-today-sessions [jornadas]="d.jornadas" [modoMes]="esModoRango()" />
           </div>
 
           <!-- COLUMNA DERECHA: Requieren atención y Actividad reciente -->
@@ -127,17 +114,63 @@ import { GroupMetricsDeckComponent } from './group-metrics-deck.component';
         </div>
 
         <!-- SECCIÓN INFERIOR: Métricas y Estado por Grupos de Formación -->
-        <app-group-metrics-deck [jornadas]="d.jornadas" />
       </div>
     }
   `,
   styles: [`
+    .home-header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      width: 100%;
+      padding: 2px 0 4px;
+    }
+
+    .home-header-copy { min-width: 0; }
+
+    .home-eyebrow {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--r21-red);
+      font-size: 10.5px;
+      font-weight: 750;
+      letter-spacing: .09em;
+      text-transform: uppercase;
+    }
+
+    .home-header h1 {
+      margin: 0;
+      color: var(--r21-text-primary);
+      font-size: clamp(24px, 2vw, 30px);
+      font-weight: 720;
+      letter-spacing: -.025em;
+      line-height: 1.1;
+    }
+
+    .home-header p {
+      margin: 6px 0 0;
+      color: var(--r21-text-secondary);
+      font-size: 12.5px;
+    }
+
+    .calendar-wrapper {
+      display: flex;
+      align-items: center;
+    }
+
+    @media (max-width: 620px) {
+      .home-header { align-items: flex-start; flex-direction: column; gap: 14px; }
+      .calendar-wrapper { width: 100%; }
+      .calendar-wrapper :deep(.p-calendar) { width: 100%; }
+      .calendar-wrapper :deep(.p-inputtext) { width: 100%; }
+    }
+
     .home-page-container {
       display: flex;
       flex-direction: column;
       gap: 24px;
       width: 100%;
-      max-width: 1440px;
     }
 
     .home-columns-grid {
@@ -152,19 +185,6 @@ import { GroupMetricsDeckComponent } from './group-metrics-deck.component';
       flex-direction: column;
       gap: 14px;
       min-width: 0;
-    }
-
-    .left-section-title-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      .section-heading {
-        font-size: 18px;
-        font-weight: 650;
-        color: var(--r21-text-primary);
-        margin: 0;
-      }
     }
 
     .column-right {
@@ -183,6 +203,13 @@ import { GroupMetricsDeckComponent } from './group-metrics-deck.component';
     .skeleton-summary-box {
       width: 100%;
     }
+
+    .skeleton-block { width: 100%; border-radius: var(--r21-radius-md); }
+    .skeleton-block.summary { height: 80px; }
+    .skeleton-block.heading { height: 48px; margin-bottom: 12px; }
+    .skeleton-block.panel { height: 280px; }
+    .skeleton-block.attention { height: 150px; margin-bottom: 12px; }
+    .skeleton-block.activity { height: 240px; }
 
     .error-card-box {
       display: flex;
@@ -232,39 +259,36 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly cargando = signal(true);
   readonly errorCarga = signal(false);
 
-  readonly fechaActual = signal<string>(new Date().toISOString().slice(0, 10));
-  readonly grupoActivo = signal<string>('postulantes');
-
-  readonly saludoUsuario = computed(() => {
-    const nombre = this.auth.perfil()?.persona.nombres || 'Carlos Quispe';
-    return `Bienvenido, ${nombre}`;
-  });
-
-  readonly jornadaSeleccionada = computed<JornadaHoy | null>(() => {
-    const list = this.datos()?.jornadas ?? [];
-    if (list.length === 0) return null;
-    const g = this.grupoActivo();
-    if (g === 'postulantes') {
-      return list.find((j) => (j.etapa || '').toUpperCase().includes('POSTULANTE') || (j.grupo || '').toUpperCase().includes('POSTULANTE')) ?? list[0] ?? null;
-    }
-    if (g === 'aspirantes') {
-      return list.find((j) => (j.etapa || '').toUpperCase().includes('COMPA') || (j.grupo || '').toUpperCase().includes('COMPA') || (j.grupo || '').toUpperCase().includes('ASPIRANTE')) ?? list[1] ?? null;
-    }
-    if (g === 'esbas') {
-      return list.find((j) => (j.etapa || '').toUpperCase().includes('ESBAS') || (j.grupo || '').toUpperCase().includes('ESBAS') || (j.etapa || '').toUpperCase().includes('CURSO')) ?? list[2] ?? null;
-    }
-    return list[0] ?? null;
-  });
-
-  readonly incidenciasGrupo = computed(() => {
-    const atencion = this.datos()?.requierenAtencion ?? [];
-    const j = this.jornadaSeleccionada();
-    if (!j) return atencion;
-    const gNombre = j.grupo.toLowerCase();
-    return atencion.filter((a) => a.jornadaId === j.jornadaId || a.descripcion.toLowerCase().includes(gNombre));
-  });
-
+  rangeDates: (Date | null)[] = [new Date()];
+  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
   private refrescoPendiente: ReturnType<typeof setTimeout> | null = null;
+
+  readonly hoyIso = new Date().toLocaleDateString('sv-SE');
+
+  readonly nombreUsuario = computed(() =>
+    this.auth.perfil()?.persona.nombres?.split(' ')[0] || 'Carlos',
+  );
+
+  readonly esModoRango = computed(() => {
+    const d = this.datos();
+    return d?.periodo === 'rango' || d?.periodo === 'mes';
+  });
+
+  readonly textoPeriodo = computed(() => {
+    const d = this.datos();
+    if (!d) return 'Cargando información operativa...';
+    if ((d.periodo === 'rango' || d.periodo === 'mes') && d.fechaFin && d.fecha !== d.fechaFin) {
+      return `Consolidado del periodo ${this.formatearFechaCorta(d.fecha)} al ${this.formatearFechaCorta(d.fechaFin)}.`;
+    }
+    if (d.fecha === this.hoyIso) {
+      return 'Revisa el estado de la formación del día.';
+    }
+    return `Estado de la formación para el ${this.formatearFechaLarga(d.fecha)}.`;
+  });
+
+  readonly jornadaActiva = computed(() =>
+    this.datos()?.jornadas.some((jornada) => jornada.estado === 'ABIERTA') ?? false,
+  );
 
   ngOnInit(): void {
     this.cargar();
@@ -276,24 +300,67 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.realtime.off('dashboard.actualizar');
     this.realtime.off('asistencia.registrada');
+    if (this.debounceTimer) clearTimeout(this.debounceTimer);
     if (this.refrescoPendiente) clearTimeout(this.refrescoPendiente);
   }
 
-  onFechaSeleccionada(nuevaFechaIso: string): void {
-    this.fechaActual.set(nuevaFechaIso);
-    this.cargar(nuevaFechaIso);
+  alSeleccionarFecha(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+
+    // Si ya seleccionó ambos extremos o si es sólo el primero
+    if (this.rangeDates && this.rangeDates[0] && this.rangeDates[1]) {
+      this.cargar();
+    } else if (this.rangeDates && this.rangeDates[0]) {
+      // Si sólo eligió un día, esperamos un momento por si va a elegir el segundo,
+      // o cargamos ese día si el usuario solo quería seleccionar una fecha.
+      this.debounceTimer = setTimeout(() => {
+        this.cargar();
+      }, 400);
+    }
   }
 
-  async cargar(fechaParam?: string): Promise<void> {
+  alCerrarCalendario(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+
+    // Si cerró habiendo elegido sólo un día o ambos días iguales, normalizamos
+    if (this.rangeDates && this.rangeDates[0]) {
+      if (this.rangeDates[1] && this.toIsoDate(this.rangeDates[0]) === this.toIsoDate(this.rangeDates[1])) {
+        this.rangeDates = [this.rangeDates[0]];
+      }
+    }
+    this.cargar();
+  }
+
+  async cargar(): Promise<void> {
     this.cargando.set(true);
     this.errorCarga.set(false);
     try {
-      const fecha = fechaParam || this.fechaActual();
-      // Si se pasa fecha se consulta con query param o endpoint estándar
+      const params: Record<string, string> = {};
+
+      if (this.rangeDates && this.rangeDates.length > 0 && this.rangeDates[0]) {
+        const d0 = this.toIsoDate(this.rangeDates[0]);
+        const d1 = this.rangeDates[1] ? this.toIsoDate(this.rangeDates[1]) : null;
+
+        if (d1 && d0 !== d1) {
+          const dMin = d0 < d1 ? d0 : d1;
+          const dMax = d0 < d1 ? d1 : d0;
+          params['desde'] = dMin;
+          params['hasta'] = dMax;
+        } else {
+          params['fecha'] = d0;
+        }
+      } else {
+        params['fecha'] = this.hoyIso;
+      }
+
       const data = await this.http
-        .get<DashboardHoy>(`${environment.apiUrl}/dashboard/today`, {
-          params: { fecha },
-        })
+        .get<DashboardHoy>(`${environment.apiUrl}/dashboard/today`, { params })
         .toPromise();
       this.datos.set(data ?? null);
     } catch {
@@ -310,5 +377,26 @@ export class HomeComponent implements OnInit, OnDestroy {
       this.refrescoPendiente = null;
       this.cargar();
     }, 400);
+  }
+
+  private toIsoDate(d: Date): string {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  private formatearFechaCorta(fechaIso: string): string {
+    const [year, month, day] = fechaIso.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return new Intl.DateTimeFormat('es-PE', { day: '2-digit', month: 'short' }).format(date);
+  }
+
+  private formatearFechaLarga(fechaIso: string): string {
+    const [year, month, day] = fechaIso.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    return new Intl.DateTimeFormat('es-PE', {
+      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+    }).format(date);
   }
 }

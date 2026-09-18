@@ -1,77 +1,37 @@
-<app-page-header titulo="Seguimiento" subtitulo="Métricas reales por integrante — sin calificaciones artificiales" />
+<app-page-header titulo="Seguimiento" subtitulo="Historial objetivo de asistencia" descripcion="Consulta la evolución de cada grupo dentro de un periodo específico." />
 
-<div class="r21-card">
-  <div class="r21-card-body">
-    <div class="row g-2 align-items-end">
-      <div class="col-12 col-md-3">
-        <label class="form-label small fw-semibold">Grupo</label>
-        <select class="form-select form-select-sm" [(ngModel)]="grupoId" (change)="cargar()">
-          @for (g of grupos(); track g.id) {
-            <option [ngValue]="g.id">{{ g.nombre }} ({{ g.etapa }})</option>
-          }
-        </select>
-      </div>
-      <div class="col-6 col-md-2">
-        <label class="form-label small fw-semibold">Desde</label>
-        <input type="date" class="form-control form-control-sm" [(ngModel)]="desde" (change)="cargar()" />
-      </div>
-      <div class="col-6 col-md-2">
-        <label class="form-label small fw-semibold">Hasta</label>
-        <input type="date" class="form-control form-control-sm" [(ngModel)]="hasta" (change)="cargar()" />
-      </div>
-      <div class="col-12 col-md-3">
-        <label class="form-label small fw-semibold">Ordenar por</label>
-        <select class="form-select form-select-sm" [(ngModel)]="orden" (change)="cargar()">
-          <option value="faltas_injustificadas">Más faltas injustificadas</option>
-          <option value="menor_asistencia">Menor asistencia</option>
-          <option value="salidas_anticipadas">Más salidas anticipadas</option>
-          <option value="horas">Más horas</option>
-        </select>
-      </div>
-    </div>
-  </div>
-</div>
+<section class="filters" aria-label="Filtros de seguimiento">
+  <label class="field"><span>Grupo de formación</span><select [ngModel]="grupoId()" (ngModelChange)="cambiarGrupo($event)">@for (g of grupos(); track g.id) {<option [ngValue]="g.id">{{ g.nombre }} · {{ g.etapa }}</option>}</select></label>
+  <div class="period-field"><span>Periodo</span><div class="quick-periods">
+    <button type="button" [class.active]="periodo()==='mes'" (click)="aplicarPeriodo('mes')">Mes actual</button>
+    <button type="button" [class.active]="periodo()==='primera'" (click)="aplicarPeriodo('primera')">1.ª quincena</button>
+    <button type="button" [class.active]="periodo()==='segunda'" (click)="aplicarPeriodo('segunda')">2.ª quincena</button>
+    <button type="button" [class.active]="periodo()==='personalizado'" (click)="aplicarPeriodo('personalizado',false)">Personalizado</button>
+  </div></div>
+  <label class="field"><span>Ordenar por</span><select [ngModel]="orden()" (ngModelChange)="cambiarOrden($event)">
+    <option value="nombre">Nombre</option><option value="faltas_injustificadas">Más faltas injustificadas</option><option value="faltas_justificadas">Más faltas justificadas</option><option value="menor_asistencia">Menor asistencia</option><option value="salidas_anticipadas">Más salidas anticipadas</option><option value="horas_adicionales">Más horas adicionales</option>
+  </select></label>
+  @if(periodo()==='personalizado'){<div class="custom-dates"><label class="field"><span>Desde</span><input type="date" [(ngModel)]="desde" (change)="fechasPersonalizadas()"></label><label class="field"><span>Hasta</span><input type="date" [(ngModel)]="hasta" (change)="fechasPersonalizadas()"></label></div>}
+</section>
 
-<div class="r21-card">
-  <div class="r21-card-header">
-    <h2>Integrantes <span class="text-muted fw-normal small">— {{ jornadasEsperadas() }} jornadas obligatorias en el periodo</span></h2>
-  </div>
-  <div class="r21-card-body p-0 table-responsive">
-    @if (cargando()) {
-      <div class="p-4 text-center text-muted">Cargando…</div>
-    } @else if (filas().length === 0) {
-      <app-empty-state mensaje="Sin integrantes o sin datos en el periodo" icono="bi-binoculars" />
-    } @else {
-      <table class="table table-sm table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Persona</th>
-            <th class="text-center">DNI</th>
-            <th class="text-center">Asistencias</th>
-            <th class="text-center">F. justificadas</th>
-            <th class="text-center">F. injustificadas</th>
-            <th class="text-center">Salidas antic.</th>
-            <th class="text-center">Horas</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (f of filas(); track f.personaId) {
-            <tr>
-              <td class="fw-semibold">{{ f.nombreCompleto }}</td>
-              <td class="text-center text-muted">{{ f.dni ?? '—' }}</td>
-              <td class="text-center">{{ f.asistencias }}</td>
-              <td class="text-center">{{ f.faltasJustificadas }}</td>
-              <td class="text-center">
-                <span [class.text-danger]="f.faltasInjustificadas > 0" [class.fw-bold]="f.faltasInjustificadas > 0">
-                  {{ f.faltasInjustificadas }}
-                </span>
-              </td>
-              <td class="text-center">{{ f.salidasAnticipadas }}</td>
-              <td class="text-center">{{ f.horas }}</td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    }
-  </div>
-</div>
+@if(error()){<div class="alert" role="alert"><tui-icon icon="@tui.circle-alert" />{{ error() }}</div>}
+@if(resumen();as r){<section class="summary" aria-label="Resumen del periodo">
+  <div><span>Jornadas obligatorias</span><strong>{{r.jornadasObligatorias}}</strong></div><div><span>Asistencia del grupo</span><strong>{{r.asistenciaGrupo}}%</strong></div><div><span>Faltas injustificadas</span><strong class="danger">{{r.faltasInjustificadas}}</strong></div><div><span>Faltas justificadas</span><strong>{{r.faltasJustificadas}}</strong></div><div><span>Salidas anticipadas</span><strong>{{r.salidasAnticipadas}}</strong></div><div><span>Horas adicionales</span><strong>{{r.horasAdicionales}} h</strong></div>
+</section>}
+
+<section class="results"><header><div><h2>Integrantes</h2><p>{{desde}} — {{hasta}}</p></div><span>{{filas().length}} registrados</span></header>
+  @if(cargando()){<div class="loading"><span></span><span></span><span></span></div>}
+  @else if(jornadasEsperadas()===0){<div class="empty"><tui-icon icon="@tui.calendar-off"/><strong>Sin jornadas en el periodo seleccionado</strong><p>Prueba con otro rango de fechas.</p></div>}
+  @else if(filas().length===0){<div class="empty"><tui-icon icon="@tui.users"/><strong>No hay integrantes aplicables para este periodo</strong><p>El grupo no tuvo membresías vigentes en estas fechas.</p></div>}
+  @else {<div class="table-wrap"><table><thead><tr><th>Integrante</th><th>Asistencia</th><th>F. justificadas</th><th>F. injustificadas</th><th>Salidas anticipadas</th><th>Horas adicionales</th><th></th></tr></thead><tbody>
+    @for(f of filas();track f.personaId){<tr><td data-label="Integrante"><strong>{{f.nombreCompleto}}</strong><small>{{f.dni||'Sin DNI'}} · {{f.jornadasAplicables}} jornadas aplicables</small></td><td data-label="Asistencia"><span class="attendance" [class.attendance--low]="f.porcentajeAsistencia<80">{{f.porcentajeAsistencia}}%</span><small>{{f.asistencias}} / {{f.jornadasAplicables}}</small></td><td data-label="F. justificadas">{{f.faltasJustificadas}}</td><td data-label="F. injustificadas"><strong [class.danger]="f.faltasInjustificadas>0">{{f.faltasInjustificadas}}</strong></td><td data-label="Salidas anticipadas">{{f.salidasAnticipadas}}</td><td data-label="Horas adicionales">{{f.horasAdicionales}} h</td><td><button class="detail-button" type="button" (click)="abrirDetalle(f.personaId)">Ver detalle <tui-icon icon="@tui.arrow-right"/></button></td></tr>}
+  </tbody></table></div>}
+</section>
+
+@if(detalle()||cargandoDetalle()){<div class="drawer-backdrop" (click)="cerrarDetalle()"></div><aside class="drawer" aria-label="Detalle del integrante">
+  @if(cargandoDetalle()){<div class="drawer-loading">Cargando detalle…</div>}
+  @else if(detalle();as d){<header class="drawer-header"><div><span>Detalle del integrante</span><h2>{{d.integrante.nombreCompleto}}</h2><p>{{d.grupo.nombre}} · {{d.desde}} — {{d.hasta}}</p></div><button type="button" aria-label="Cerrar detalle" (click)="cerrarDetalle()"><tui-icon icon="@tui.x"/></button></header>
+  <div class="drawer-summary"><div><strong>{{d.integrante.porcentajeAsistencia}}%</strong><span>Asistencia</span></div><div><strong>{{d.integrante.faltasInjustificadas}}</strong><span>Faltas injustificadas</span></div><div><strong>{{d.integrante.horasAdicionales}} h</strong><span>Horas adicionales</span></div></div><h3>Historial de jornadas</h3><div class="history">
+    @for(item of d.historial;track item.jornadaId){<article><div class="history-date"><strong>{{item.fecha}}</strong><span>{{item.tipo.toLowerCase()}}</span></div><div><span class="status {{claseEstado(item.estado)}}">{{etiquetaEstado(item.estado)}}</span><p>{{item.entrada||'—'}} → {{item.salida||'—'}} @if(item.horasAdicionales){ · {{item.horasAdicionales}} h}</p></div>@if(item.incidencia){<p class="incident">{{item.incidencia}}</p>}</article>}@empty{<div class="empty empty--small">No existen jornadas aplicables.</div>}
+  </div>}
+</aside>}

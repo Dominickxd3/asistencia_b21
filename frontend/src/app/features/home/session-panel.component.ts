@@ -1,12 +1,12 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ProgressBarModule } from 'primeng/progressbar';
-import { TagModule } from 'primeng/tag';
+import { TuiIcon } from '@taiga-ui/core';
+import { TuiBadge, TuiProgressBar } from '@taiga-ui/kit';
 import { JornadaHoy, AtencionItem } from '../../core/models/api.models';
 
 @Component({
   selector: 'app-session-panel',
-  imports: [RouterLink, ProgressBarModule, TagModule],
+  imports: [RouterLink, TuiBadge, TuiIcon, TuiProgressBar],
   template: `
     <article class="r21-session-panel">
       <!-- 1. Cabecera de la Jornada -->
@@ -14,14 +14,12 @@ import { JornadaHoy, AtencionItem } from '../../core/models/api.models';
         <div class="header-left">
           <div class="title-and-tags">
             <h3 class="panel-group-title">{{ nombreGrupo() }}</h3>
-            <p-tag
-              [value]="tipoJornada()"
-              [severity]="tipoJornada() === 'OBLIGATORIA' ? 'danger' : 'secondary'"
-              styleClass="tag-compact-caps"
-            />
+            <span tuiBadge size="s" [appearance]="tipoJornada() === 'OBLIGATORIA' ? 'negative' : 'neutral'" class="tag-compact-caps">
+              {{ tipoJornada() }}
+            </span>
           </div>
           <div class="schedule-line">
-            <i class="pi pi-clock"></i>
+            <tui-icon icon="@tui.clock-3" />
             <span class="schedule-time">{{ horario() }}</span>
             <span class="schedule-dot">·</span>
             <span class="schedule-meta">{{ etapaTexto() }}</span>
@@ -53,7 +51,7 @@ import { JornadaHoy, AtencionItem } from '../../core/models/api.models';
             }
           </span>
         </div>
-        <p-progressBar [value]="porcentajeProgreso()" [showValue]="false" styleClass="r21-progress-thick" />
+        <progress tuiProgressBar size="s" [value]="porcentajeProgreso()" max="100" class="r21-progress-thick"></progress>
       </div>
 
       <!-- 3. Detalle de Casos Relevantes -->
@@ -93,7 +91,7 @@ import { JornadaHoy, AtencionItem } from '../../core/models/api.models';
       <div class="panel-footer-row">
         <div class="instructor-profile">
           <div class="instructor-avatar-mini">
-            <i class="pi pi-user"></i>
+            <tui-icon icon="@tui.user" />
           </div>
           <div class="instructor-info">
             <span class="inst-label">Encargado de grupo</span>
@@ -106,7 +104,7 @@ import { JornadaHoy, AtencionItem } from '../../core/models/api.models';
           class="btn-action-asistencia"
         >
           <span>Ver registro de asistencia</span>
-          <i class="pi pi-arrow-right"></i>
+          <tui-icon icon="@tui.arrow-right" />
         </a>
       </div>
     </article>
@@ -166,7 +164,7 @@ import { JornadaHoy, AtencionItem } from '../../core/models/api.models';
       font-size: 12.5px;
       color: var(--r21-text-secondary);
 
-      i {
+      tui-icon {
         font-size: 12px;
         color: var(--r21-text-muted);
       }
@@ -257,15 +255,10 @@ import { JornadaHoy, AtencionItem } from '../../core/models/api.models';
       }
     }
 
-    :host ::ng-deep .r21-progress-thick {
+    .r21-progress-thick {
       height: 7px;
-      border-radius: 4px;
-      background-color: #E9ECEF;
-
-      .p-progressbar-value {
-        background-color: var(--r21-red);
-        border-radius: 4px;
-      }
+      width: 100%;
+      color: var(--r21-red);
     }
 
     .relevant-cases-section {
@@ -420,7 +413,7 @@ import { JornadaHoy, AtencionItem } from '../../core/models/api.models';
       text-decoration: none;
       transition: background-color var(--r21-transition-fast), border-color var(--r21-transition-fast);
 
-      i {
+      tui-icon {
         font-size: 11px;
         transition: transform var(--r21-transition-fast);
       }

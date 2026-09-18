@@ -12,6 +12,7 @@ import { ReportesPageComponent } from './features/reports/reportes.page';
 import { AuditoriaPageComponent } from './features/audit/auditoria.page';
 import { MiGrupoComponent } from './features/groups/mi-grupo.component';
 import { ConstruccionComponent } from './shared/components/construccion.component';
+import { ProfileSettingsComponent } from './features/profile/profile-settings.component';
 
 export const routes: Routes = [
   { path: 'login', component: LoginComponent },
@@ -21,6 +22,7 @@ export const routes: Routes = [
     canActivate: [authGuard],
     children: [
       { path: 'inicio', component: HomeComponent },
+      { path: 'perfil', component: ProfileSettingsComponent },
       {
         path: 'asistencia',
         component: AttendancePageComponent,

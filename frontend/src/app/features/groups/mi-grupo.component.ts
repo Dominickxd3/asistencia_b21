@@ -33,7 +33,7 @@ interface Miembro {
         </div>
         <div class="r21-card-body pt-1 pb-1">
           @if (miembros().length === 0) {
-            <app-empty-state mensaje="Este grupo aún no tiene integrantes" icono="bi-people" />
+            <app-empty-state mensaje="Este grupo aún no tiene integrantes" icono="@tui.users" />
           }
           @for (m of miembros(); track m.id) {
             <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="border-color: var(--r21-borde)">
@@ -53,7 +53,7 @@ interface Miembro {
         <div class="r21-card-body">
           <app-empty-state
             mensaje="No eres encargado activo de ningún grupo en este momento"
-            icono="bi-person-x"
+            icono="@tui.user-x"
           />
         </div>
       </div>

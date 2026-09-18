@@ -1,13 +1,15 @@
 import { NestFactory } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { join } from 'node:path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const config = app.get(ConfigService);
 
   const apiPrefix = config.get<string>('app.apiPrefix') ?? 'api';
@@ -17,6 +19,12 @@ async function bootstrap() {
   app.setGlobalPrefix(apiPrefix);
   app.use(helmet());
   app.use(cookieParser());
+  app.useStaticAssets(join(process.cwd(), 'public', 'imagenes'), {
+    prefix: '/imagenes',
+    dotfiles: 'deny',
+    index: false,
+    maxAge: '7d',
+  });
   app.enableCors({
     origin: corsOrigin,
     credentials: true,

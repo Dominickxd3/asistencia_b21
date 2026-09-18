@@ -3,10 +3,12 @@ import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export const TRACKING_ORDER = [
+  'nombre',
   'faltas_injustificadas',
+  'faltas_justificadas',
   'menor_asistencia',
   'salidas_anticipadas',
-  'horas',
+  'horas_adicionales',
 ] as const;
 
 export type TrackingOrder = (typeof TRACKING_ORDER)[number];
@@ -31,4 +33,11 @@ export class TrackingQueryDto {
   @IsOptional()
   @IsIn(TRACKING_ORDER as unknown as string[])
   orden?: TrackingOrder;
+}
+
+export class TrackingDetailQueryDto extends TrackingQueryDto {
+  @ApiProperty({ description: 'Integrante' })
+  @Type(() => Number)
+  @IsInt()
+  personaId: number;
 }

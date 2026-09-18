@@ -26,3 +26,24 @@ export interface PendienteItem {
   personaId: number;
   nombreCompleto: string;
 }
+
+export type AccionFila =
+  | 'entrada'
+  | 'salida'
+  | 'hora-manual'
+  | 'falta-justificada'
+  | 'salida-anticipada'
+  | 'observacion'
+  | 'ajustar'
+  | 'anular';
+
+export interface SolicitudAccion {
+  accion: AccionFila;
+  item: PizarraItem;
+}
+
+export interface HoraManualResult {
+  horaEntrada?: string;
+  horaSalida?: string;
+  motivo: string;
+}

@@ -1,5 +1,6 @@
 import { Component, computed, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TuiIcon } from '@taiga-ui/core';
 import { JornadaHoy } from '../../core/models/api.models';
 
 export interface GroupCardMetric {
@@ -25,14 +26,14 @@ export interface GroupCardMetric {
 
 @Component({
   selector: 'app-group-metrics-deck',
-  imports: [RouterLink],
+  imports: [RouterLink, TuiIcon],
   template: `
     <section class="r21-group-metrics-deck" aria-label="Métricas por Grupo de Formación">
       <!-- Encabezado de la sección -->
       <div class="deck-header-row">
         <div class="deck-title-wrap">
           <div class="deck-title-lead">
-            <i class="pi pi-chart-bar"></i>
+            <tui-icon icon="@tui.chart-bar" />
             <h2 class="deck-title">Métricas y Estado por Grupos de Formación</h2>
           </div>
           <span class="deck-subtitle">
@@ -53,7 +54,7 @@ export interface GroupCardMetric {
             <div class="card-top-bar">
               <div class="card-icon-title">
                 <div class="group-icon-badge" [style.background-color]="grupo.bgColor" [style.color]="grupo.color">
-                  <i [class]="grupo.icono"></i>
+                  <tui-icon [icon]="grupo.icono" />
                 </div>
                 <div class="group-identity">
                   <h3 class="group-title">{{ grupo.nombre }}</h3>
@@ -127,11 +128,11 @@ export interface GroupCardMetric {
             <!-- Próxima sesión y Encargado -->
             <div class="card-footer-info">
               <div class="footer-meta-line">
-                <i class="pi pi-calendar-clock"></i>
+                <tui-icon icon="@tui.calendar-clock" />
                 <span class="next-session-text">{{ grupo.proximaSesion }}</span>
               </div>
               <div class="footer-instructor-line">
-                <i class="pi pi-user"></i>
+                <tui-icon icon="@tui.user" />
                 <span>Encargado: <strong>{{ grupo.encargado }}</strong></span>
               </div>
             </div>
@@ -140,7 +141,7 @@ export interface GroupCardMetric {
             <div class="card-action-bar">
               <a [routerLink]="['/asistencia']" class="btn-group-action">
                 <span>Ver asistencia del grupo</span>
-                <i class="pi pi-arrow-up-right"></i>
+                <tui-icon icon="@tui.arrow-up-right" />
               </a>
             </div>
           </article>
@@ -536,7 +537,7 @@ export class GroupMetricsDeckComponent {
         nombre: 'Postulantes 2026-II',
         subtitulo: 'Convocatoria y adaptación básica',
         etapaBadge: 'Etapa Inicial',
-        icono: 'pi pi-user-plus',
+        icono: '@tui.user-plus',
         color: '#C8102E', // Rojo Institucional Rímac 21
         bgColor: '#FEF3F2',
         integrantes: postIntegrantes,
@@ -556,7 +557,7 @@ export class GroupMetricsDeckComponent {
         nombre: 'Aspirantes Compañía',
         subtitulo: 'Doctrina de cuartel y guardias',
         etapaBadge: 'Formación de Cuartel',
-        icono: 'pi pi-shield',
+        icono: '@tui.shield',
         color: '#14804A', // Verde operativo
         bgColor: '#ECFDF3',
         integrantes: aspIntegrantes,
@@ -576,7 +577,7 @@ export class GroupMetricsDeckComponent {
         nombre: 'Aspirantes ESBAS',
         subtitulo: 'Escuela Básica y Acreditación',
         etapaBadge: 'Acreditación CGBVP',
-        icono: 'pi pi-check-square',
+        icono: '@tui.square-check',
         color: '#0284C7', // Azul cian técnico
         bgColor: '#F0F9FF',
         integrantes: esbasIntegrantes,

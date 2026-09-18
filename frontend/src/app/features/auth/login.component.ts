@@ -1,11 +1,12 @@
 import { Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { TuiIcon } from '@taiga-ui/core';
 import { AuthService } from '../../core/auth/auth.service';
 
 @Component({
   selector: 'app-login',
-  imports: [FormsModule],
+  imports: [FormsModule, TuiIcon],
   template: `
     <div class="r21-login">
       <div class="r21-login-card">
@@ -42,7 +43,7 @@ import { AuthService } from '../../core/auth/auth.service';
 
           @if (error()) {
             <div class="alert alert-danger py-2 small" role="alert">
-              <i class="bi bi-exclamation-circle"></i> {{ error() }}
+              <tui-icon icon="@tui.circle-alert" /> {{ error() }}
             </div>
           }
 

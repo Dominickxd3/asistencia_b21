@@ -1,53 +1,143 @@
-<app-page-header titulo="Asistencia" subtitulo="Registro operativo de la jornada" />
+<!-- Toast y confirmDialog oficiales de PrimeNG para notificaciones operativas -->
+<p-toast position="top-right" [life]="3000" />
+<p-confirmDialog />
 
-@if (mensaje(); as m) {
-  <div
-    class="alert py-2 small d-flex align-items-center gap-2"
-    [class.alert-success]="m.tipo === 'ok'"
-    [class.alert-danger]="m.tipo === 'error'"
-  >
-    <i class="bi" [class]="m.tipo === 'ok' ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
-    {{ m.texto }}
-  </div>
-}
-
-@if (jornadas().length > 1) {
-  <div class="d-flex align-items-center gap-2">
-    <label class="small fw-semibold text-muted">Jornada:</label>
-    <select
-      class="form-select form-select-sm w-auto"
-      [ngModel]="jornadaId()"
-      (ngModelChange)="cambiarJornada($event)"
-    >
-      @for (j of jornadas(); track j.id) {
-        <option [ngValue]="j.id">{{ j.grupo }} — {{ j.estado }}</option>
-      }
-    </select>
-  </div>
-}
-
-@if (cargando()) {
-  <div class="r21-card r21-card-body p-4 text-center text-muted">Cargando…</div>
-} @else if (jornadaActual(); as j) {
-  <app-attendance-board
-    [jornada]="j"
-    [items]="pizarra()"
-    [procesandoId]="procesandoId()"
-    [puedeAjustar]="puedeAjustar()"
-    [puedeAnular]="puedeAnular()"
-    (accion)="ejecutar($event)"
-    (cerrar)="intentarCierre()"
-  />
-} @else {
-  <div class="r21-card">
-    <div class="r21-card-body">
-      <app-empty-state
-        mensaje="No hay jornadas programadas para hoy"
-        icono="bi-calendar-x"
-      />
+<div class="r21-attendance-view">
+  <!-- ESTADO 1: CARGANDO -->
+  @if (cargando()) {
+    <div class="loading-state-box">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Cargando información de jornada operativa…</span>
     </div>
-  </div>
-}
+  }
+
+  <!-- ESTADO 2: CON JORNADA ACTIVA / PROGRAMADA -->
+  @else if (jornadaActual(); as j) {
+    <!-- ENCABEZADO DE LA JORNADA OPERATIVA -->
+    <header class="session-header-card">
+      <!-- Selector de Jornada si hay más de una -->
+      @if (jornadas().length > 1) {
+        <div class="session-switcher-bar">
+          <span class="switcher-label">Jornadas:</span>
+          @for (item of jornadas(); track item.id) {
+            <button
+              type="button"
+              class="session-tab-btn"
+              [class.active]="item.id === j.id"
+              (click)="cambiarJornada(item.id)"
+            >
+              {{ item.grupo }} · {{ item.tipoJornada }}
+            </button>
+          }
+        </div>
+      }
+
+      <!-- Título del Grupo, Tipo, Horario y Estado -->
+      <div class="session-main-header-row">
+        <div class="session-title-group">
+          <h1 class="session-group-name">{{ j.grupo }}</h1>
+          <div class="session-schedule-line">
+            <span>{{ j.tipoJornada === 'OBLIGATORIA' ? 'Obligatoria' : 'Voluntaria' }}</span>
+            <span class="dot-sep">·</span>
+            <span class="schedule-time">{{ formatearHorario(j) }}</span>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+          <span class="session-status-badge" [class]="formatearEstadoJornada(j.estado).cssClass">
+            <span class="status-dot"></span>
+            <span>{{ formatearEstadoJornada(j.estado).texto }}</span>
+          </span>
+
+          @if (j.estado === 'ABIERTA') {
+            <button
+              type="button"
+              class="r21-secondary-button"
+              (click)="intentarCierre()"
+            ><i class="pi pi-lock"></i> Cerrar jornada</button>
+          }
+        </div>
+      </div>
+
+      <!-- Resumen Compacto: Presentes y Pendientes -->
+      <div class="session-summary-pills-row">
+        <div class="summary-pills-wrap">
+          <span class="pill-presentes">
+            <i class="pi pi-check"></i>
+            {{ presentesCount() }} / {{ totalIntegrantes() }} presentes
+          </span>
+          <span class="pill-pendientes" [class.all-clear]="pendientesCount() === 0">
+            <i class="pi pi-clock"></i>
+            {{ pendientesCount() }} pendiente{{ pendientesCount() === 1 ? '' : 's' }}
+          </span>
+        </div>
+      </div>
+    </header>
+
+    <!-- BARRA DE BÚSQUEDA RÁPIDA -->
+    <div class="quick-search-container">
+      <div class="search-input-wrap">
+        <i class="pi pi-search search-lead-icon"></i>
+        <input
+          type="text"
+          placeholder="Buscar integrante por nombre o apellido…"
+          [ngModel]="filtroBusqueda()"
+          (ngModelChange)="filtroBusqueda.set($event)"
+          class="search-box-input"
+        />
+        @if (filtroBusqueda()) {
+          <button
+            type="button"
+            class="clear-search-icon-btn"
+            (click)="filtroBusqueda.set('')"
+            title="Limpiar búsqueda"
+            aria-label="Limpiar búsqueda"
+          >
+            <i class="pi pi-times"></i>
+          </button>
+        }
+      </div>
+      <span class="search-counter-badge">
+        {{ itemsOrdenadosYFiltrados().length }} de {{ totalIntegrantes() }} integrantes
+      </span>
+    </div>
+
+    <!-- LISTA OPERATIVA DE INTEGRANTES -->
+    <section class="operative-roster-section" aria-label="Nómina de integrantes de la jornada">
+      @if (itemsOrdenadosYFiltrados().length === 0) {
+        <div class="empty-search-alert">
+          <i class="pi pi-search"></i>
+          <span>No se encontraron integrantes que coincidan con "{{ filtroBusqueda() }}"</span>
+        </div>
+      } @else {
+        @for (item of itemsOrdenadosYFiltrados(); track item.personaId) {
+          <app-attendance-member-row
+            [item]="item"
+            [procesando]="procesandoId() === item.personaId"
+            [puedeAjustar]="puedeAjustar()"
+            [puedeAnular]="puedeAnular()"
+            (accion)="ejecutar($event)"
+          />
+        }
+      }
+    </section>
+  }
+
+  <!-- ESTADO 3: SIN JORNADA PROGRAMADA -->
+  @else {
+    <div class="empty-jornada-compact">
+      <div class="empty-icon-box">
+        <i class="pi pi-calendar-times"></i>
+      </div>
+      <div class="empty-text-wrap">
+        <span class="empty-main-text">No hay jornadas programadas para hoy</span>
+        <p class="empty-sub-text">
+          Cuando exista una jornada, podrás registrar entradas, salidas e incidencias desde aquí.
+        </p>
+      </div>
+    </div>
+  }
+</div>
 
 <!-- Diálogo de motivo (justificada / salida anticipada / observación / anular) -->
 <app-motivo-dialog
@@ -59,7 +149,7 @@
   [persona]="solicitud()?.item?.nombreCompleto ?? ''"
   [procesando]="procesandoId() !== null"
   (confirmado)="confirmarMotivo($event)"
-  (cancelar)="cerrarDialogos()"
+  (cancelar)="dialogo.set(null)"
 />
 
 <!-- Diálogo de hora manual (registro o ajuste) -->
@@ -70,7 +160,7 @@
   [persona]="solicitud()?.item?.nombreCompleto ?? ''"
   [procesando]="procesandoId() !== null"
   (confirmado)="confirmarHoraManual($event)"
-  (cancelar)="cerrarDialogos()"
+  (cancelar)="dialogo.set(null)"
 />
 
 <!-- Cierre de jornada -->
@@ -79,5 +169,5 @@
   [pendientes]="pendientesCierre()"
   [procesando]="false"
   (confirmar)="confirmarCierre()"
-  (cancelar)="cerrarDialogos()"
+  (cancelar)="dialogo.set(null)"
 />

@@ -39,6 +39,9 @@ export class Persona {
   @Column({ name: 'correo', type: 'nvarchar', length: 150, nullable: true })
   correo: string | null;
 
+  @Column({ name: 'foto_url', type: 'nvarchar', length: 300, nullable: true })
+  fotoUrl: string | null;
+
   @Column({ name: 'fecha_nacimiento', type: 'date', nullable: true })
   fechaNacimiento: string | null;
 

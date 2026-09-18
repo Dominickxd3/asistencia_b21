@@ -1,51 +1,49 @@
 import { Component, computed, input, output } from '@angular/core';
-import { CalendarModule } from 'primeng/calendar';
+import { TuiButton, TuiIcon } from '@taiga-ui/core';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-date-selector',
-  imports: [CalendarModule, FormsModule],
+  imports: [FormsModule, TuiButton, TuiIcon],
   template: `
     <div class="r21-date-selector" aria-label="Control de fecha">
       <!-- Botón día anterior -->
-      <button
+      <button tuiIconButton appearance="flat" size="xs"
         type="button"
         class="nav-date-btn"
         (click)="cambiarDia(-1)"
         title="Día anterior"
         aria-label="Día anterior"
       >
-        <i class="pi pi-chevron-left"></i>
+        <tui-icon icon="@tui.chevron-left" />
       </button>
 
       <!-- Selector con p-calendar nativamente alineado -->
       <div class="calendar-picker-box">
-        <i class="pi pi-calendar date-lead-icon"></i>
-        <p-calendar
-          [(ngModel)]="fechaModel"
-          (ngModelChange)="onCalendarChange($event)"
-          dateFormat="dd M yy"
-          [showIcon]="false"
-          styleClass="r21-calendar-control"
-          inputStyleClass="r21-calendar-text"
+        <tui-icon icon="@tui.calendar-days" class="date-lead-icon" />
+        <input
+          class="r21-calendar-text"
+          type="date"
+          [ngModel]="fechaIso()"
+          (ngModelChange)="onIsoChange($event)"
+          aria-label="Seleccionar fecha"
         />
-        <i class="pi pi-chevron-down date-trail-icon"></i>
       </div>
 
       <!-- Botón día siguiente -->
-      <button
+      <button tuiIconButton appearance="flat" size="xs"
         type="button"
         class="nav-date-btn"
         (click)="cambiarDia(1)"
         title="Día siguiente"
         aria-label="Día siguiente"
       >
-        <i class="pi pi-chevron-right"></i>
+        <tui-icon icon="@tui.chevron-right" />
       </button>
 
       <!-- Botón Hoy -->
       @if (!esHoy()) {
-        <button
+        <button tuiButton appearance="flat" size="xs"
           type="button"
           class="btn-today-pill"
           (click)="irAHoy()"
@@ -80,7 +78,7 @@ import { FormsModule } from '@angular/forms';
       cursor: pointer;
       transition: background-color var(--r21-transition-fast), color var(--r21-transition-fast);
 
-      i {
+      tui-icon {
         font-size: 11px;
       }
 
@@ -113,36 +111,20 @@ import { FormsModule } from '@angular/forms';
         flex-shrink: 0;
       }
 
-      .date-trail-icon {
-        font-size: 10px;
-        color: var(--r21-text-muted);
-        margin-left: 6px;
-        flex-shrink: 0;
-      }
     }
 
-    :host ::ng-deep .r21-calendar-control {
-      display: inline-flex;
-      align-items: center;
+    .r21-calendar-text {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--r21-text-primary);
+      background: transparent;
+      border: 0;
+      padding: 0;
+      width: 112px;
+      cursor: pointer;
+      color-scheme: light;
 
-      .r21-calendar-text {
-        font-family: var(--r21-font);
-        font-size: 12.5px;
-        font-weight: 600;
-        color: var(--r21-text-primary);
-        background: transparent !important;
-        border: none !important;
-        padding: 0 !important;
-        width: 105px !important;
-        text-align: center;
-        cursor: pointer;
-        font-variant-numeric: tabular-nums;
-        box-shadow: none !important;
-
-        &:focus {
-          outline: none !important;
-        }
-      }
+      &:focus { outline: none; }
     }
 
     .btn-today-pill {
@@ -200,6 +182,12 @@ export class DateSelectorComponent {
     if (date) {
       this.emitirFecha(date);
     }
+  }
+
+  onIsoChange(iso: string): void {
+    if (!iso) return;
+    const [year, month, day] = iso.split('-').map(Number);
+    this.emitirFecha(new Date(year, month - 1, day));
   }
 
   private emitirFecha(date: Date): void {
