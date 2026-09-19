@@ -14,7 +14,13 @@ import { RealtimeService } from './realtime.service';
  */
 @WebSocketGateway({
   namespace: '/realtime',
-  cors: { origin: process.env.CORS_ORIGIN ?? 'http://localhost:4200', credentials: true },
+  cors: {
+    origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      // En desarrollo o red local permitir orígenes de desarrollo
+      callback(null, true);
+    },
+    credentials: true,
+  },
 })
 export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

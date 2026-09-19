@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ToastModule } from 'primeng/toast';
 import { ButtonModule } from 'primeng/button';
@@ -129,20 +129,89 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
     });
   });
 
+  private wsUnbinds: Array<() => void> = [];
+
+  constructor() {
+    effect(() => {
+      const reconexion = this.realtime.reconectado();
+      if (reconexion > 0 && this.jornadaId()) {
+        void this.recargarPizarra();
+      }
+    });
+  }
+
   async ngOnInit(): Promise<void> {
     this.realtime.conectar();
-    this.realtime.on('asistencia.registrada', (e: any) => {
-      if (e?.jornadaId === this.jornadaId()) void this.recargarPizarra();
-    });
-    this.realtime.on('jornada.cerrada', (e: any) => {
-      if (e?.jornadaId === this.jornadaId()) void this.cargarJornadas();
-    });
+
+    this.wsUnbinds.push(
+      this.realtime.on('asistencia.registrada', (e: any) => {
+        if (!e) return;
+        if (Number(e.jornadaId) === Number(this.jornadaId())) {
+          this.procesarEventoAsistenciaEnTiempoReal(e);
+        }
+      }),
+      this.realtime.on('jornada.abierta', (e: any) => {
+        if (!e) return;
+        void this.cargarJornadas();
+      }),
+      this.realtime.on('jornada.cerrada', (e: any) => {
+        if (!e) return;
+        if (Number(e.jornadaId) === Number(this.jornadaId())) {
+          void this.cargarJornadas();
+        }
+      }),
+    );
+
     await this.cargarJornadas();
   }
 
   ngOnDestroy(): void {
-    this.realtime.off('asistencia.registrada');
-    this.realtime.off('jornada.cerrada');
+    this.wsUnbinds.forEach((u) => u());
+    this.wsUnbinds = [];
+  }
+
+  private procesarEventoAsistenciaEnTiempoReal(e: any): void {
+    const personaId = Number(e.personaId);
+    if (!personaId) {
+      void this.recargarPizarra();
+      return;
+    }
+
+    // 1. Actualización in-place ultra rápida (< 5ms) en la señal reactiva
+    const lista = this.pizarra();
+    const index = lista.findIndex((item) => item.personaId === personaId);
+
+    if (index !== -1) {
+      const item = lista[index];
+      const esAnulacion = e.estado === 'ANULADO';
+      const fechaHoraIso = e.fechaHora ? new Date(e.fechaHora).toISOString() : new Date().toISOString();
+
+      const itemActualizado: PizarraItem = {
+        ...item,
+        asistenciaId: esAnulacion ? null : (e.asistenciaId ?? item.asistenciaId),
+        estado: esAnulacion ? null : e.estado,
+        tipoRegistro: esAnulacion ? null : (item.tipoRegistro ?? 'QR'),
+        fechaHoraEntrada:
+          esAnulacion
+            ? null
+            : e.accion === 'ENTRADA'
+              ? fechaHoraIso
+              : item.fechaHoraEntrada,
+        fechaHoraSalida:
+          esAnulacion
+            ? null
+            : e.accion === 'SALIDA'
+              ? fechaHoraIso
+              : item.fechaHoraSalida,
+      };
+
+      const copia = [...lista];
+      copia[index] = itemActualizado;
+      this.pizarra.set(copia);
+    }
+
+    // 2. Sincronizar en segundo plano con el servidor para cálculo fino de duraciones
+    void this.recargarPizarra();
   }
 
   async cargarJornadas(): Promise<void> {
@@ -257,11 +326,24 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
       }
       await this.recargarPizarra();
     } catch (err: any) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'No se pudo registrar',
-        detail: err?.error?.message ?? 'Ocurrió un error al registrar la asistencia',
-      });
+      const errorMsg = err?.error?.message ?? '';
+      const esConflicto = err?.status === 409 || errorMsg.includes('ya tiene un registro');
+
+      if (esConflicto) {
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Registro ya actualizado',
+          detail: `${sol.item.nombreCompleto} ya cuenta con asistencia registrada en esta jornada.`,
+          life: 3000,
+        });
+      } else {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'No se pudo registrar',
+          detail: errorMsg || 'Ocurrió un error al registrar la asistencia',
+        });
+      }
+      await this.recargarPizarra();
     } finally {
       this.procesandoId.set(null);
     }

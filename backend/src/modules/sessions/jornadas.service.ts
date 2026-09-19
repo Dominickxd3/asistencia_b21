@@ -17,6 +17,7 @@ import { CreateJornadaDto } from './dto/jornada.dto';
 import { PermissionCode } from '../../common/constants/permissions.constants';
 import { Programacion, ProgramacionDetalle } from './entities/programacion.entity';
 import { resolverReglaAsistencia } from '../../common/domain/attendance-rule';
+import { RealtimeService } from '../realtime/realtime.service';
 
 @Injectable()
 export class JornadasService implements OnModuleInit, OnModuleDestroy {
@@ -33,6 +34,7 @@ export class JornadasService implements OnModuleInit, OnModuleDestroy {
     private readonly groups: GroupsService,
     private readonly authz: AuthzService,
     private readonly auditoria: AuditoriaService,
+    private readonly realtime: RealtimeService,
   ) {}
 
   onModuleInit(): void {
@@ -156,6 +158,10 @@ export class JornadasService implements OnModuleInit, OnModuleDestroy {
       entidad: 'jornadas',
       entidadId: jornadaId,
       valorNuevo: { estado: 'ABIERTA' },
+    });
+    this.realtime.emitirJornada('jornada.abierta', {
+      jornadaId,
+      grupoId: jornada.grupoId,
     });
     return this.recargar(jornadaId);
   }
@@ -312,6 +318,13 @@ export class JornadasService implements OnModuleInit, OnModuleDestroy {
           entidadId: jornada.id,
           valorNuevo: { estado: 'ABIERTA', zonaHoraria: 'America/Lima' },
         });
+        const jInfo = await this.jornadaRepo.findOne({ where: { id: jornada.id } });
+        if (jInfo) {
+          this.realtime.emitirJornada('jornada.abierta', {
+            jornadaId: jornada.id,
+            grupoId: jInfo.grupoId,
+          });
+        }
       }
 
       const vencidas: Array<{ id: number; tipoJornada: string }> = await this.jornadaRepo.query(
@@ -371,6 +384,13 @@ export class JornadasService implements OnModuleInit, OnModuleDestroy {
       entidadId: jornadaId,
       valorNuevo: { estado: 'CERRADA', faltasAutomaticas: convertirFaltas, zonaHoraria: 'America/Lima' },
     });
+    const jInfo = await this.jornadaRepo.findOne({ where: { id: jornadaId } });
+    if (jInfo) {
+      this.realtime.emitirJornada('jornada.cerrada', {
+        jornadaId,
+        grupoId: jInfo.grupoId,
+      });
+    }
   }
 
   private ahoraLima(): { fecha: string; hora: string } {

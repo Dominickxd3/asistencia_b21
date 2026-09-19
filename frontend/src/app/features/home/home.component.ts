@@ -287,16 +287,22 @@ export class HomeComponent implements OnInit, OnDestroy {
     return `Estado de la formación para el ${this.formatearFechaLarga(d.fecha)}.`;
   });
 
+  private wsUnbinds: Array<() => void> = [];
+
   ngOnInit(): void {
     this.cargar();
     this.realtime.conectar();
-    this.realtime.on('dashboard.actualizar', () => this.programarRefresco());
-    this.realtime.on('asistencia.registrada', () => this.programarRefresco());
+    this.wsUnbinds.push(
+      this.realtime.on('dashboard.actualizar', () => this.programarRefresco()),
+      this.realtime.on('asistencia.registrada', () => this.programarRefresco()),
+      this.realtime.on('jornada.abierta', () => this.programarRefresco()),
+      this.realtime.on('jornada.cerrada', () => this.programarRefresco()),
+    );
   }
 
   ngOnDestroy(): void {
-    this.realtime.off('dashboard.actualizar');
-    this.realtime.off('asistencia.registrada');
+    this.wsUnbinds.forEach((u) => u());
+    this.wsUnbinds = [];
     if (this.refrescoPendiente) clearTimeout(this.refrescoPendiente);
   }
 

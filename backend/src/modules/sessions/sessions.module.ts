@@ -4,6 +4,7 @@ import { JornadasController } from './sessions.controller';
 import { JornadasService } from './jornadas.service';
 import { AuditModule } from '../audit/audit.module';
 import { GroupsModule } from '../groups/groups.module';
+import { RealtimeModule } from '../realtime/realtime.module';
 import { Jornada } from './entities/jornada.entity';
 import { Programacion, ProgramacionDetalle } from './entities/programacion.entity';
 
@@ -12,6 +13,7 @@ import { Programacion, ProgramacionDetalle } from './entities/programacion.entit
     TypeOrmModule.forFeature([Jornada, Programacion, ProgramacionDetalle]),
     GroupsModule,
     AuditModule,
+    RealtimeModule,
   ],
   controllers: [JornadasController],
   providers: [JornadasService],

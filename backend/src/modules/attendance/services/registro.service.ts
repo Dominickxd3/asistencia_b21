@@ -252,7 +252,7 @@ export class RegistroService extends AsistenciaBaseService {
   }
 
   async agregarObservacion(asistenciaId: number, observacion: string, usuarioId: number) {
-    await this.obtenerAsistencia(asistenciaId, usuarioId);
+    const asistencia = await this.obtenerAsistencia(asistenciaId, usuarioId);
     await this.asistenciaRepo.query(
       `UPDATE asistencias SET observacion = @1, fecha_actualizacion = GETDATE()
        WHERE asistencia_id = @0`,
@@ -265,6 +265,15 @@ export class RegistroService extends AsistenciaBaseService {
       entidad: 'asistencias',
       entidadId: asistenciaId,
       valorNuevo: { observacion },
+    });
+    this.realtime.emitirAsistenciaRegistrada({
+      jornadaId: Number(asistencia.jornadaId),
+      grupoId: asistencia.jornada.grupoId,
+      asistenciaId,
+      personaId: asistencia.personaId,
+      accion: 'ENTRADA',
+      estado: asistencia.estadoAsistencia,
+      fechaHora: new Date(),
     });
     return this.asistenciaRepo.findOne({ where: { id: asistenciaId } });
   }
@@ -663,5 +672,9 @@ export class RegistroService extends AsistenciaBaseService {
       [jornada.id, usuarioId],
     );
     jornada.estado = 'ABIERTA';
+    this.realtime.emitirJornada('jornada.abierta', {
+      jornadaId: Number(jornada.id),
+      grupoId: jornada.grupoId,
+    });
   }
 }
