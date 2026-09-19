@@ -65,6 +65,44 @@
   box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.1);
 }
 
+.filter-field-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.quick-presets {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.quick-preset-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: #667085;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.quick-preset-link:hover {
+  color: #c8102e;
+  text-decoration: underline;
+}
+
+.quick-preset-link.active {
+  color: #c8102e;
+  font-weight: 750;
+}
+
+.preset-sep {
+  color: #d0d5dd;
+  font-size: 10px;
+}
+
 /* Calendario PrimeNG Rango a 100% de Ancho */
 .calendar-picker-wrapper {
   display: flex;
@@ -89,6 +127,7 @@
   font-size: 13px;
   font-weight: 500;
   color: #181c23;
+  cursor: pointer;
   outline: none;
   transition: border-color 0.15s ease;
 }
@@ -98,7 +137,37 @@
   box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.1);
 }
 
-:host ::ng-deep .p-calendar .p-datepicker-trigger {
+:host ::ng-deep .p-calendar .p-datepicker-trigger,
+:host ::ng-deep .p-calendar .p-datepicker-icon,
+:host ::ng-deep .p-calendar i {
+  color: #c8102e !important;
+  cursor: pointer;
+}
+
+:host ::ng-deep .calendar-footer-presets {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-top: 1px solid #f2f4f7;
+  background: #fafbfc;
+}
+
+:host ::ng-deep .preset-pill {
+  border: 1px solid #d8dee7;
+  background: #ffffff;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 650;
+  color: #344054;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+:host ::ng-deep .preset-pill:hover {
+  background: #f8f9fa;
+  border-color: #c8102e;
   color: #c8102e;
 }
 

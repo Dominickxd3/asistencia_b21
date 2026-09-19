@@ -18,9 +18,31 @@
     </select>
   </div>
 
-  <!-- 2. Calendario de Rango de Fechas (Idéntico a Inicio) -->
+  <!-- 2. Calendario de Rango de Fechas -->
   <div class="filter-field filter-field--calendar">
-    <label>Rango de fechas</label>
+    <div class="filter-field-head">
+      <label>Rango de fechas</label>
+      <div class="quick-presets">
+        <button
+          type="button"
+          class="quick-preset-link"
+          [class.active]="esMesActual()"
+          (click)="seleccionarMesActual()"
+          title="Fijar al mes actual"
+        >
+          Mes actual
+        </button>
+        <span class="preset-sep">·</span>
+        <button
+          type="button"
+          class="quick-preset-link"
+          (click)="seleccionarUltimos30Dias()"
+          title="Fijar a los últimos 30 días"
+        >
+          30 días
+        </button>
+      </div>
+    </div>
     <div class="calendar-picker-wrapper">
       <p-calendar
         [(ngModel)]="rangeDates"
@@ -30,12 +52,22 @@
         [showIcon]="true"
         iconDisplay="input"
         icon="pi pi-calendar"
-        placeholder="Seleccionar rango de fechas"
+        placeholder="01/09/2026 - 30/09/2026"
         [style]="{ width: '100%' }"
         [inputStyle]="{ width: '100%' }"
+        [showOtherMonths]="true"
+        [selectOtherMonths]="true"
         (onSelect)="alSeleccionarFecha($event)"
         (onClose)="alCerrarCalendario()"
-      />
+      >
+        <ng-template pTemplate="footer">
+          <div class="calendar-footer-presets">
+            <button type="button" class="preset-pill" (click)="seleccionarMesActual()">Mes actual</button>
+            <button type="button" class="preset-pill" (click)="seleccionarUltimos30Dias()">Últimos 30 días</button>
+            <button type="button" class="preset-pill" (click)="seleccionarMesAnterior()">Mes anterior</button>
+          </div>
+        </ng-template>
+      </p-calendar>
     </div>
   </div>
 

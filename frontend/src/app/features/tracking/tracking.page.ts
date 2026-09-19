@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { SlicePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CalendarModule } from 'primeng/calendar';
+import { PrimeTemplate } from 'primeng/api';
 import { firstValueFrom } from 'rxjs';
 import { TuiIcon } from '@taiga-ui/core';
 import { environment } from '../../../environments/environment';
@@ -80,11 +81,12 @@ export interface ItemRanking {
 @Component({
   selector: 'app-tracking-page',
   standalone: true,
-  imports: [FormsModule, CalendarModule, PageHeaderComponent, TuiIcon, SlicePipe],
+  imports: [FormsModule, CalendarModule, PrimeTemplate, PageHeaderComponent, TuiIcon, SlicePipe],
   templateUrl: './tracking.page.html',
   styleUrl: './tracking.page.css',
 })
 export class TrackingPageComponent implements OnInit {
+  readonly hoyMaximo = new Date();
   private readonly http = inject(HttpClient);
 
   // 1. Estados de Filtros Principales (Nivel 1)
@@ -93,11 +95,26 @@ export class TrackingPageComponent implements OnInit {
   readonly filtroActivo = signal<FiltroDinamico>('todos');
   readonly busqueda = signal('');
 
-  // Rango de fechas con Calendario idéntico al de inicio
-  rangeDates: Date[] = [];
-  private inicioSeleccionIso: string | null = null;
-  desde = '';
-  hasta = '';
+  // Rango de fechas: inicializado por defecto en el Mes Actual completo (ej. 01/09/2026 - 30/09/2026)
+  private readonly hoyReferencia = new Date();
+  readonly desde = signal(
+    this.toIsoDate(new Date(this.hoyReferencia.getFullYear(), this.hoyReferencia.getMonth(), 1)),
+  );
+  readonly hasta = signal(
+    this.toIsoDate(new Date(this.hoyReferencia.getFullYear(), this.hoyReferencia.getMonth() + 1, 0)),
+  );
+
+  rangeDates: (Date | null)[] = [
+    new Date(this.hoyReferencia.getFullYear(), this.hoyReferencia.getMonth(), 1),
+    new Date(this.hoyReferencia.getFullYear(), this.hoyReferencia.getMonth() + 1, 0),
+  ];
+
+  readonly esMesActual = computed(() => {
+    const hoy = new Date();
+    const d1 = this.toIsoDate(new Date(hoy.getFullYear(), hoy.getMonth(), 1));
+    const d2 = this.toIsoDate(new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0));
+    return this.desde() === d1 && this.hasta() === d2;
+  });
 
   // 2. Estados del Bloque de Rankings (Nivel 2)
   readonly vistaActiva = signal<VistaRanking>('asistencia');
@@ -325,13 +342,6 @@ export class TrackingPageComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    const hoy = new Date();
-    const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-    const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
-    this.rangeDates = [primerDia, ultimoDia];
-    this.desde = this.toIsoDate(primerDia);
-    this.hasta = this.toIsoDate(ultimoDia);
-
     try {
       const grupos = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/groups`));
       this.grupos.set(grupos.map(x => ({ id: Number(x.id), nombre: x.nombre, etapa: x.etapa })));
@@ -370,53 +380,61 @@ export class TrackingPageComponent implements OnInit {
     }
   }
 
-  alSeleccionarFecha(fecha: Date): void {
-    const seleccionIso = this.toIsoDate(fecha);
-
-    if (this.inicioSeleccionIso === seleccionIso && !this.rangeDates?.[1]) {
-      this.rangeDates = [];
-      this.inicioSeleccionIso = null;
-      return;
-    }
-
-    if (!this.inicioSeleccionIso || !this.rangeDates?.[0]) {
-      this.rangeDates = [fecha];
-      this.inicioSeleccionIso = seleccionIso;
-      this.desde = seleccionIso;
-      this.hasta = seleccionIso;
-      void this.cargar();
-      void this.cargarComparativaGrupos();
-      return;
-    }
-
-    if (this.inicioSeleccionIso !== seleccionIso) {
-      const inicio = new Date(`${this.inicioSeleccionIso}T00:00:00`);
-      const d1 = inicio <= fecha ? inicio : fecha;
-      const d2 = inicio <= fecha ? fecha : inicio;
-      this.rangeDates = [d1, d2];
-      this.desde = this.toIsoDate(d1);
-      this.hasta = this.toIsoDate(d2);
-      this.inicioSeleccionIso = null;
-      void this.cargar();
-      void this.cargarComparativaGrupos();
+  alSeleccionarFecha(_fecha?: Date): void {
+    // Si PrimeNG ya completó la selección de inicio y fin en el rango
+    if (this.rangeDates && this.rangeDates[0] && this.rangeDates[1]) {
+      this.aplicarRango(this.rangeDates[0], this.rangeDates[1]);
     }
   }
 
   alCerrarCalendario(): void {
-    if (this.rangeDates && this.rangeDates[0]) {
-      const d1 = this.rangeDates[0];
-      const d2 = this.rangeDates[1] || d1;
-      this.desde = this.toIsoDate(d1);
-      this.hasta = this.toIsoDate(d2);
-      void this.cargar();
-      void this.cargarComparativaGrupos();
+    if (!this.rangeDates || this.rangeDates.length === 0 || !this.rangeDates[0]) {
+      this.seleccionarMesActual();
+      return;
     }
+
+    const d1 = this.rangeDates[0];
+    const d2 = this.rangeDates[1] || d1;
+    this.aplicarRango(d1, d2);
+  }
+
+  seleccionarMesActual(): void {
+    const hoy = new Date();
+    const d1 = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    const d2 = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+    this.aplicarRango(d1, d2);
+  }
+
+  seleccionarUltimos30Dias(): void {
+    const hoy = new Date();
+    const d1 = new Date();
+    d1.setDate(hoy.getDate() - 30);
+    this.aplicarRango(d1, hoy);
+  }
+
+  seleccionarMesAnterior(): void {
+    const hoy = new Date();
+    const d1 = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1);
+    const d2 = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+    this.aplicarRango(d1, d2);
+  }
+
+  private aplicarRango(d1: Date, d2: Date): void {
+    const inicio = d1 <= d2 ? d1 : d2;
+    const fin = d1 <= d2 ? d2 : d1;
+    this.rangeDates = [inicio, fin];
+    this.desde.set(this.toIsoDate(inicio));
+    this.hasta.set(this.toIsoDate(fin));
+    void this.cargar();
+    void this.cargarComparativaGrupos();
   }
 
   async cargar() {
     const grupoId = this.grupoId();
-    if (!grupoId || !this.desde || !this.hasta) return;
-    if (this.desde > this.hasta) {
+    const desde = this.desde();
+    const hasta = this.hasta();
+    if (!grupoId || !desde || !hasta) return;
+    if (desde > hasta) {
       this.error.set('La fecha inicial no puede ser posterior a la fecha final.');
       return;
     }
@@ -424,8 +442,8 @@ export class TrackingPageComponent implements OnInit {
     this.error.set('');
     const params = new HttpParams()
       .set('grupoId', grupoId)
-      .set('desde', this.desde)
-      .set('hasta', this.hasta)
+      .set('desde', desde)
+      .set('hasta', hasta)
       .set('orden', 'nombre');
     try {
       const r = await firstValueFrom(this.http.get<Respuesta>(`${environment.apiUrl}/tracking`, { params }));
@@ -442,12 +460,14 @@ export class TrackingPageComponent implements OnInit {
   }
 
   async cargarComparativaGrupos() {
-    if (!this.desde || !this.hasta || !this.grupos().length) return;
+    const desde = this.desde();
+    const hasta = this.hasta();
+    if (!desde || !hasta || !this.grupos().length) return;
     this.cargandoGrupos.set(true);
     try {
       const requests = this.grupos().map(g =>
         firstValueFrom(this.http.get<Respuesta>(`${environment.apiUrl}/tracking`, {
-          params: new HttpParams().set('grupoId', g.id).set('desde', this.desde).set('hasta', this.hasta).set('orden', 'nombre')
+          params: new HttpParams().set('grupoId', g.id).set('desde', desde).set('hasta', hasta).set('orden', 'nombre')
         }))
       );
       const results = await Promise.all(requests);
@@ -468,8 +488,8 @@ export class TrackingPageComponent implements OnInit {
     const params = new HttpParams()
       .set('grupoId', grupoId)
       .set('personaId', personaId)
-      .set('desde', this.desde)
-      .set('hasta', this.hasta);
+      .set('desde', this.desde())
+      .set('hasta', this.hasta());
     try {
       this.detalle.set(await firstValueFrom(this.http.get<Detalle>(`${environment.apiUrl}/tracking/detail`, { params })));
     } catch {
