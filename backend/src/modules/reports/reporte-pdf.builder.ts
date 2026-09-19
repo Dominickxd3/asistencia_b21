@@ -1,106 +1,119 @@
 import PDFDocument from 'pdfkit';
 
-/** Construye el PDF institucional en memoria. Diseño sobrio y compacto. */
+/** Constructor de informes institucionales, paginados y listos para presentación. */
 export class ReportePdfBuilder {
   private doc: PDFKit.PDFDocument;
   private chunks: Buffer[] = [];
+  private tituloDocumento = 'Reporte institucional';
 
   constructor() {
-    this.doc = new PDFDocument({ margin: 40, size: 'A4', info: { Title: 'Reporte Rímac 21' } });
+    this.doc = new PDFDocument({ margin: 40, size: 'A4', bufferPages: true, info: { Title: 'Reporte Rímac 21', Author: 'Área de Instrucción' } });
     this.doc.on('data', (c: Buffer) => this.chunks.push(c));
   }
 
   encabezado(titulo: string, subtitulo: string): this {
     const { doc } = this;
-    doc
-      .rect(0, 0, doc.page.width, 76)
-      .fill('#c8102e');
-    doc
-      .fill('#fff')
-      .fontSize(15)
-      .font('Helvetica-Bold')
-      .text('Compañía de Bomberos Voluntarios Rímac N.º 21', 40, 24)
-      .fontSize(10)
-      .font('Helvetica')
-      .text(`Área de Instrucción — ${titulo}`, 40, 46);
-    doc.fill('#24272c').moveDown(1.6);
-    doc
-      .fontSize(10)
-      .fillColor('#6b7280')
-      .text(subtitulo);
-    doc.moveDown(0.8).moveTo(40, doc.y).lineTo(555, doc.y).stroke('#e2e5ea').moveDown(0.8);
+    this.tituloDocumento = titulo;
+    doc.rect(0, 0, doc.page.width, 94).fill('#c8102e');
+    doc.fillColor('#fff').font('Helvetica-Bold').fontSize(16)
+      .text('COMPAÑÍA DE BOMBEROS VOLUNTARIOS RÍMAC N.º 21', 40, 22, { characterSpacing: .2 });
+    doc.font('Helvetica').fontSize(9).fillColor('#ffe7ec').text('ÁREA DE INSTRUCCIÓN', 40, 48, { characterSpacing: 1 });
+    doc.font('Helvetica-Bold').fontSize(12).fillColor('#fff').text(titulo, 40, 65);
+    doc.y = 112;
+    doc.roundedRect(40, 108, 515, 42, 5).fill('#f7f8fa');
+    doc.fillColor('#475467').font('Helvetica').fontSize(9).text(subtitulo, 52, 120, { width: 490, lineGap: 3 });
+    doc.y = 164;
     return this;
   }
 
-  seccion(titulo: string): this {
-    this.doc
-      .moveDown(0.6)
-      .fontSize(12)
-      .font('Helvetica-Bold')
-      .fillColor('#24272c')
-      .text(titulo)
-      .moveDown(0.35);
+  seccion(titulo: string, descripcion?: string): this {
+    this.asegurarEspacio(120);
+    this.doc.x = 40;
+    this.doc.font('Helvetica-Bold').fontSize(12).fillColor('#101828').text(titulo, 40, this.doc.y, { width: 515 });
+    if (descripcion) this.doc.moveDown(.2).font('Helvetica').fontSize(8.5).fillColor('#667085').text(descripcion, 40, this.doc.y, { width: 515 });
+    this.doc.moveDown(.55);
     return this;
   }
 
-  tabla(columnas: { nombre: string; ancho: number }[], filas: (string | number)[][]): this {
+  indicadores(items: Array<{ etiqueta: string; valor: string | number; detalle?: string; color?: string }>): this {
+    this.asegurarEspacio(76);
+    const { doc } = this;
+    const gap = 8;
+    const ancho = (515 - gap * (items.length - 1)) / items.length;
+    const y = doc.y;
+    items.forEach((item, i) => {
+      const x = 40 + i * (ancho + gap);
+      doc.roundedRect(x, y, ancho, 62, 5).fillAndStroke('#ffffff', '#e4e7ec');
+      doc.font('Helvetica').fontSize(7.5).fillColor('#667085').text(item.etiqueta.toUpperCase(), x + 10, y + 9, { width: ancho - 20 });
+      doc.font('Helvetica-Bold').fontSize(18).fillColor(item.color || '#101828').text(String(item.valor), x + 10, y + 24, { width: ancho - 20 });
+      if (item.detalle) doc.font('Helvetica').fontSize(7).fillColor('#98a2b3').text(item.detalle, x + 10, y + 47, { width: ancho - 20 });
+    });
+    doc.y = y + 72;
+    return this;
+  }
+
+  nota(texto: string): this {
+    this.asegurarEspacio(40);
+    const y = this.doc.y;
+    this.doc.roundedRect(40, y, 515, 32, 4).fill('#fff7e8');
+    this.doc.font('Helvetica').fontSize(8).fillColor('#7a4d00').text(texto, 50, y + 9, { width: 495 });
+    this.doc.y = y + 42;
+    return this;
+  }
+
+  tabla(columnas: { nombre: string; ancho: number; align?: 'left'|'center'|'right' }[], filas: (string | number)[][]): this {
     const { doc } = this;
     const inicioX = 40;
+    const total = columnas.reduce((s, c) => s + c.ancho, 0);
     let y = doc.y;
-
-    const dibujarFila = (celdas: (string | number)[], negrita: boolean) => {
-      const alto = 18;
+    const cabecera = () => {
+      doc.roundedRect(inicioX, y, total, 24, 3).fill('#17213c');
       let x = inicioX;
-      if (y > doc.page.height - 70) {
-        doc.addPage();
-        y = 60;
-      }
-      if (negrita) {
-        doc.rect(inicioX, y, columnas.reduce((s, c) => s + c.ancho, 0), alto).fill('#f1533');
-        doc.fillColor('#6b7280');
-      } else {
-        doc.fillColor('#24272c');
-      }
-      celdas.forEach((celda, i) => {
-        doc
-          .font(negrita ? 'Helvetica-Bold' : 'Helvetica')
-          .fontSize(9)
-          .text(String(celda), x + 4, y + 4, { width: columnas[i].ancho - 8, ellipsis: true });
+      columnas.forEach((c) => {
+        doc.font('Helvetica-Bold').fontSize(7.4).fillColor('#fff').text(c.nombre, x + 4, y + 8, { width: c.ancho - 8, align: c.align || 'left', ellipsis: true });
+        x += c.ancho;
+      });
+      y += 24;
+    };
+    cabecera();
+    filas.forEach((fila, indice) => {
+      if (y > doc.page.height - 72) { doc.addPage(); y = 52; cabecera(); }
+      const alto = 22;
+      if (indice % 2) doc.rect(inicioX, y, total, alto).fill('#f8f9fb');
+      let x = inicioX;
+      fila.forEach((celda, i) => {
+        doc.font('Helvetica').fontSize(7.7).fillColor('#1d2939').text(String(celda), x + 4, y + 7, { width: columnas[i].ancho - 8, align: columnas[i].align || 'left', ellipsis: true });
         x += columnas[i].ancho;
       });
-      doc
-        .strokeColor('#eceef2')
-        .lineWidth(0.5)
-        .moveTo(inicioX, y + alto)
-        .lineTo(inicioX + columnas.reduce((s, c) => s + c.ancho, 0), y + alto)
-        .stroke();
+      doc.moveTo(inicioX, y + alto).lineTo(inicioX + total, y + alto).lineWidth(.35).strokeColor('#e4e7ec').stroke();
       y += alto;
-    };
-
-    dibujarFila(columnas.map((c) => c.nombre), true);
-    for (const fila of filas) dibujarFila(fila, false);
-    doc.y = y + 8;
+    });
+    doc.y = y + 10;
     return this;
   }
 
   resumenPares(pares: [string, string | number][]): this {
-    const { doc } = this;
-    for (const [k, v] of pares) {
-      doc.font('Helvetica-Bold').fontSize(10).fillColor('#24272c').text(`${k}: `, { continued: true });
-      doc.font('Helvetica').fillColor('#24272c').text(String(v));
-    }
+    this.doc.x = 40;
+    pares.forEach(([k,v]) => {
+      this.doc.font('Helvetica-Bold').fontSize(9).fillColor('#344054').text(`${k}: `, 40, this.doc.y, { width: 515, continued:true });
+      this.doc.font('Helvetica').text(String(v));
+    });
+    this.doc.moveDown(.45);
     return this;
   }
 
   finalizar(): Promise<Buffer> {
     const { doc } = this;
-    doc
-      .fontSize(8)
-      .fillColor('#9aa0a8')
-      .text(`Generado: ${new Date().toLocaleString('es-PE')} · Sistema institucional Rímac 21`, 40, doc.page.height - 40);
-    return new Promise((resolve) => {
-      doc.on('end', () => resolve(Buffer.concat(this.chunks)));
-      doc.end();
-    });
+    const rango = doc.bufferedPageRange();
+    const generado = new Intl.DateTimeFormat('es-PE', { timeZone:'America/Lima', dateStyle:'medium', timeStyle:'short' }).format(new Date());
+    for (let i = rango.start; i < rango.start + rango.count; i++) {
+      doc.switchToPage(i);
+      doc.moveTo(40, doc.page.height - 42).lineTo(555, doc.page.height - 42).lineWidth(.5).strokeColor('#e4e7ec').stroke();
+      doc.font('Helvetica').fontSize(7).fillColor('#98a2b3').text(`Generado: ${generado} · Sistema institucional Rímac 21`, 40, doc.page.height - 31, { width: 390 });
+      doc.text(`Página ${i + 1} de ${rango.count}`, 455, doc.page.height - 31, { width: 100, align:'right' });
+    }
+    return new Promise((resolve) => { doc.on('end',()=>resolve(Buffer.concat(this.chunks))); doc.end(); });
   }
+
+  private asegurarEspacio(alto: number): void { if (this.doc.y + alto > this.doc.page.height - 58) { this.doc.addPage(); this.doc.y = 52; } }
 }

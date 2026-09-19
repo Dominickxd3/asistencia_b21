@@ -1,49 +1,50 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
+import { TuiNotificationService } from '@taiga-ui/core';
 import { environment } from '../../../environments/environment';
+import { AuthService } from '../../core/auth/auth.service';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 import { EmptyStateComponent } from '../../shared/components/empty-state.component';
+import { ModalComponent } from '../../shared/components/modal.component';
+
+interface HistorialRow { id:number; personaId:number; persona:string; etapa:string; etapaCodigo:string; grupo:string; fechaInicio:string; fechaFin:string|null; estado:string; observacion:string|null }
 
 @Component({
-  selector: 'app-historial-page',
-  imports: [PageHeaderComponent, EmptyStateComponent],
-  template: `
-    <app-page-header titulo="Historial de formación" subtitulo="Toda la trayectoria de etapas, nunca duplicada" />
-    <div class="r21-card">
-      <div class="r21-card-body p-0 table-responsive">
-        @if (filas().length === 0) {
-          <app-empty-state mensaje="Sin historial aún" icono="@tui.history" />
-        } @else {
-          <table class="table table-sm table-hover align-middle mb-0">
-            <thead class="table-light">
-              <tr><th>Persona</th><th>Etapa</th><th>Grupo</th><th>Desde</th><th>Hasta</th><th>Estado</th></tr>
-            </thead>
-            <tbody>
-              @for (h of filas(); track h.id) {
-                <tr>
-                  <td class="fw-semibold">{{ h.persona }}</td>
-                  <td>{{ h.etapa }}</td>
-                  <td>{{ h.grupo }}</td>
-                  <td>{{ h.fechaInicio }}</td>
-                  <td>{{ h.fechaFin ?? '—' }}</td>
-                  <td>
-                    <span class="r21-badge" [class.ok]="h.estado === 'ACTIVO'" [class.neutro]="h.estado !== 'ACTIVO'">{{ h.estado }}</span>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        }
-      </div>
-    </div>
+  selector:'app-historial-page',
+  imports:[FormsModule,PageHeaderComponent,EmptyStateComponent,ModalComponent],
+  template:`
+    <app-page-header titulo="Historial de formación" subtitulo="Trayectoria de etapas y grupos por persona" />
+    <section class="history-panel">
+      <header class="filters">
+        <label class="search"><span>Buscar</span><div><i class="pi pi-search"></i><input placeholder="Nombre de la persona" [(ngModel)]="busqueda" (ngModelChange)="pagina.set(1)"></div></label>
+        <label><span>Etapa</span><select [(ngModel)]="etapa" (ngModelChange)="pagina.set(1)"><option value="">Todas</option><option value="POSTULANTE">Postulante</option><option value="ASPIRANTE_COMPANIA">Aspirante de compañía</option><option value="ASPIRANTE_ESBAS">Aspirante ESBAS</option></select></label>
+        <label><span>Estado</span><select [(ngModel)]="estado" (ngModelChange)="pagina.set(1)"><option value="">Todos</option><option value="ACTIVO">Activo</option><option value="FINALIZADO">Finalizado</option><option value="RETIRADO">Retirado</option></select></label>
+      </header>
+      @if(cargando()){<div class="state">Cargando historial…</div>}@else if(paginadas().length===0){<app-empty-state mensaje="No hay registros para estos filtros" icono="@tui.history" />}@else{
+        <div class="history-grid grid-head"><span>Persona</span><span>Etapa</span><span>Grupo</span><span>Desde</span><span>Hasta</span><span>Estado</span><span></span></div>
+        @for(h of paginadas();track h.id){<div class="history-grid grid-row"><span class="person" data-label="Persona"><strong>{{h.persona}}</strong></span><span data-label="Etapa">{{h.etapa}}</span><span data-label="Grupo">{{h.grupo}}</span><span data-label="Desde" class="date">{{fecha(h.fechaInicio)}}</span><span data-label="Hasta" class="date">{{fecha(h.fechaFin)}}</span><span data-label="Estado"><b class="status" [class.active]="h.estado==='ACTIVO'">{{etiquetaEstado(h.estado)}}</b></span><span class="action"><button title="Ver detalle" aria-label="Ver detalle" (click)="detalle.set(h)"><i class="pi pi-eye"></i></button>@if(auth.tienePermiso('formation.promote')){<button title="Editar registro" aria-label="Editar registro" (click)="editar(h)"><i class="pi pi-pencil"></i></button>}</span></div>}
+        <footer class="pagination"><span>Mostrando {{desde()}}–{{hasta()}} de {{filtradas().length}}</span><div class="controls"><label>Mostrar<select [ngModel]="tamano()" (ngModelChange)="cambiarTamano($event)"><option [ngValue]="10">10</option><option [ngValue]="25">25</option><option [ngValue]="50">50</option><option [ngValue]="100">100</option></select></label><button (click)="irPagina(pagina()-1)" [disabled]="pagina()===1"><i class="pi pi-chevron-left"></i></button><strong>{{pagina()}} / {{totalPaginas()}}</strong><button (click)="irPagina(pagina()+1)" [disabled]="pagina()===totalPaginas()"><i class="pi pi-chevron-right"></i></button></div></footer>
+      }
+    </section>
+    <app-modal [titulo]="'Detalle de formación'" [visible]="!!detalle()" (cerrar)="detalle.set(null)">@if(detalle();as h){<div class="detail"><div><span>Persona</span><strong>{{h.persona}}</strong></div><div><span>Etapa</span><strong>{{h.etapa}}</strong></div><div><span>Grupo</span><strong>{{h.grupo}}</strong></div><div><span>Periodo</span><strong>{{fecha(h.fechaInicio)}} — {{fecha(h.fechaFin)}}</strong></div><div><span>Estado</span><strong>{{etiquetaEstado(h.estado)}}</strong></div><div class="full"><span>Observación</span><p>{{h.observacion||'Sin observaciones'}}</p></div></div>}</app-modal>
+    <app-modal [titulo]="'Editar registro de formación'" [visible]="!!editando()" (cerrar)="editando.set(null)">@if(editando();as h){<div class="edit-context"><strong>{{h.persona}}</strong><span>{{h.etapa}} · {{h.grupo}}</span></div><div class="edit-form"><label>Fecha inicial<input type="date" [(ngModel)]="form.fechaInicio"></label><label>Fecha final<input type="date" [(ngModel)]="form.fechaFin"></label><label class="full">Motivo de la edición *<textarea rows="4" maxlength="500" [(ngModel)]="form.observacion" placeholder="Indique por qué se corrige este registro"></textarea></label></div>}<div acciones class="modal-actions"><button class="secondary" (click)="editando.set(null)">Cancelar</button><button class="primary" [disabled]="!form.fechaInicio||!form.observacion.trim()" (click)="guardarEdicion()">Guardar corrección</button></div></app-modal>
   `,
+  styles:[`
+    :host{display:flex;flex-direction:column;gap:16px}.history-panel{overflow:hidden;border:1px solid var(--r21-border);border-radius:12px;background:#fff;box-shadow:var(--r21-shadow-sm)}.filters{display:grid;grid-template-columns:minmax(240px,1fr) 210px 170px;gap:10px;padding:14px 16px;border-bottom:1px solid var(--r21-border)}.filters label{display:flex;flex-direction:column;gap:5px;color:var(--r21-text-muted);font-size:9.5px;font-weight:750;text-transform:uppercase}.filters input,.filters select{width:100%;height:36px;padding:0 10px;border:1px solid var(--r21-border);border-radius:7px;background:#fff;color:var(--r21-text-primary);font-size:11px;text-transform:none}.search div{position:relative}.search i{position:absolute;top:11px;left:10px}.search input{padding-left:30px}.history-grid{display:grid;grid-template-columns:minmax(210px,1.25fr) minmax(170px,1fr) minmax(150px,1fr) 105px 105px 90px 74px;align-items:center;gap:14px;padding:11px 16px}.grid-head{background:#f7f8fa;color:var(--r21-text-muted);font-size:9.5px;font-weight:750;text-transform:uppercase}.grid-row{min-height:52px;border-top:1px solid var(--r21-border-subtle);font-size:11.5px}.grid-row:hover{background:#fafafa}.date{font-variant-numeric:tabular-nums}.status{display:inline-flex;padding:3px 7px;border-radius:99px;background:#f2f4f7;color:#475467;font-size:9px;text-transform:capitalize}.status.active{background:#e8f7ee;color:#087443}.action{display:flex;gap:5px}.action button{display:grid;width:30px;height:30px;place-items:center;border:1px solid var(--r21-border);border-radius:7px;background:#fff;color:#475467}.action button:hover{border-color:var(--r21-red);color:var(--r21-red)}.pagination{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:8px 16px;border-top:1px solid var(--r21-border);color:var(--r21-text-secondary);font-size:11px}.controls,.controls label{display:flex;align-items:center;gap:8px}.controls label{color:var(--r21-text-muted)}.controls select{width:62px;height:30px;padding:0 7px;border:1px solid var(--r21-border);border-radius:7px;background:#fff}.controls button{display:grid;width:30px;height:30px;place-items:center;border:1px solid var(--r21-border);border-radius:7px;background:#fff}.controls button:disabled{opacity:.4}.state{padding:40px;text-align:center;color:var(--r21-text-secondary)}.detail{display:grid;grid-template-columns:1fr 1fr;gap:16px}.detail div{display:flex;flex-direction:column;gap:4px}.detail span{color:var(--r21-text-muted);font-size:10px;text-transform:uppercase}.detail strong{font-size:12px}.detail .full{grid-column:1/-1}.detail p{margin:0;padding:10px;border-radius:7px;background:#f7f8fa;color:var(--r21-text-secondary);font-size:11.5px}.edit-context{display:flex;flex-direction:column;gap:3px;margin-bottom:16px;padding:10px 12px;border-radius:8px;background:#f7f8fa}.edit-context span{color:var(--r21-text-secondary);font-size:11px}.edit-form{display:grid;grid-template-columns:1fr 1fr;gap:12px}.edit-form label{display:flex;flex-direction:column;gap:5px;color:var(--r21-text-secondary);font-size:11px}.edit-form .full{grid-column:1/-1}.edit-form input,.edit-form textarea{padding:9px;border:1px solid var(--r21-border);border-radius:7px;background:#fff;font:inherit}.edit-form input{height:38px}.edit-form textarea{resize:vertical}.modal-actions{display:flex;gap:8px}.primary,.secondary{min-height:38px;padding:0 14px;border:1px solid var(--r21-red);border-radius:8px;font-weight:700}.primary{background:var(--r21-red);color:#fff}.secondary{border-color:var(--r21-border);background:#fff}.primary:disabled{opacity:.5}
+    @media(max-width:850px){.filters{grid-template-columns:1fr 1fr}.search{grid-column:1/-1}.grid-head{display:none}.history-grid{grid-template-columns:1fr 1fr}.grid-row>span::before{content:attr(data-label);display:block;margin-bottom:3px;color:var(--r21-text-muted);font-size:8.5px;font-weight:700;text-transform:uppercase}.person,.action{grid-column:1/-1}.action{display:flex}}@media(max-width:520px){.filters,.history-grid,.detail{grid-template-columns:1fr}.filters label,.search,.grid-row>span,.person,.action,.detail .full{grid-column:1}.pagination>span{display:none}.pagination{justify-content:flex-end}}
+  `]
 })
-export class HistorialPageComponent implements OnInit {
-  private readonly http = inject(HttpClient);
-  readonly filas = signal<any[]>([]);
-
-  async ngOnInit(): Promise<void> {
-    this.filas.set(await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/formation/historial`)));
-  }
+export class HistorialPageComponent implements OnInit{
+  private readonly http=inject(HttpClient);private readonly notifications=inject(TuiNotificationService);protected readonly auth=inject(AuthService);readonly filas=signal<HistorialRow[]>([]);readonly cargando=signal(true);readonly detalle=signal<HistorialRow|null>(null);readonly editando=signal<HistorialRow|null>(null);readonly pagina=signal(1);readonly tamano=signal(25);busqueda='';etapa='';estado='';form={fechaInicio:'',fechaFin:'',observacion:''};
+  readonly filtradas=computed(()=>{const q=this.busqueda.trim().toLocaleLowerCase('es');return this.filas().filter(h=>(!q||h.persona.toLocaleLowerCase('es').includes(q))&&(!this.etapa||h.etapaCodigo===this.etapa)&&(!this.estado||h.estado===this.estado))});
+  readonly totalPaginas=computed(()=>Math.max(1,Math.ceil(this.filtradas().length/this.tamano())));readonly paginadas=computed(()=>this.filtradas().slice((this.pagina()-1)*this.tamano(),this.pagina()*this.tamano()));readonly desde=computed(()=>this.filtradas().length?(this.pagina()-1)*this.tamano()+1:0);readonly hasta=computed(()=>Math.min(this.pagina()*this.tamano(),this.filtradas().length));
+  async ngOnInit(){await this.cargar()}
+  async cargar(){this.cargando.set(true);try{this.filas.set(await firstValueFrom(this.http.get<HistorialRow[]>(`${environment.apiUrl}/formation/historial`)))}finally{this.cargando.set(false)}}
+  editar(h:HistorialRow){this.editando.set(h);this.form={fechaInicio:String(h.fechaInicio).slice(0,10),fechaFin:h.fechaFin?String(h.fechaFin).slice(0,10):'',observacion:h.observacion??''}}
+  async guardarEdicion(){const h=this.editando();if(!h||!this.form.observacion.trim())return;try{await firstValueFrom(this.http.patch(`${environment.apiUrl}/formation/historial/${h.id}`,{fechaInicio:this.form.fechaInicio,fechaFin:this.form.fechaFin||null,observacion:this.form.observacion.trim()}));this.notifications.open('El registro fue corregido y auditado',{label:'Historial actualizado',appearance:'positive',autoClose:4000}).subscribe();this.editando.set(null);await this.cargar()}catch(e:any){this.notifications.open(e?.error?.message??'No se pudo editar el registro',{label:'Error al actualizar',appearance:'negative',autoClose:5000}).subscribe()}}
+  cambiarTamano(v:number|string){this.tamano.set(Number(v));this.pagina.set(1)}irPagina(v:number){if(v>=1&&v<=this.totalPaginas())this.pagina.set(v)}
+  fecha(valor:string|null){if(!valor)return'—';const [a,m,d]=String(valor).slice(0,10).split('-');return a&&m&&d?`${d}/${m}/${a}`:'—'}
+  etiquetaEstado(v:string){return v.charAt(0)+v.slice(1).toLowerCase()}
 }

@@ -1,114 +1,12 @@
-<app-page-header titulo="Personas" subtitulo="Una sola persona, todo su historial de etapas" />
-
-@if (ok(); as msg) {
-  <div class="alert alert-success py-2 small">{{ msg }}</div>
-}
-@if (error(); as msg) {
-  <div class="alert alert-danger py-2 small">{{ msg }}</div>
-}
-
-@if (auth.tienePermiso('formation.manage_people')) {
-  <div class="r21-card">
-    <div class="r21-card-header"><h2>Registrar persona</h2></div>
-    <div class="r21-card-body">
-      <div class="row g-2">
-        <div class="col-12 col-md-2">
-          <input class="form-control form-control-sm" placeholder="DNI" [(ngModel)]="form.dni" maxlength="8" />
-        </div>
-        <div class="col-12 col-md-3">
-          <input class="form-control form-control-sm" placeholder="Nombres" [(ngModel)]="form.nombres" />
-        </div>
-        <div class="col-6 col-md-3">
-          <input class="form-control form-control-sm" placeholder="Apellido paterno" [(ngModel)]="form.apellidoPaterno" />
-        </div>
-        <div class="col-6 col-md-3">
-          <input class="form-control form-control-sm" placeholder="Apellido materno" [(ngModel)]="form.apellidoMaterno" />
-        </div>
-        <div class="col-12 col-md-1 d-grid">
-          <button class="btn btn-sm btn-r21" (click)="crear()" [disabled]="!form.nombres || !form.apellidoPaterno">
-            Registrar
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-}
-
-<div class="r21-card">
-  <div class="r21-card-header">
-    <h2>Personas registradas</h2>
-    <input
-      class="form-control form-control-sm w-auto"
-      placeholder="Buscar…"
-      [ngModel]="busqueda()"
-      (ngModelChange)="busqueda.set($event); cargar()"
-    />
-  </div>
-  <div class="r21-card-body p-0 table-responsive">
-    @if (cargando()) {
-      <div class="p-4 text-center text-muted">Cargando…</div>
-    } @else if (personas().length === 0) {
-      <app-empty-state mensaje="Sin resultados" icono="@tui.user-x" />
-    } @else {
-      <table class="table table-sm table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr><th>DNI</th><th>Persona</th><th class="text-center">Estado</th><th></th></tr>
-        </thead>
-        <tbody>
-          @for (p of personas(); track p.id) {
-            <tr>
-              <td class="text-muted">{{ p.dni ?? '—' }}</td>
-              <td>
-                <span class="fw-semibold">{{ p.apellidoPaterno }} {{ p.apellidoMaterno }}</span>
-                {{ p.nombres }}
-              </td>
-              <td class="text-center">
-                <span class="r21-badge" [class.ok]="p.estado === 'ACTIVO'" [class.neutro]="p.estado !== 'ACTIVO'">
-                  {{ p.estado }}
-                </span>
-              </td>
-              <td class="text-end">
-                <button class="btn btn-sm btn-r21-outline me-1" (click)="verHistorial(p)">Historial</button>
-                @if (auth.tienePermiso('formation.promote')) {
-                  <button class="btn btn-sm btn-r21-outline" (click)="promoviendo.set(p)">Promover</button>
-                }
-              </td>
-            </tr>
-          }
-        </tbody>
-      </table>
-    }
-  </div>
-</div>
-
-<app-modal [titulo]="'Historial de ' + (historialDe()?.apellidoPaterno ?? '')" [visible]="!!historialDe()" (cerrar)="historialDe.set(null)">
-  @if (historial().length === 0) {
-    <div class="text-muted small">Sin historial de etapas</div>
-  }
-  <table class="table table-sm mb-0">
-    <thead><tr><th>Etapa</th><th>Grupo</th><th>Desde</th><th>Hasta</th><th>Estado</th></tr></thead>
-    <tbody>
-      @for (h of historial(); track h.id) {
-        <tr>
-          <td>{{ h.etapaNombre }}</td>
-          <td>{{ h.grupo }}</td>
-          <td>{{ h.fechaInicio }}</td>
-          <td>{{ h.fechaFin ?? '—' }}</td>
-          <td><span class="r21-badge" [class.ok]="h.estado === 'ACTIVO'" [class.neutro]="h.estado !== 'ACTIVO'">{{ h.estado }}</span></td>
-        </tr>
-      }
-    </tbody>
-  </table>
-</app-modal>
-
-<app-modal [titulo]="'Promover a ' + (promoviendo()?.apellidoPaterno ?? '')" [visible]="!!promoviendo()" (cerrar)="promoviendo.set(null)">
-  <p class="small text-muted">Selecciona la etapa destino. La persona no se duplica: se cierra su etapa activa y se abre la nueva con historial.</p>
-  <div class="d-flex flex-column gap-2">
-    <button class="btn btn-sm btn-r21-outline text-start" (click)="promover('ASPIRANTE_COMPANIA')">
-      → Aspirante de compañía
-    </button>
-    <button class="btn btn-sm btn-r21-outline text-start" (click)="promover('ASPIRANTE_ESBAS')">
-      → Aspirante en formación ESBAS
-    </button>
-  </div>
-</app-modal>
+<app-page-header titulo="Personas" subtitulo="Gestión de integrantes y etapas">@if(auth.tienePermiso('formation.manage_people')){<button class="primary-action" (click)="nueva()"><i class="pi pi-plus"></i>Nueva persona</button>}</app-page-header>
+@if(ok();as msg){<div class="feedback success">{{msg}}</div>} @if(error();as msg){<div class="feedback error">{{msg}}</div>}
+<section class="people-panel">
+  <header class="people-toolbar"><div class="toolbar-filters"><label>Grupo de formación<select [ngModel]="etapa()" (ngModelChange)="etapa.set($event);aplicarFiltros()"><option value="">Todos</option><option value="POSTULANTE">Postulantes</option><option value="ASPIRANTE_COMPANIA">Aspirantes de compañía</option><option value="ASPIRANTE_ESBAS">Aspirantes ESBAS</option></select></label></div><div class="people-search"><i class="pi pi-search"></i><input placeholder="Buscar por DNI o nombre" [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)" (keyup.enter)="aplicarFiltros()"><button type="button" (click)="aplicarFiltros()">Buscar</button></div></header>
+  @if(cargando()){<div class="panel-state">Cargando personas…</div>}@else if(personas().length===0){<app-empty-state mensaje="No hay personas para este filtro" icono="@tui.user-x"/>}@else{
+    <div class="people-grid"><div class="grid-head"><span>DNI</span><span>Persona</span><span>Formación actual</span><span>Estado</span><span>Acciones</span></div>
+    @for(p of personas();track p.id){<div class="grid-row"><span class="dni" data-label="DNI">{{p.dni??'—'}}</span><span class="person-cell" data-label="Persona"><span class="avatar">{{p.apellidoPaterno[0]}}{{p.nombres[0]}}</span><strong>{{nombre(p)}}</strong></span><span class="formation-cell" data-label="Formación"><span class="stage-badge">{{etiquetaEtapa(p.etapaCodigo)}}</span><small>{{p.grupo??''}}</small></span><span data-label="Estado"><span class="status-badge">{{p.estado}}</span></span><span class="row-actions" data-label="Acciones">@if(auth.tienePermiso('formation.manage_people')){<button type="button" title="Editar persona" (click)="editar(p)"><i class="pi pi-pencil"></i><span>Editar</span></button>}<button type="button" title="Ver historial" (click)="verHistorial(p)"><i class="pi pi-history"></i><span>Historial</span></button>@if(auth.tienePermiso('formation.promote')){<button type="button" title="Promover persona" (click)="promoviendo.set(p)"><i class="pi pi-arrow-up-right"></i><span>Promover</span></button>}</span></div>}
+    </div><footer class="pagination"><span>Mostrando {{desde()}}–{{hasta()}} de {{total()}}</span><div class="pagination-controls"><label class="pagination-size">Mostrar <select aria-label="Cantidad de registros por página" [ngModel]="tamano()" (ngModelChange)="cambiarTamano($event)"><option [ngValue]="10">10</option><option [ngValue]="25">25</option><option [ngValue]="50">50</option><option [ngValue]="100">100</option></select></label><div class="pagination-pages"><button (click)="irPagina(pagina()-1)" [disabled]="pagina()===1" aria-label="Página anterior"><i class="pi pi-chevron-left"></i></button><strong>{{pagina()}} / {{totalPaginas()}}</strong><button (click)="irPagina(pagina()+1)" [disabled]="pagina()===totalPaginas()" aria-label="Página siguiente"><i class="pi pi-chevron-right"></i></button></div></div></footer>}
+</section>
+<app-modal [titulo]="editando()?'Editar persona':'Nueva persona'" [visible]="modalPersona()" (cerrar)="modalPersona.set(false)"><div class="person-form"><label>DNI<input [(ngModel)]="form.dni" maxlength="8" [disabled]="!!editando()"></label><label>Nombres *<input [(ngModel)]="form.nombres"></label><label>Apellido paterno *<input [(ngModel)]="form.apellidoPaterno"></label><label>Apellido materno<input [(ngModel)]="form.apellidoMaterno"></label><label>Teléfono<input [(ngModel)]="form.telefono"></label><label>Correo<input type="email" [(ngModel)]="form.correo"></label></div><div acciones class="modal-actions"><button class="secondary-action" (click)="modalPersona.set(false)">Cancelar</button><button class="primary-action" (click)="guardar()" [disabled]="!form.nombres||!form.apellidoPaterno">Guardar</button></div></app-modal>
+<app-modal [titulo]="'Historial de '+(historialDe()?nombre(historialDe()!):'')" [visible]="!!historialDe()" (cerrar)="historialDe.set(null)">@if(historial().length===0){<div class="panel-state">Sin historial de etapas</div>}@for(h of historial();track h.id){<div class="history-row"><strong>{{h.etapaNombre}}</strong><span>{{h.grupo}}</span><small>{{h.fechaInicio}} — {{h.fechaFin??'Actualidad'}}</small></div>}</app-modal>
+<app-modal [titulo]="'Promover o corregir a '+(promoviendo()?nombre(promoviendo()!):'')" [visible]="!!promoviendo()" (cerrar)="promoviendo.set(null);motivoCorreccion.set('')"><div class="promotion-options"><span class="section-label">Promover a una etapa siguiente</span><button type="button" (click)="promover('ASPIRANTE_COMPANIA')">Aspirantes de compañía<i class="pi pi-arrow-right"></i></button><button type="button" (click)="promover('ASPIRANTE_ESBAS')">Aspirantes ESBAS<i class="pi pi-arrow-right"></i></button><div class="correction-box"><strong>¿Te equivocaste al promover?</strong><p>Restaura la etapa y el grupo anteriores sin eliminar el historial.</p><textarea rows="3" placeholder="Motivo obligatorio de la corrección" [ngModel]="motivoCorreccion()" (ngModelChange)="motivoCorreccion.set($event)"></textarea><button type="button" class="correction-button" [disabled]="!motivoCorreccion().trim()" (click)="corregirPromocion()"><i class="pi pi-undo"></i> Corregir última promoción</button></div></div></app-modal>

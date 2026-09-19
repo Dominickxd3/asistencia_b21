@@ -38,6 +38,7 @@ import { TodaySessionsComponent } from './today-sessions.component';
           [(ngModel)]="rangeDates" 
           selectionMode="range" 
           [readonlyInput]="true"
+          [maxDate]="hoyMaximo"
           dateFormat="dd/mm/yy"
           [showIcon]="true"
           iconDisplay="input"
@@ -252,6 +253,7 @@ import { TodaySessionsComponent } from './today-sessions.component';
   `]
 })
 export class HomeComponent implements OnInit, OnDestroy {
+  readonly hoyMaximo = new Date();
   private readonly http = inject(HttpClient);
   private readonly auth = inject(AuthService);
   protected readonly realtime = inject(RealtimeService);

@@ -10,7 +10,7 @@ import { GrupoFormacion } from './entities/grupo-formacion.entity';
 import { GrupoEncargado } from './entities/grupo-encargado.entity';
 import { GrupoIntegrante } from './entities/grupo-integrante.entity';
 import { GrupoEtapaView } from './views/grupo.view';
-import { CreateGroupDto, AssignManagerDto } from './dto/group.dto';
+import { CreateGroupDto, AssignManagerDto, UpdateGroupDto } from './dto/group.dto';
 import { AuditoriaService } from '../audit/auditoria.service';
 
 @Injectable()
@@ -54,6 +54,10 @@ export class GroupsService {
     return resultado;
   }
 
+  listarEtapas() {
+    return this.ds.query(`SELECT etapa_id AS id, codigo, nombre FROM etapas_formacion WHERE estado = 'ACTIVO' ORDER BY orden`);
+  }
+
   async crear(dto: CreateGroupDto, usuarioId: number): Promise<GrupoFormacion> {
     const existente = await this.grupoRepo.findOne({ where: { codigo: dto.codigo } });
     if (existente) {
@@ -76,6 +80,29 @@ export class GroupsService {
       valorNuevo: dto,
     });
     return grupo;
+  }
+
+  async actualizar(id: number, dto: UpdateGroupDto, usuarioId: number): Promise<GrupoFormacion> {
+    const grupo = await this.grupoRepo.findOne({ where: { id } });
+    if (!grupo) throw new NotFoundException('Grupo no encontrado');
+    if (grupo.estado !== 'ACTIVO') throw new ConflictException('Solo se puede editar un grupo activo');
+    const anterior = { nombre: grupo.nombre, periodo: grupo.periodo, fechaInicio: grupo.fechaInicio, fechaFin: grupo.fechaFin };
+    Object.assign(grupo, dto);
+    const guardado = await this.grupoRepo.save(grupo);
+    await this.auditoria.registrar({ usuarioId, accion: 'GROUP_UPDATED', modulo: 'groups', entidad: 'grupos_formacion', entidadId: id, valorAnterior: anterior, valorNuevo: dto });
+    return guardado;
+  }
+
+  async cerrar(id: number, usuarioId: number): Promise<void> {
+    const grupo = await this.grupoRepo.findOne({ where: { id } });
+    if (!grupo) throw new NotFoundException('Grupo no encontrado');
+    if (grupo.estado !== 'ACTIVO') throw new ConflictException('El grupo ya se encuentra cerrado');
+    const activos = await this.integranteRepo.count({ where: { grupoId: id, estado: 'ACTIVO' } });
+    if (activos > 0) throw new ConflictException('Retire o reasigne a los integrantes antes de cerrar el grupo');
+    grupo.estado = 'CERRADO';
+    grupo.fechaFin = grupo.fechaFin ?? new Date().toISOString().slice(0, 10);
+    await this.grupoRepo.save(grupo);
+    await this.auditoria.registrar({ usuarioId, accion: 'GROUP_CLOSED', modulo: 'groups', entidad: 'grupos_formacion', entidadId: id, valorAnterior: { estado: 'ACTIVO' }, valorNuevo: { estado: 'CERRADO', fechaFin: grupo.fechaFin } });
   }
 
   /** Asigna encargado: finaliza la asignacion vigente y crea la nueva. */
@@ -125,6 +152,14 @@ export class GroupsService {
       where: { grupoId, personaId, estado: 'ACTIVO' },
     });
     if (duplicado) throw new ConflictException('La persona ya es integrante activo del grupo');
+    const [etapa] = await this.ds.query(
+      `SELECT pe.persona_etapa_id AS id, pe.etapa_id AS etapaId, pe.grupo_id AS grupoId
+       FROM persona_etapas pe WHERE pe.persona_id = @0 AND pe.estado = 'ACTIVO'`,
+      [personaId],
+    );
+    if (!etapa) throw new ConflictException('La persona no tiene una etapa de formación activa');
+    if (Number(etapa.etapaId) !== grupo.etapaId) throw new ConflictException('La etapa de la persona no corresponde a la etapa del grupo');
+    if (etapa.grupoId && Number(etapa.grupoId) !== grupoId) throw new ConflictException('La persona ya pertenece a otro grupo activo; retírela primero');
     await this.integranteRepo.save(
       this.integranteRepo.create({
         grupoId,
@@ -134,6 +169,7 @@ export class GroupsService {
         creadoPorUsuarioId: usuarioId,
       }),
     );
+    await this.ds.query(`UPDATE persona_etapas SET grupo_id = @1 WHERE persona_etapa_id = @0`, [etapa.id, grupoId]);
     await this.auditoria.registrar({
       usuarioId,
       accion: 'MEMBER_ADDED',
@@ -141,6 +177,18 @@ export class GroupsService {
       entidad: 'grupo_integrantes',
       entidadId: `${grupoId}/${personaId}`,
     });
+  }
+
+  async retirarIntegrante(grupoId: number, personaId: number, motivo: string | undefined, usuarioId: number): Promise<void> {
+    const miembro = await this.integranteRepo.findOne({ where: { grupoId, personaId, estado: 'ACTIVO' } });
+    if (!miembro) throw new NotFoundException('La persona no es integrante activo de este grupo');
+    const hoy = new Date().toISOString().slice(0, 10);
+    miembro.estado = 'RETIRADO';
+    miembro.fechaFin = hoy;
+    miembro.motivoSalida = motivo?.trim() || 'Retiro del grupo';
+    await this.integranteRepo.save(miembro);
+    await this.ds.query(`UPDATE persona_etapas SET grupo_id = NULL WHERE persona_id = @0 AND grupo_id = @1 AND estado = 'ACTIVO'`, [personaId, grupoId]);
+    await this.auditoria.registrar({ usuarioId, accion: 'MEMBER_REMOVED', modulo: 'groups', entidad: 'grupo_integrantes', entidadId: miembro.id, valorAnterior: { grupoId, personaId, estado: 'ACTIVO' }, valorNuevo: { estado: 'RETIRADO', motivo: miembro.motivoSalida } });
   }
 
   /** El encargado operativo solo puede operar sobre SU grupo activo */
@@ -182,6 +230,24 @@ export class GroupsService {
       fechaIngreso: r.fechaInicio,
       estado: r.estado,
     }));
+  }
+
+  async candidatos(grupoId: number) {
+    const grupo = await this.grupoRepo.findOne({ where: { id: grupoId } });
+    if (!grupo) throw new NotFoundException('Grupo no encontrado');
+    return this.ds.query(
+      `SELECT p.persona_id AS id, p.dni, p.nombres,
+              p.apellido_paterno AS apellidoPaterno, p.apellido_materno AS apellidoMaterno
+       FROM personas p
+       JOIN persona_etapas pe ON pe.persona_id = p.persona_id AND pe.estado = 'ACTIVO'
+       WHERE p.estado = 'ACTIVO' AND pe.etapa_id = @0 AND pe.grupo_id IS NULL
+         AND NOT EXISTS (
+           SELECT 1 FROM grupo_integrantes gi
+           WHERE gi.persona_id = p.persona_id AND gi.estado = 'ACTIVO'
+         )
+       ORDER BY p.apellido_paterno, p.apellido_materno, p.nombres`,
+      [grupo.etapaId],
+    );
   }
 
   private toView(g: GrupoFormacion, totalIntegrantes: number): GrupoEtapaView {

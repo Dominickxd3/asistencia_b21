@@ -27,8 +27,10 @@ export class PersonsController {
   listar(
     @Query('q') q?: string,
     @Query('pagina', new DefaultValuePipe(1), ParseIntPipe) pagina?: number,
+    @Query('tamano', new DefaultValuePipe(25), ParseIntPipe) tamano?: number,
+    @Query('etapa') etapa?: string,
   ) {
-    return this.persons.listar(q, pagina);
+    return this.persons.listar(q, pagina, tamano, etapa);
   }
 
   @Get(':id')

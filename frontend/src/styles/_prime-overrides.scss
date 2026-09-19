@@ -311,6 +311,26 @@
           color: #FFFFFF !important;
           font-weight: 700;
         }
+
+        /* Fechas posteriores al límite permitido: visibles, pero inactivas. */
+        &.p-disabled {
+          color: #98A2B3 !important;
+          background: #F2F4F7 !important;
+          font-weight: 500;
+          opacity: .65;
+          cursor: not-allowed;
+          pointer-events: none;
+          text-decoration: none;
+        }
+      }
+
+      &.p-disabled > span,
+      &[aria-disabled='true'] > span {
+        color: #98A2B3 !important;
+        background: #F2F4F7 !important;
+        opacity: .65;
+        cursor: not-allowed;
+        pointer-events: none;
       }
 
       &.p-datepicker-today > span {
@@ -325,6 +345,14 @@
         }
       }
     }
+  }
+
+  .p-datepicker-next.p-disabled,
+  .p-datepicker-prev.p-disabled {
+    color: #B8C0CC !important;
+    background: #F2F4F7 !important;
+    opacity: .55;
+    cursor: not-allowed;
   }
 
   .p-datepicker-buttonbar {

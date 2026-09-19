@@ -21,10 +21,12 @@ export class ReportsDataService {
       `SELECT
          g.nombre AS grupo, e.nombre AS etapa,
          p.apellido_paterno + ' ' + ISNULL(p.apellido_materno + ' ', '') + p.nombres AS persona,
-         SUM(CASE WHEN a.estado_asistencia IN ('PRESENTE','FINALIZADO','SALIDA_ANTICIPADA') THEN 1 ELSE 0 END) AS asistencias,
-         SUM(CASE WHEN a.estado_asistencia = 'FALTA_JUSTIFICADA' THEN 1 ELSE 0 END) AS faltasJustificadas,
-         SUM(CASE WHEN a.estado_asistencia = 'FALTA_INJUSTIFICADA' THEN 1 ELSE 0 END) AS faltasInjustificadas,
-         SUM(CASE WHEN a.estado_asistencia = 'SALIDA_ANTICIPADA' THEN 1 ELSE 0 END) AS salidasAnticipadas,
+         SUM(CASE WHEN j.tipo_jornada = 'OBLIGATORIA' THEN 1 ELSE 0 END) AS jornadasObligatorias,
+         SUM(CASE WHEN j.tipo_jornada = 'OBLIGATORIA' AND a.estado_asistencia IN ('PRESENTE','FINALIZADO','SALIDA_ANTICIPADA') THEN 1 ELSE 0 END) AS asistencias,
+         SUM(CASE WHEN j.tipo_jornada = 'OBLIGATORIA' AND a.estado_asistencia = 'FALTA_JUSTIFICADA' THEN 1 ELSE 0 END) AS faltasJustificadas,
+         SUM(CASE WHEN j.tipo_jornada = 'OBLIGATORIA' AND a.estado_asistencia = 'FALTA_INJUSTIFICADA' THEN 1 ELSE 0 END) AS faltasInjustificadas,
+         SUM(CASE WHEN j.tipo_jornada = 'OBLIGATORIA' AND a.estado_asistencia = 'SALIDA_ANTICIPADA' THEN 1 ELSE 0 END) AS salidasAnticipadas,
+         SUM(CASE WHEN j.tipo_jornada = 'VOLUNTARIA' AND a.estado_asistencia IN ('PRESENTE','FINALIZADO','SALIDA_ANTICIPADA') THEN 1 ELSE 0 END) AS participacionesVoluntarias,
          ISNULL(SUM(CASE WHEN a.fecha_hora_entrada IS NOT NULL AND a.fecha_hora_salida IS NOT NULL
                          THEN DATEDIFF(minute, a.fecha_hora_entrada, a.fecha_hora_salida)/60.0 END),0) AS horas
        FROM grupos_formacion g

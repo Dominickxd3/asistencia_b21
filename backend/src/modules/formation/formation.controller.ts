@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FormationService } from './formation.service';
-import { PromoverDto } from './dto/formacion.dto';
+import { ActualizarHistorialDto, CorregirPromocionDto, PromoverDto } from './dto/formacion.dto';
 import { RequirePermissions } from '../auth/decorators/auth.decorators';
 import { PermissionCode } from '../../common/constants/permissions.constants';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
@@ -18,6 +18,12 @@ export class FormationController {
     return this.formation.promover(dto, user.id);
   }
 
+  @Post('promotion/correct')
+  @RequirePermissions(PermissionCode.FORMATION_PROMOTE)
+  corregirPromocion(@Body() dto: CorregirPromocionDto, @CurrentUser() user: CurrentUserData) {
+    return this.formation.corregirUltimaPromocion(dto, user.id);
+  }
+
   @Get('personas/:id/historial')
   @RequirePermissions(PermissionCode.FORMATION_VIEW)
   historial(@Param('id', ParseIntPipe) id: number) {
@@ -28,5 +34,11 @@ export class FormationController {
   @RequirePermissions(PermissionCode.FORMATION_VIEW)
   historialGeneral() {
     return this.formation.historialGeneral();
+  }
+
+  @Patch('historial/:id')
+  @RequirePermissions(PermissionCode.FORMATION_PROMOTE)
+  actualizarHistorial(@Param('id', ParseIntPipe) id: number, @Body() dto: ActualizarHistorialDto, @CurrentUser() user: CurrentUserData) {
+    return this.formation.actualizarHistorial(id, dto, user.id);
   }
 }

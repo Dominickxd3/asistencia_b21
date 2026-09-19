@@ -1,98 +1,256 @@
-<app-page-header titulo="Reportes" subtitulo="PDF generado en el servidor con datos de SQL Server" />
+<app-page-header titulo="Reportes" subtitulo="Información consolidada para toma de decisiones" />
 
-<div class="row g-3">
-  <div class="col-12 col-lg-5">
-    <div class="r21-card">
-      <div class="r21-card-header"><h2>Parámetros</h2></div>
-      <div class="r21-card-body">
-        <label class="form-label small fw-semibold">Tipo de reporte</label>
-        <select class="form-select form-select-sm mb-3" [(ngModel)]="tipo">
-          <option value="ESTADO_GENERAL">Estado general (consolidado)</option>
-          <option value="DETALLE_INDIVIDUAL">Detalle individual</option>
-          <option value="JORNADA">Jornada específica</option>
-        </select>
-
-        <label class="form-label small fw-semibold">Periodo</label>
-        <div class="btn-group btn-group-sm mb-2 w-100">
-          @for (p of ['Q1', 'Q2', 'MES', 'PERSONALIZADO']; track p) {
-            <button
-              type="button"
-              class="btn"
-              [class.btn-r21]="periodoRapido === p"
-              [class.btn-r21-outline]="periodoRapido !== p"
-              (click)="aplicarPeriodo($any(p))"
-            >
-              {{ p === 'Q1' ? '1ra quincena' : p === 'Q2' ? '2da quincena' : p === 'MES' ? 'Mes' : 'Personalizado' }}
-            </button>
-          }
+<div class="report-layout">
+  <main class="builder">
+    <section class="step-card">
+      <header>
+        <span class="step">1</span>
+        <div>
+          <h2>¿Qué necesitas informar?</h2>
+          <p>Elige el nivel de detalle del documento.</p>
         </div>
-        <div class="row g-2 mb-3">
-          <div class="col-6">
-            <input type="date" class="form-control form-control-sm" [(ngModel)]="desde" />
-          </div>
-          <div class="col-6">
-            <input type="date" class="form-control form-control-sm" [(ngModel)]="hasta" />
-          </div>
-        </div>
-
-        @if (tipo !== 'JORNADA') {
-          <label class="form-label small fw-semibold">Grupos (consolidado)</label>
-          <div class="border rounded p-2 mb-3" style="max-height: 150px; overflow-y: auto">
-            @for (g of gruposDisponibles(); track g.id) {
-              <div class="form-check form-check-sm">
-                <input
-                  class="form-check-input"
-                  type="checkbox"
-                  [id]="'g' + g.id"
-                  [checked]="gruposSeleccionados().includes(g.id)"
-                  (change)="toggleGrupo(g.id)"
-                />
-                <label class="form-check-label small" [for]="'g' + g.id">
-                  {{ g.nombre }} <span class="text-muted">({{ g.etapa }})</span>
-                </label>
-              </div>
-            }
-          </div>
-        }
-
-        @if (tipo === 'DETALLE_INDIVIDUAL') {
-          <label class="form-label small fw-semibold">Persona</label>
-          <select class="form-select form-select-sm mb-3" [(ngModel)]="personaId">
-            @for (p of personas(); track p.personaId) {
-              <option [ngValue]="p.personaId">{{ p.nombreCompleto }}</option>
-            }
-          </select>
-        }
-
-        @if (tipo === 'JORNADA') {
-          <label class="form-label small fw-semibold">Jornada</label>
-          <p class="small text-muted">Usa Seguimiento para ver jornadas; por ahora el id numérico de la jornada.</p>
-          <input type="number" class="form-control form-control-sm mb-3" [(ngModel)]="jornadaId" placeholder="Ej. 12" />
-        }
-
-        @if (mensaje(); as m) {
-          <div class="small mb-2" [class.text-success]="m.includes('descargado')" [class.text-danger]="!m.includes('descargado')">
-            {{ m }}
-          </div>
-        }
-
+      </header>
+      <div class="report-types">
         <button
-          class="btn btn-r21 w-100"
-          (click)="generar()"
-          [disabled]="generando() || gruposSeleccionados().length === 0"
+          type="button"
+          [class.selected]="tipo === 'ESTADO_GENERAL'"
+          (click)="seleccionarTipo('ESTADO_GENERAL')"
         >
-          <tui-icon icon="@tui.file-down" /> {{ generando() ? 'Generando…' : 'Generar PDF' }}
+          <i class="pi pi-chart-bar"></i
+          ><span
+            ><strong>Consolidado ejecutivo</strong
+            ><small>Comparación por persona y grupo</small></span
+          ><i class="pi pi-check-circle check"></i>
+        </button>
+        <button
+          type="button"
+          [class.selected]="tipo === 'DETALLE_INDIVIDUAL'"
+          (click)="seleccionarTipo('DETALLE_INDIVIDUAL')"
+        >
+          <i class="pi pi-user"></i
+          ><span
+            ><strong>Detalle individual</strong
+            ><small>Trayectoria de asistencia de una persona</small></span
+          ><i class="pi pi-check-circle check"></i>
+        </button>
+        <button
+          type="button"
+          [class.selected]="tipo === 'JORNADA'"
+          (click)="seleccionarTipo('JORNADA')"
+        >
+          <i class="pi pi-calendar"></i
+          ><span
+            ><strong>Jornada específica</strong
+            ><small>Registro completo de un día y grupo</small></span
+          ><i class="pi pi-check-circle check"></i>
         </button>
       </div>
-    </div>
-  </div>
+    </section>
 
-  <div class="col-12 col-lg-7">
-    <div class="r21-card">
-      <div class="r21-card-header"><h2>Últimos reportes</h2></div>
-      <div class="r21-card-body">
-        <app-empty-state mensaje="Los reportes generados aparecen aquí (registro en reportes_generados)" icono="@tui.file-text" />
+    <section class="step-card">
+      <header>
+        <span class="step">2</span>
+        <div>
+          <h2>Periodo del reporte</h2>
+          <p>Selecciona un acceso rápido o define cualquier rango.</p>
+        </div>
+      </header>
+      <div class="quick-periods">
+        @for (p of ['HOY', 'SEMANA', 'MES', 'PERSONALIZADO']; track p) {
+          <button
+            type="button"
+            [class.active]="periodoRapido === p"
+            (click)="aplicarPeriodo($any(p))"
+          >
+            {{
+              p === 'HOY'
+                ? 'Hoy'
+                : p === 'SEMANA'
+                  ? 'Últimos 7 días'
+                  : p === 'MES'
+                    ? 'Mes actual'
+                    : 'Personalizado'
+            }}
+          </button>
+        }
       </div>
-    </div>
-  </div>
+      <div class="date-range">
+        <label
+          >Desde<input
+            type="date"
+            [(ngModel)]="desde"
+            (change)="periodoRapido = 'PERSONALIZADO'; actualizarDependencias()" /></label
+        ><i class="pi pi-arrow-right"></i
+        ><label
+          >Hasta<input
+            type="date"
+            [(ngModel)]="hasta"
+            (change)="periodoRapido = 'PERSONALIZADO'; actualizarDependencias()"
+        /></label>
+      </div>
+      @if (desde > hasta) {
+        <p class="validation">
+          <i class="pi pi-exclamation-circle"></i> La fecha final no puede ser anterior a la
+          inicial.
+        </p>
+      }
+    </section>
+
+    <section class="step-card">
+      <header>
+        <span class="step">3</span>
+        <div>
+          <h2>Alcance</h2>
+          <p>Define los grupos incluidos en el documento.</p>
+        </div>
+      </header>
+      <div class="group-actions">
+        <button type="button" (click)="seleccionarTodos()">Seleccionar todos</button
+        ><button type="button" (click)="limpiarGrupos()">Limpiar</button
+        ><span>{{ gruposSeleccionados().length }} seleccionados</span>
+      </div>
+      <div class="group-grid">
+        @for (g of gruposDisponibles(); track g.id) {
+          <label [class.checked]="gruposSeleccionados().includes(g.id)"
+            ><input
+              type="checkbox"
+              [checked]="gruposSeleccionados().includes(g.id)"
+              (change)="toggleGrupo(g.id)"
+            /><span
+              ><strong>{{ g.nombre }}</strong
+              ><small>{{ g.etapa }} · {{ g.totalIntegrantes }} integrantes</small></span
+            ></label
+          >
+        }
+      </div>
+      @if (tipo === 'DETALLE_INDIVIDUAL') {
+        <label class="dependent-field"
+          >Persona<select [(ngModel)]="personaId">
+            <option [ngValue]="null" disabled>Selecciona una persona</option>
+            @for (p of personas(); track p.personaId) {
+              <option [ngValue]="p.personaId">
+                {{ p.nombreCompleto }} · {{ p.dni ?? 'Sin DNI' }}
+              </option>
+            }
+          </select></label
+        >
+      }
+      @if (tipo === 'JORNADA') {
+        <label class="dependent-field"
+          >Jornada dentro del periodo<select [(ngModel)]="jornadaId">
+            <option [ngValue]="null" disabled>Selecciona una jornada</option>
+            @for (j of jornadas(); track j.id) {
+              <option [ngValue]="j.id">{{ fecha(j.fecha) }} · {{ j.grupo }} · {{ j.tipo }}</option>
+            }
+          </select></label
+        >
+        @if (jornadas().length === 0) {
+          <p class="validation neutral">No existen jornadas dentro del rango seleccionado.</p>
+        }
+      }
+    </section>
+  </main>
+
+  <aside>
+    <section class="summary-card">
+      <header>
+        <i class="pi pi-file-pdf"></i>
+        <div>
+          <h2>Resumen del documento</h2>
+          <p>Revisa antes de generar</p>
+        </div>
+      </header>
+      <dl>
+        <div>
+          <dt>Reporte</dt>
+          <dd>{{ nombreTipo(tipo) }}</dd>
+        </div>
+        <div>
+          <dt>Periodo</dt>
+          <dd>{{ fecha(desde) }} — {{ fecha(hasta) }}</dd>
+        </div>
+        <div>
+          <dt>Grupos</dt>
+          <dd>{{ gruposSeleccionados().length }}</dd>
+        </div>
+        @if (tipo === 'DETALLE_INDIVIDUAL') {
+          <div>
+            <dt>Persona</dt>
+            <dd>{{ personaId ? 'Seleccionada' : 'Pendiente' }}</dd>
+          </div>
+        }
+        @if (tipo === 'JORNADA') {
+          <div>
+            <dt>Jornada</dt>
+            <dd>{{ jornadaId ? 'Seleccionada' : 'Pendiente' }}</dd>
+          </div>
+        }
+      </dl>
+      <div class="included">
+        <strong>El reporte incluirá</strong>
+        @if (tipo === 'ESTADO_GENERAL') {
+          <span><i class="pi pi-check"></i> Asistencias y faltas justificadas</span
+          ><span><i class="pi pi-check"></i> Faltas injustificadas y salidas anticipadas</span
+          ><span><i class="pi pi-check"></i> Horas acumuladas por integrante</span>
+        } @else if (tipo === 'DETALLE_INDIVIDUAL') {
+          <span><i class="pi pi-check"></i> Fecha y tipo de cada jornada</span
+          ><span><i class="pi pi-check"></i> Estado, entrada y salida</span
+          ><span><i class="pi pi-check"></i> Tipo de registro utilizado</span>
+        } @else {
+          <span><i class="pi pi-check"></i> Lista completa de participantes</span
+          ><span><i class="pi pi-check"></i> Entrada, salida y estado</span
+          ><span><i class="pi pi-check"></i> Responsable del registro</span>
+        }
+      </div>
+      <div class="download-actions">
+        <button
+          class="generate pdf"
+          (click)="generar()"
+          [disabled]="generando() || generandoExcel() || !puedeGenerar()"
+        >
+          <tui-icon icon="@tui.file-down" />{{ generando() ? 'Generando…' : 'Descargar PDF' }}
+        </button>
+        <button
+          class="generate excel"
+          (click)="generarExcel()"
+          [disabled]="generando() || generandoExcel() || !puedeGenerar()"
+        >
+          <i class="pi pi-file-excel"></i>{{
+            generandoExcel() ? 'Generando…' : 'Descargar Excel'
+          }}
+        </button>
+      </div>
+      @if (!puedeGenerar()) {
+        <small class="pending">Completa el periodo, los grupos y el detalle solicitado.</small>
+      }
+    </section>
+
+    <section class="recent-card">
+      <header>
+        <div>
+          <h2>Reportes recientes</h2>
+          <p>Últimos documentos generados</p>
+        </div>
+        <span>{{ recientes().length }}</span>
+      </header>
+      @if (recientes().length === 0) {
+        <app-empty-state mensaje="Aún no hay reportes generados" icono="@tui.file-text" />
+      } @else {
+        <div class="recent-list">
+          @for (r of recientes(); track r.id) {
+            <div class="recent">
+              <i class="pi pi-file-pdf"></i
+              ><span
+                ><strong>{{ nombreTipo(r.tipo) }}</strong
+                ><small
+                  >{{ fecha(r.desde) }} — {{ fecha(r.hasta) }} ·
+                  {{ r.generadoPor ?? 'Usuario' }}</small
+                ><em>{{ r.codigo }}</em></span
+              >
+            </div>
+          }
+        </div>
+      }
+    </section>
+  </aside>
 </div>

@@ -29,7 +29,15 @@ body {
 *, *::before, *::after { box-sizing: border-box; }
 ::selection { color: var(--r21-text-primary); background: #f7cbd3; }
 button, input, select, textarea { font: inherit; }
+input[type='date'] { color-scheme: light; }
+input[type='date']:disabled,
+input[type='date'][readonly] {
+  color: #98A2B3;
+  background: #F2F4F7;
+  cursor: not-allowed;
+}
 app-root, tui-root { display: block; min-height: 100%; background: var(--r21-bg); color: var(--r21-text-primary); }
+body:has(.r21-modal-wrap) { overflow: hidden; }
 
 tui-root[tuiTheme='light'] {
   --tui-background-base: #f5f6f8;

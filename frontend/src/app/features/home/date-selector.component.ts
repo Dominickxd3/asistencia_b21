@@ -24,6 +24,7 @@ import { FormsModule } from '@angular/forms';
         <input
           class="r21-calendar-text"
           type="date"
+          [max]="hoyIso"
           [ngModel]="fechaIso()"
           (ngModelChange)="onIsoChange($event)"
           aria-label="Seleccionar fecha"
@@ -35,6 +36,7 @@ import { FormsModule } from '@angular/forms';
         type="button"
         class="nav-date-btn"
         (click)="cambiarDia(1)"
+        [disabled]="esHoy()"
         title="Día siguiente"
         aria-label="Día siguiente"
       >
@@ -151,10 +153,10 @@ export class DateSelectorComponent {
   readonly fechaSeleccionada = output<string>();
 
   fechaModel: Date = new Date();
+  readonly hoyIso = this.toIso(new Date());
 
   readonly esHoy = computed(() => {
-    const hoyStr = new Date().toISOString().slice(0, 10);
-    return this.fechaIso() === hoyStr;
+    return this.fechaIso() === this.hoyIso;
   });
 
   ngOnChanges(): void {
@@ -191,10 +193,15 @@ export class DateSelectorComponent {
   }
 
   private emitirFecha(date: Date): void {
+    const iso = this.toIso(date);
+    if (iso > this.hoyIso) return;
+    this.fechaSeleccionada.emit(iso);
+  }
+
+  private toIso(date: Date): string {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    const iso = `${y}-${m}-${day}`;
-    this.fechaSeleccionada.emit(iso);
+    return `${y}-${m}-${day}`;
   }
 }

@@ -49,3 +49,37 @@ export class AddMemberDto {
   @IsInt()
   personaId: number;
 }
+
+export class UpdateGroupDto {
+  @ApiPropertyOptional({ example: 'Aspirantes de compañía 2026-II' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(150)
+  nombre?: string;
+
+  @ApiPropertyOptional({ example: '2026-II' })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(30)
+  periodo?: string;
+
+  @ApiPropertyOptional({ example: '2026-08-03' })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  fechaInicio?: string;
+
+  @ApiPropertyOptional({ example: '2026-12-20' })
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  fechaFin?: string;
+}
+
+export class RemoveMemberDto {
+  @ApiPropertyOptional({ example: 'Cambio de grupo' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  motivo?: string;
+}

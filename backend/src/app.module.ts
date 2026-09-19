@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import configuration from './config/configuration';
 import { DatabaseModule } from './database/database.module';
@@ -15,6 +15,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
 import { FormationModule } from './modules/formation/formation.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { NoFutureDatesInterceptor } from './common/interceptors/no-future-dates.interceptor';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ReportsModule } from './modules/reports/reports.module';
   controllers: [HealthController],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
+    { provide: APP_INTERCEPTOR, useClass: NoFutureDatesInterceptor },
   ],
 })
 export class AppModule {}
