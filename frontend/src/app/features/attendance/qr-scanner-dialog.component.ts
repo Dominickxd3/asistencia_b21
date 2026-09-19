@@ -77,18 +77,13 @@ import jsQR from 'jsqr';
 
           <canvas #canvasElement style="display: none;"></canvas>
 
-          <!-- Overlay con miras de encuadre en blanco y línea láser -->
+          <!-- Overlay con miras limpias de encuadre -->
           <div class="scanner-overlay-aim">
             <div class="scanner-reticle-box">
               <div class="reticle-corner corner-tl"></div>
               <div class="reticle-corner corner-tr"></div>
               <div class="reticle-corner corner-bl"></div>
               <div class="reticle-corner corner-br"></div>
-              <div class="scanner-laser-line"></div>
-            </div>
-            <div class="scanner-guide-text">
-              <i class="pi pi-qrcode"></i>
-              <span>Apunte al código QR</span>
             </div>
           </div>
 
@@ -399,49 +394,6 @@ import jsQR from 'jsqr';
       border-bottom-width: 3px;
       border-right-width: 3px;
       border-bottom-right-radius: 4px;
-    }
-
-    .scanner-laser-line {
-      position: absolute;
-      left: 6px;
-      right: 6px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, #22C55E, #86EFAC, #22C55E, transparent);
-      box-shadow: 0 0 6px #22C55E;
-      animation: scan-vertical 2.2s ease-in-out infinite alternate;
-    }
-
-    @keyframes scan-vertical {
-      0% {
-        top: 6px;
-        opacity: 0.3;
-      }
-      50% {
-        opacity: 1;
-      }
-      100% {
-        top: 170px;
-        opacity: 0.3;
-      }
-    }
-
-    .scanner-guide-text {
-      margin-top: 12px;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      background: rgba(24, 28, 35, 0.8);
-      backdrop-filter: blur(4px);
-      border-radius: 99px;
-      color: #FFFFFF;
-      font-size: 12px;
-      font-weight: 600;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-
-      i {
-        font-size: 13px;
-      }
     }
 
     .processing-curtain {
