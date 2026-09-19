@@ -8,7 +8,7 @@ import { TuiIcon } from '@taiga-ui/core';
 import { environment } from '../../../environments/environment';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
-export type FiltroDinamico = 'todos' | 'con_faltas' | 'en_riesgo';
+export type FiltroDinamico = 'todos' | 'bueno' | 'con_faltas' | 'en_riesgo';
 
 export interface Grupo {
   id: number;
@@ -147,12 +147,19 @@ export class TrackingPageComponent implements OnInit {
       .sort((a, b) => b.faltasInjustificadas - a.faltasInjustificadas || a.porcentajeAsistencia - b.porcentajeAsistencia);
   });
 
+  // Integrantes con rendimiento Bueno (≥ 80%)
+  readonly integrantesBueno = computed(() => {
+    return this.filas().filter(f => f.porcentajeAsistencia >= 80);
+  });
+
   // Lista filtrada para la grilla
   readonly filasFiltradas = computed(() => {
     let list = this.filas();
     const f = this.filtroActivo();
 
-    if (f === 'con_faltas') {
+    if (f === 'bueno') {
+      list = list.filter(item => item.porcentajeAsistencia >= 80);
+    } else if (f === 'con_faltas') {
       list = list.filter(item => item.faltasInjustificadas > 0);
     } else if (f === 'en_riesgo') {
       list = list.filter(item => item.porcentajeAsistencia < 80);

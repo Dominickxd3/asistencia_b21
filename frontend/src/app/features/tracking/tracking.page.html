@@ -35,35 +35,15 @@
     </div>
   </div>
 
-  <!-- 3. Tres Opciones Dinámicas (Todos preseleccionado por defecto) -->
-  <div class="filter-field filter-field--dynamic">
-    <label>Filtrar integrantes</label>
-    <div class="dynamic-pills">
-      <button
-        type="button"
-        class="pill-btn"
-        [class.active]="filtroActivo() === 'todos'"
-        (click)="filtroActivo.set('todos')"
-      >
-        Todos ({{ filas().length }})
-      </button>
-      <button
-        type="button"
-        class="pill-btn pill-btn--danger"
-        [class.active]="filtroActivo() === 'con_faltas'"
-        (click)="filtroActivo.set('con_faltas')"
-      >
-        Con Faltas ({{ concentranFaltas().length }})
-      </button>
-      <button
-        type="button"
-        class="pill-btn pill-btn--warning"
-        [class.active]="filtroActivo() === 'en_riesgo'"
-        (click)="filtroActivo.set('en_riesgo')"
-      >
-        En Riesgo ({{ casosPrioritarios().length }})
-      </button>
-    </div>
+  <!-- 3. Combo Box con opciones dinámicas: Todos, Bueno, Faltas y En riesgo -->
+  <div class="filter-field">
+    <label for="select-filtro">Filtrar integrantes</label>
+    <select id="select-filtro" [ngModel]="filtroActivo()" (ngModelChange)="filtroActivo.set($event)">
+      <option value="todos">Todos ({{ filas().length }})</option>
+      <option value="bueno">Bueno ({{ integrantesBueno().length }})</option>
+      <option value="con_faltas">Faltas ({{ concentranFaltas().length }})</option>
+      <option value="en_riesgo">En riesgo ({{ casosPrioritarios().length }})</option>
+    </select>
   </div>
 </section>
 
