@@ -1,37 +1,782 @@
-<app-page-header titulo="Seguimiento" subtitulo="Historial objetivo de asistencia" descripcion="Consulta la evolución de cada grupo dentro de un periodo específico." />
+<app-page-header
+  titulo="Seguimiento de Asistencia"
+  subtitulo="Historial y Análisis de Rendimiento"
+  descripcion="Consulta la evolución, disciplina e indicadores clave por grupo de formación y periodo."
+/>
 
-<section class="filters" aria-label="Filtros de seguimiento">
-  <label class="field"><span>Grupo de formación</span><select [ngModel]="grupoId()" (ngModelChange)="cambiarGrupo($event)">@for (g of grupos(); track g.id) {<option [ngValue]="g.id">{{ g.nombre }} · {{ g.etapa }}</option>}</select></label>
-  <div class="period-field"><span>Periodo</span><div class="quick-periods">
-    <button type="button" [class.active]="periodo()==='mes'" (click)="aplicarPeriodo('mes')">Mes actual</button>
-    <button type="button" [class.active]="periodo()==='primera'" (click)="aplicarPeriodo('primera')">1.ª quincena</button>
-    <button type="button" [class.active]="periodo()==='segunda'" (click)="aplicarPeriodo('segunda')">2.ª quincena</button>
-    <button type="button" [class.active]="periodo()==='personalizado'" (click)="aplicarPeriodo('personalizado',false)">Personalizado</button>
-  </div></div>
-  <label class="field"><span>Ordenar por</span><select [ngModel]="orden()" (ngModelChange)="cambiarOrden($event)">
-    <option value="nombre">Nombre</option><option value="faltas_injustificadas">Más faltas injustificadas</option><option value="faltas_justificadas">Más faltas justificadas</option><option value="menor_asistencia">Menor asistencia</option><option value="salidas_anticipadas">Más salidas anticipadas</option><option value="horas_adicionales">Más horas adicionales</option>
-  </select></label>
-  @if(periodo()==='personalizado'){<div class="custom-dates"><label class="field"><span>Desde</span><input type="date" [(ngModel)]="desde" (change)="fechasPersonalizadas()"></label><label class="field"><span>Hasta</span><input type="date" [(ngModel)]="hasta" (change)="fechasPersonalizadas()"></label></div>}
+<!-- Barra de Filtros y Periodos -->
+<section class="filters-card" aria-label="Filtros de seguimiento">
+  <div class="filter-group-field">
+    <label for="select-grupo">
+      <tui-icon icon="@tui.users" />
+      <span>Grupo de formación</span>
+    </label>
+    <select id="select-grupo" [ngModel]="grupoId()" (ngModelChange)="cambiarGrupo($event)">
+      @for (g of grupos(); track g.id) {
+        <option [ngValue]="g.id">{{ g.nombre }} · {{ g.etapa }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="period-control">
+    <span class="period-label">
+      <tui-icon icon="@tui.calendar" />
+      <span>Periodo de evaluación</span>
+    </span>
+    <div class="quick-periods">
+      <button type="button" [class.active]="periodo() === 'mes'" (click)="aplicarPeriodo('mes')">
+        Mes actual
+      </button>
+      <button type="button" [class.active]="periodo() === 'primera'" (click)="aplicarPeriodo('primera')">
+        1.ª quincena
+      </button>
+      <button type="button" [class.active]="periodo() === 'segunda'" (click)="aplicarPeriodo('segunda')">
+        2.ª quincena
+      </button>
+      <button type="button" [class.active]="periodo() === 'personalizado'" (click)="aplicarPeriodo('personalizado', false)">
+        Personalizado
+      </button>
+    </div>
+  </div>
+
+  <div class="filter-order-field">
+    <label for="select-orden">
+      <tui-icon icon="@tui.arrow-down-up" />
+      <span>Ordenar por</span>
+    </label>
+    <select id="select-orden" [ngModel]="orden()" (ngModelChange)="cambiarOrden($event)">
+      <option value="faltas_injustificadas">Más faltas injustificadas</option>
+      <option value="menor_asistencia">Menor asistencia</option>
+      <option value="nombre">Nombre alfabético</option>
+      <option value="faltas_justificadas">Más faltas justificadas</option>
+      <option value="salidas_anticipadas">Más salidas anticipadas</option>
+      <option value="horas_adicionales">Más horas adicionales</option>
+    </select>
+  </div>
+
+  @if (periodo() === 'personalizado') {
+    <div class="custom-dates-row">
+      <label class="date-field">
+        <span>Fecha inicial</span>
+        <input type="date" [(ngModel)]="desde" (change)="fechasPersonalizadas()" />
+      </label>
+      <label class="date-field">
+        <span>Fecha final</span>
+        <input type="date" [(ngModel)]="hasta" (change)="fechasPersonalizadas()" />
+      </label>
+    </div>
+  }
 </section>
 
-@if(error()){<div class="alert" role="alert"><tui-icon icon="@tui.circle-alert" />{{ error() }}</div>}
-@if(resumen();as r){<section class="summary" aria-label="Resumen del periodo">
-  <div><span>Jornadas obligatorias</span><strong>{{r.jornadasObligatorias}}</strong></div><div><span>Asistencia del grupo</span><strong>{{r.asistenciaGrupo}}%</strong></div><div><span>Faltas injustificadas</span><strong class="danger">{{r.faltasInjustificadas}}</strong></div><div><span>Faltas justificadas</span><strong>{{r.faltasJustificadas}}</strong></div><div><span>Salidas anticipadas</span><strong>{{r.salidasAnticipadas}}</strong></div><div><span>Horas adicionales</span><strong>{{r.horasAdicionales}} h</strong></div>
-</section>}
+@if (error()) {
+  <div class="alert alert--danger" role="alert">
+    <tui-icon icon="@tui.circle-alert" />
+    <span>{{ error() }}</span>
+  </div>
+}
 
-<section class="results"><header><div><h2>Integrantes</h2><p>{{desde}} — {{hasta}}</p></div><span>{{filas().length}} registrados</span></header>
-  @if(cargando()){<div class="loading"><span></span><span></span><span></span></div>}
-  @else if(jornadasEsperadas()===0){<div class="empty"><tui-icon icon="@tui.calendar-off"/><strong>Sin jornadas en el periodo seleccionado</strong><p>Prueba con otro rango de fechas.</p></div>}
-  @else if(filas().length===0){<div class="empty"><tui-icon icon="@tui.users"/><strong>No hay integrantes aplicables para este periodo</strong><p>El grupo no tuvo membresías vigentes en estas fechas.</p></div>}
-  @else {<div class="table-wrap"><table><thead><tr><th>Integrante</th><th>Asistencia</th><th>F. justificadas</th><th>F. injustificadas</th><th>Salidas anticipadas</th><th>Horas adicionales</th><th></th></tr></thead><tbody>
-    @for(f of filas();track f.personaId){<tr><td data-label="Integrante"><strong>{{f.nombreCompleto}}</strong><small>{{f.dni||'Sin DNI'}} · {{f.jornadasAplicables}} jornadas aplicables</small></td><td data-label="Asistencia"><span class="attendance" [class.attendance--low]="f.porcentajeAsistencia<80">{{f.porcentajeAsistencia}}%</span><small>{{f.asistencias}} / {{f.jornadasAplicables}}</small></td><td data-label="F. justificadas">{{f.faltasJustificadas}}</td><td data-label="F. injustificadas"><strong [class.danger]="f.faltasInjustificadas>0">{{f.faltasInjustificadas}}</strong></td><td data-label="Salidas anticipadas">{{f.salidasAnticipadas}}</td><td data-label="Horas adicionales">{{f.horasAdicionales}} h</td><td><button class="detail-button" type="button" (click)="abrirDetalle(f.personaId)">Ver detalle <tui-icon icon="@tui.arrow-right"/></button></td></tr>}
-  </tbody></table></div>}
+<!-- PANEL DE KPIS Y GRÁFICOS INTERACTIVOS -->
+@if (resumen(); as r) {
+  <section class="kpi-grid" aria-label="Tablero de KPIs y Gráficos">
+    
+    <!-- CARD 1: Hero Gauge Circular de Asistencia Global -->
+    <article class="kpi-card kpi-card--gauge">
+      <div class="card-header">
+        <div class="header-icon-wrap icon--green">
+          <tui-icon icon="@tui.chart-pie" />
+        </div>
+        <div class="header-titles">
+          <h3 class="card-title">Asistencia Global</h3>
+          <span class="card-subtitle">Efectividad del grupo evaluado</span>
+        </div>
+      </div>
+
+      <div class="gauge-display-wrap">
+        <div class="gauge-svg-container" title="Tasa global de asistencia: {{ r.asistenciaGrupo }}%">
+          <svg viewBox="0 0 42 42" class="gauge-svg">
+            <!-- Anillo de fondo -->
+            <circle
+              class="gauge-bg-ring"
+              cx="21"
+              cy="21"
+              r="15.91549430918954"
+              fill="transparent"
+              stroke="#EAECF0"
+              stroke-width="3.8"
+            />
+            <!-- Arco de progreso -->
+            <circle
+              class="gauge-progress-ring"
+              cx="21"
+              cy="21"
+              r="15.91549430918954"
+              fill="transparent"
+              [attr.stroke]="gaugeStatus().color"
+              stroke-width="4.2"
+              stroke-linecap="round"
+              [attr.stroke-dasharray]="r.asistenciaGrupo + ' ' + (100 - r.asistenciaGrupo)"
+              stroke-dashoffset="25"
+            />
+            <!-- Umbral del 80% (meta institucional) -->
+            <circle
+              class="gauge-benchmark-ring"
+              cx="21"
+              cy="21"
+              r="15.91549430918954"
+              fill="transparent"
+              stroke="#98A2B3"
+              stroke-width="1.2"
+              stroke-dasharray="0.8 99.2"
+              stroke-dashoffset="-55"
+              title="Meta mínima institucional: 80%"
+            />
+          </svg>
+          <div class="gauge-center-content">
+            <span class="gauge-value" [style.color]="gaugeStatus().color">{{ r.asistenciaGrupo }}%</span>
+            <span class="gauge-unit">Promedio</span>
+          </div>
+        </div>
+
+        <div class="gauge-meta-details">
+          <div class="status-pill {{ gaugeStatus().badgeClass }}">
+            <span class="status-dot"></span>
+            <span>{{ gaugeStatus().label }}</span>
+          </div>
+          <p class="gauge-desc">{{ gaugeStatus().desc }}</p>
+          <div class="gauge-stat-ratio">
+            <span>Asistencias registradas:</span>
+            <strong>{{ totalAsistencias() }} / {{ totalJornadasAplicables() }}</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-footer-benchmark">
+        <span class="benchmark-label">Meta curricular B-21: <strong>80% mínimo</strong></span>
+        <div class="benchmark-bar-track">
+          <div
+            class="benchmark-bar-fill"
+            [style.width.%]="r.asistenciaGrupo > 100 ? 100 : r.asistenciaGrupo"
+            [style.background-color]="gaugeStatus().color"
+          ></div>
+          <div class="benchmark-target-marker" style="left: 80%;" title="Meta mínima 80%"></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- CARD 2: Gráfico Donut de Composición e Incidencias -->
+    <article class="kpi-card kpi-card--donut">
+      <div class="card-header">
+        <div class="header-icon-wrap icon--red">
+          <tui-icon icon="@tui.shield-alert" />
+        </div>
+        <div class="header-titles">
+          <h3 class="card-title">Composición de Jornadas</h3>
+          <span class="card-subtitle">Asistencias vs Incidencias</span>
+        </div>
+      </div>
+
+      <div class="donut-chart-layout">
+        <!-- SVG Donut Interactivo -->
+        <div class="donut-svg-wrap">
+          <svg viewBox="0 0 42 42" class="donut-svg">
+            <circle
+              class="donut-bg-ring"
+              cx="21"
+              cy="21"
+              r="15.91549430918954"
+              fill="transparent"
+              stroke="#EAECF0"
+              stroke-width="4.5"
+            />
+            @for (slice of donutSlices(); track slice.id) {
+              @if (slice.count > 0) {
+                <circle
+                  class="donut-segment"
+                  [class.donut-segment--hovered]="hoveredSegment() === slice.id"
+                  cx="21"
+                  cy="21"
+                  r="15.91549430918954"
+                  fill="transparent"
+                  [attr.stroke]="slice.color"
+                  stroke-width="4.8"
+                  [attr.stroke-dasharray]="slice.dashArray"
+                  [attr.stroke-dashoffset]="slice.dashOffset"
+                  (mouseenter)="setHoveredSegment(slice.id)"
+                  (mouseleave)="setHoveredSegment(null)"
+                  (click)="setFiltro(slice.id)"
+                />
+              }
+            }
+          </svg>
+          <div class="donut-center-info">
+            <span class="donut-center-total">{{ totalJornadasAplicables() }}</span>
+            <span class="donut-center-sub">Registros</span>
+          </div>
+        </div>
+
+        <!-- Leyenda interactiva con filtros clicables -->
+        <div class="donut-legend">
+          @for (slice of donutSlices(); track slice.id) {
+            <button
+              type="button"
+              class="legend-item"
+              [class.legend-item--active]="filtroEstado() === slice.id"
+              [class.legend-item--hovered]="hoveredSegment() === slice.id"
+              (mouseenter)="setHoveredSegment(slice.id)"
+              (mouseleave)="setHoveredSegment(null)"
+              (click)="setFiltro(slice.id)"
+              title="Haz clic para filtrar por {{ slice.label }}"
+            >
+              <span class="legend-color-dot" [style.background-color]="slice.color"></span>
+              <span class="legend-name">{{ slice.label }}</span>
+              <span class="legend-val">
+                <strong>{{ slice.count }}</strong>
+                <small>({{ slice.porcentaje }}%)</small>
+              </span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="card-note">
+        <tui-icon icon="@tui.info" />
+        <span>Haz clic en una categoría para filtrar los integrantes en la tabla</span>
+      </div>
+    </article>
+
+    <!-- CARD 3: Estado de la Cohorte (En Regla vs En Riesgo) -->
+    <article class="kpi-card kpi-card--cohort">
+      <div class="card-header">
+        <div class="header-icon-wrap icon--blue">
+          <tui-icon icon="@tui.users" />
+        </div>
+        <div class="header-titles">
+          <h3 class="card-title">Estado de la Cohorte</h3>
+          <span class="card-subtitle">Efectivos en regla vs en riesgo</span>
+        </div>
+      </div>
+
+      <div class="cohort-metrics-wrap">
+        <!-- Barra En Regla -->
+        <div
+          class="cohort-row"
+          [class.cohort-row--active]="filtroEstado() === 'en_regla'"
+          (click)="setFiltro('en_regla')"
+          title="Ver integrantes en regla (≥ 80%)"
+        >
+          <div class="cohort-row-head">
+            <span class="cohort-badge cohort-badge--ok">En Regla (≥ 80%)</span>
+            <div class="cohort-numbers">
+              <strong>{{ integrantesEnRegla().length }}</strong>
+              <span class="cohort-fraction">/ {{ totalIntegrantes() }}</span>
+              <span class="cohort-pct font-ok">({{ pctEnRegla() }}%)</span>
+            </div>
+          </div>
+          <div class="cohort-bar-track">
+            <div class="cohort-bar-fill cohort-bar-fill--ok" [style.width.%]="pctEnRegla()"></div>
+          </div>
+        </div>
+
+        <!-- Barra En Riesgo -->
+        <div
+          class="cohort-row"
+          [class.cohort-row--active]="filtroEstado() === 'en_riesgo'"
+          (click)="setFiltro('en_riesgo')"
+          title="Ver integrantes en riesgo (< 80%)"
+        >
+          <div class="cohort-row-head">
+            <span class="cohort-badge cohort-badge--danger">En Riesgo (&lt; 80%)</span>
+            <div class="cohort-numbers">
+              <strong>{{ integrantesEnRiesgo().length }}</strong>
+              <span class="cohort-fraction">/ {{ totalIntegrantes() }}</span>
+              <span class="cohort-pct font-danger">({{ pctEnRiesgo() }}%)</span>
+            </div>
+          </div>
+          <div class="cohort-bar-track">
+            <div class="cohort-bar-fill cohort-bar-fill--danger" [style.width.%]="pctEnRiesgo()"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cohort-filter-buttons">
+        <button
+          type="button"
+          class="btn-cohort-filter"
+          [class.active]="filtroEstado() === 'en_regla'"
+          (click)="setFiltro('en_regla')"
+        >
+          <span class="dot dot--ok"></span>
+          <span>En regla: {{ integrantesEnRegla().length }}</span>
+        </button>
+        <button
+          type="button"
+          class="btn-cohort-filter"
+          [class.active]="filtroEstado() === 'en_riesgo'"
+          (click)="setFiltro('en_riesgo')"
+        >
+          <span class="dot dot--danger"></span>
+          <span>En riesgo: {{ integrantesEnRiesgo().length }}</span>
+        </button>
+      </div>
+    </article>
+
+    <!-- CARD 4: Jornadas y Formación Adicional -->
+    <article class="kpi-card kpi-card--hours">
+      <div class="card-header">
+        <div class="header-icon-wrap icon--amber">
+          <tui-icon icon="@tui.clock" />
+        </div>
+        <div class="header-titles">
+          <h3 class="card-title">Jornadas y Horas</h3>
+          <span class="card-subtitle">Compromiso formativo y extra</span>
+        </div>
+      </div>
+
+      <div class="hours-stats-grid">
+        <!-- Métrica Jornadas Obligatorias -->
+        <div class="stat-pill-box">
+          <div class="stat-icon-lead">
+            <tui-icon icon="@tui.calendar-check" />
+          </div>
+          <div class="stat-values">
+            <span class="stat-num">{{ r.jornadasObligatorias }}</span>
+            <span class="stat-label">Jornadas obligatorias</span>
+          </div>
+        </div>
+
+        <!-- Métrica Horas Adicionales -->
+        <div
+          class="stat-pill-box stat-pill-box--clickable"
+          [class.stat-pill-box--active]="filtroEstado() === 'con_adicionales'"
+          (click)="setFiltro('con_adicionales')"
+          title="Filtrar por integrantes con horas adicionales"
+        >
+          <div class="stat-icon-lead">
+            <tui-icon icon="@tui.award" />
+          </div>
+          <div class="stat-values">
+            <span class="stat-num">{{ r.horasAdicionales }} <small>h</small></span>
+            <span class="stat-label">Horas voluntarias acumuladas</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hours-average-footer">
+        <div class="avg-row">
+          <span>Promedio de horas adicionales:</span>
+          <strong>{{ promedioHorasAdicionales() }} h / integrante</strong>
+        </div>
+        <div class="avg-row">
+          <span>Integrantes con aporte extra:</span>
+          <strong>{{ integrantesConAdicionales().length }} de {{ totalIntegrantes() }}</strong>
+        </div>
+      </div>
+    </article>
+
+  </section>
+}
+
+<!-- SECCIÓN DE RESULTADOS: TABLA DE INTEGRANTES -->
+<section class="results-card" aria-label="Nómina y detalle de integrantes">
+  
+  <div class="results-header">
+    <div class="results-header-left">
+      <div class="results-title-row">
+        <h2 class="results-title">Nómina de Integrantes</h2>
+        <span class="results-count-pill">{{ filasFiltradas().length }} de {{ totalIntegrantes() }}</span>
+      </div>
+      <p class="results-dates">
+        <tui-icon icon="@tui.calendar" />
+        <span>Periodo evaluado: {{ desde }} al {{ hasta }}</span>
+        @if (grupoActual(); as g) {
+          <span class="bullet-sep">·</span>
+          <span>{{ g.nombre }} ({{ g.etapa }})</span>
+        }
+      </p>
+    </div>
+
+    <!-- Buscador en tiempo real -->
+    <div class="results-search-box">
+      <tui-icon icon="@tui.search" />
+      <input
+        type="text"
+        placeholder="Buscar por apellido, nombre o DNI..."
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+      />
+      @if (busqueda()) {
+        <button type="button" class="btn-clear-search" (click)="busqueda.set('')" title="Borrar búsqueda">
+          <tui-icon icon="@tui.x" />
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Barra de Filtros Rápidos (Chips) -->
+  <div class="quick-filter-chips">
+    <span class="filter-lead-label">Filtros rápidos:</span>
+    <button
+      type="button"
+      class="chip-btn"
+      [class.active]="filtroEstado() === 'todos'"
+      (click)="setFiltro('todos')"
+    >
+      <span>Todos ({{ totalIntegrantes() }})</span>
+    </button>
+    <button
+      type="button"
+      class="chip-btn chip-btn--danger"
+      [class.active]="filtroEstado() === 'con_faltas'"
+      (click)="setFiltro('con_faltas')"
+    >
+      <span class="chip-dot"></span>
+      <span>Con Faltas Injustificadas ({{ integrantesConFaltas().length }})</span>
+    </button>
+    <button
+      type="button"
+      class="chip-btn chip-btn--warning"
+      [class.active]="filtroEstado() === 'en_riesgo'"
+      (click)="setFiltro('en_riesgo')"
+    >
+      <span class="chip-dot"></span>
+      <span>En Riesgo &lt; 80% ({{ integrantesEnRiesgo().length }})</span>
+    </button>
+    <button
+      type="button"
+      class="chip-btn chip-btn--ok"
+      [class.active]="filtroEstado() === 'en_regla'"
+      (click)="setFiltro('en_regla')"
+    >
+      <span class="chip-dot"></span>
+      <span>En Regla ≥ 80% ({{ integrantesEnRegla().length }})</span>
+    </button>
+    <button
+      type="button"
+      class="chip-btn chip-btn--purple"
+      [class.active]="filtroEstado() === 'con_adicionales'"
+      (click)="setFiltro('con_adicionales')"
+    >
+      <span class="chip-dot"></span>
+      <span>Con Horas Extra ({{ integrantesConAdicionales().length }})</span>
+    </button>
+
+    @if (filtroEstado() !== 'todos' || busqueda()) {
+      <button type="button" class="chip-btn chip-btn--clear" (click)="limpiarFiltros()">
+        <tui-icon icon="@tui.rotate-ccw" />
+        <span>Restablecer</span>
+      </button>
+    }
+  </div>
+
+  <!-- Estado de carga -->
+  @if (cargando()) {
+    <div class="loading-state">
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+      <div class="skeleton-row"></div>
+    </div>
+  }
+  @else if (jornadasEsperadas() === 0) {
+    <div class="empty-state">
+      <div class="empty-icon-wrap">
+        <tui-icon icon="@tui.calendar-off" />
+      </div>
+      <h3>Sin jornadas obligatorias en el periodo</h3>
+      <p>No se encontraron jornadas programadas para este grupo en el rango seleccionado. Prueba con otro mes o quincena.</p>
+    </div>
+  }
+  @else if (filas().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon-wrap">
+        <tui-icon icon="@tui.users" />
+      </div>
+      <h3>No hay integrantes registrados</h3>
+      <p>El grupo seleccionado no tiene integrantes con membresía activa en las fechas indicadas.</p>
+    </div>
+  }
+  @else if (filasFiltradas().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon-wrap">
+        <tui-icon icon="@tui.filter-x" />
+      </div>
+      <h3>Ningún integrante coincide con el filtro</h3>
+      <p>Prueba cambiando el término de búsqueda o restableciendo los filtros de estado.</p>
+      <button type="button" class="btn-reset-filters" (click)="limpiarFiltros()">
+        <tui-icon icon="@tui.rotate-ccw" />
+        <span>Ver todos los integrantes</span>
+      </button>
+    </div>
+  }
+  @else {
+    <!-- Tabla de Integrantes Moderna y Responsiva -->
+    <div class="table-responsive">
+      <table class="tracking-table">
+        <thead>
+          <tr>
+            <th class="th-member">Integrante</th>
+            <th class="th-attendance">Rendimiento / Asistencia</th>
+            <th class="th-incidents">F. Justificadas</th>
+            <th class="th-incidents">F. Injustificadas</th>
+            <th class="th-incidents">Salidas Anticipadas</th>
+            <th class="th-hours">Horas Extra</th>
+            <th class="th-actions">Acción</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (f of filasFiltradas(); track f.personaId) {
+            <tr class="table-row">
+              <!-- Integrante con Avatar y datos -->
+              <td class="td-member" data-label="Integrante">
+                <div class="member-cell">
+                  <div
+                    class="member-avatar"
+                    [style.background-color]="obtenerColorAvatar(f.nombreCompleto).bg"
+                    [style.color]="obtenerColorAvatar(f.nombreCompleto).color"
+                  >
+                    {{ obtenerIniciales(f.nombreCompleto) }}
+                  </div>
+                  <div class="member-info">
+                    <span class="member-name">{{ f.nombreCompleto }}</span>
+                    <div class="member-sub">
+                      <span class="dni-pill">{{ f.dni || 'Sin DNI' }}</span>
+                      <span class="jornadas-pill">{{ f.jornadasAplicables }} jor. aplicables</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Asistencia con Barra de Progreso y Porcentaje -->
+              <td class="td-attendance" data-label="Asistencia">
+                <div class="attendance-cell">
+                  <div class="attendance-top">
+                    <span
+                      class="attendance-pct"
+                      [class.text-ok]="f.porcentajeAsistencia >= 80"
+                      [class.text-warning]="f.porcentajeAsistencia >= 60 && f.porcentajeAsistencia < 80"
+                      [class.text-danger]="f.porcentajeAsistencia < 60"
+                    >
+                      {{ f.porcentajeAsistencia }}%
+                    </span>
+                    <span class="attendance-ratio">{{ f.asistencias }} / {{ f.jornadasAplicables }}</span>
+                  </div>
+                  <div class="attendance-progress-track">
+                    <div
+                      class="attendance-progress-fill"
+                      [class]="obtenerClaseAsistencia(f.porcentajeAsistencia)"
+                      [style.width.%]="f.porcentajeAsistencia"
+                    ></div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Faltas Justificadas -->
+              <td class="td-incidents" data-label="F. Justificadas">
+                @if (f.faltasJustificadas > 0) {
+                  <span class="incident-badge badge--amber">
+                    <tui-icon icon="@tui.info" />
+                    <span>{{ f.faltasJustificadas }}</span>
+                  </span>
+                } @else {
+                  <span class="badge--zero">0</span>
+                }
+              </td>
+
+              <!-- Faltas Injustificadas -->
+              <td class="td-incidents" data-label="F. Injustificadas">
+                @if (f.faltasInjustificadas > 0) {
+                  <span class="incident-badge badge--danger-solid">
+                    <tui-icon icon="@tui.alert-triangle" />
+                    <span>{{ f.faltasInjustificadas }}</span>
+                  </span>
+                } @else {
+                  <span class="badge--zero">0</span>
+                }
+              </td>
+
+              <!-- Salidas Anticipadas -->
+              <td class="td-incidents" data-label="Salidas Anticipadas">
+                @if (f.salidasAnticipadas > 0) {
+                  <span class="incident-badge badge--purple">
+                    <tui-icon icon="@tui.log-out" />
+                    <span>{{ f.salidasAnticipadas }}</span>
+                  </span>
+                } @else {
+                  <span class="badge--zero">0</span>
+                }
+              </td>
+
+              <!-- Horas Adicionales -->
+              <td class="td-hours" data-label="Horas Adicionales">
+                @if (f.horasAdicionales > 0) {
+                  <span class="hours-badge">
+                    <tui-icon icon="@tui.clock" />
+                    <span>{{ f.horasAdicionales }} h</span>
+                  </span>
+                } @else {
+                  <span class="badge--zero">0 h</span>
+                }
+              </td>
+
+              <!-- Botón Detalle -->
+              <td class="td-actions" data-label="Acción">
+                <button
+                  type="button"
+                  class="btn-detail"
+                  (click)="abrirDetalle(f.personaId)"
+                  title="Ver desglose e historial de jornadas de {{ f.nombreCompleto }}"
+                >
+                  <span>Ver detalle</span>
+                  <tui-icon icon="@tui.arrow-right" />
+                </button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
 </section>
 
-@if(detalle()||cargandoDetalle()){<div class="drawer-backdrop" (click)="cerrarDetalle()"></div><aside class="drawer" aria-label="Detalle del integrante">
-  @if(cargandoDetalle()){<div class="drawer-loading">Cargando detalle…</div>}
-  @else if(detalle();as d){<header class="drawer-header"><div><span>Detalle del integrante</span><h2>{{d.integrante.nombreCompleto}}</h2><p>{{d.grupo.nombre}} · {{d.desde}} — {{d.hasta}}</p></div><button type="button" aria-label="Cerrar detalle" (click)="cerrarDetalle()"><tui-icon icon="@tui.x"/></button></header>
-  <div class="drawer-summary"><div><strong>{{d.integrante.porcentajeAsistencia}}%</strong><span>Asistencia</span></div><div><strong>{{d.integrante.faltasInjustificadas}}</strong><span>Faltas injustificadas</span></div><div><strong>{{d.integrante.horasAdicionales}} h</strong><span>Horas adicionales</span></div></div><h3>Historial de jornadas</h3><div class="history">
-    @for(item of d.historial;track item.jornadaId){<article><div class="history-date"><strong>{{item.fecha}}</strong><span>{{item.tipo.toLowerCase()}}</span></div><div><span class="status {{claseEstado(item.estado)}}">{{etiquetaEstado(item.estado)}}</span><p>{{item.entrada||'—'}} → {{item.salida||'—'}} @if(item.horasAdicionales){ · {{item.horasAdicionales}} h}</p></div>@if(item.incidencia){<p class="incident">{{item.incidencia}}</p>}</article>}@empty{<div class="empty empty--small">No existen jornadas aplicables.</div>}
-  </div>}
-</aside>}
+<!-- DRAWER LATERAL: HISTORIAL DE JORNADAS DEL INTEGRANTE -->
+@if (detalle() || cargandoDetalle()) {
+  <div class="drawer-backdrop" (click)="cerrarDetalle()"></div>
+  <aside class="drawer-panel" aria-label="Detalle e historial del integrante">
+    
+    @if (cargandoDetalle()) {
+      <div class="drawer-loading">
+        <div class="spinner"></div>
+        <span>Cargando detalle del integrante...</span>
+      </div>
+    }
+    @else if (detalle(); as d) {
+      <header class="drawer-header">
+        <div class="drawer-header-info">
+          <div
+            class="drawer-avatar"
+            [style.background-color]="obtenerColorAvatar(d.integrante.nombreCompleto).bg"
+            [style.color]="obtenerColorAvatar(d.integrante.nombreCompleto).color"
+          >
+            {{ obtenerIniciales(d.integrante.nombreCompleto) }}
+          </div>
+          <div class="drawer-title-col">
+            <span class="drawer-pretitle">{{ d.grupo.nombre }} · {{ d.grupo.etapa }}</span>
+            <h2 class="drawer-name">{{ d.integrante.nombreCompleto }}</h2>
+            <div class="drawer-meta-tags">
+              <span class="meta-tag">DNI: {{ d.integrante.dni || 'No registrado' }}</span>
+              <span class="meta-tag">Periodo: {{ d.desde }} a {{ d.hasta }}</span>
+            </div>
+          </div>
+        </div>
+        <button
+          type="button"
+          class="btn-close-drawer"
+          aria-label="Cerrar detalle"
+          (click)="cerrarDetalle()"
+        >
+          <tui-icon icon="@tui.x" />
+        </button>
+      </header>
+
+      <!-- Resumen en 3 tarjetas rápidas -->
+      <div class="drawer-summary-cards">
+        <div class="d-card d-card--attendance">
+          <span class="d-card-label">Asistencia Neta</span>
+          <div class="d-card-val-row">
+            <strong
+              [class.text-ok]="d.integrante.porcentajeAsistencia >= 80"
+              [class.text-danger]="d.integrante.porcentajeAsistencia < 80"
+            >
+              {{ d.integrante.porcentajeAsistencia }}%
+            </strong>
+            <small>{{ d.integrante.asistencias }} / {{ d.integrante.jornadasAplicables }}</small>
+          </div>
+          <div class="d-card-progress">
+            <div
+              class="d-card-progress-fill"
+              [class]="obtenerClaseAsistencia(d.integrante.porcentajeAsistencia)"
+              [style.width.%]="d.integrante.porcentajeAsistencia"
+            ></div>
+          </div>
+        </div>
+
+        <div class="d-card d-card--faults">
+          <span class="d-card-label">Faltas Injustificadas</span>
+          <div class="d-card-val-row">
+            <strong [class.text-danger]="d.integrante.faltasInjustificadas > 0">
+              {{ d.integrante.faltasInjustificadas }}
+            </strong>
+          </div>
+          <span class="d-card-sub">Jornadas sin justificar</span>
+        </div>
+
+        <div class="d-card d-card--hours">
+          <span class="d-card-label">Horas Adicionales</span>
+          <div class="d-card-val-row">
+            <strong>{{ d.integrante.horasAdicionales }} h</strong>
+          </div>
+          <span class="d-card-sub">Actividades formativas extra</span>
+        </div>
+      </div>
+
+      <div class="drawer-history-section">
+        <div class="history-header">
+          <tui-icon icon="@tui.calendar-days" />
+          <h3>Historial de Jornadas del Periodo</h3>
+        </div>
+
+        <div class="timeline-list">
+          @for (item of d.historial; track item.jornadaId) {
+            <article class="timeline-item">
+              <div class="timeline-date-box">
+                <span class="t-day">{{ item.fecha | slice:8:10 }}</span>
+                <span class="t-month">{{ item.fecha | slice:5:7 }}/{{ item.fecha | slice:0:4 }}</span>
+                <span class="t-type-tag" [class.t-type-tag--vol]="item.tipo === 'VOLUNTARIA'">
+                  {{ item.tipo === 'OBLIGATORIA' ? 'Oblig.' : 'Volunt.' }}
+                </span>
+              </div>
+
+              <div class="timeline-content">
+                <div class="timeline-status-row">
+                  <span class="status-badge {{ claseEstado(item.estado) }}">
+                    {{ etiquetaEstado(item.estado) }}
+                  </span>
+                  @if (item.horasAdicionales > 0) {
+                    <span class="badge-extra-time">
+                      <tui-icon icon="@tui.clock" />
+                      +{{ item.horasAdicionales }} h extra
+                    </span>
+                  }
+                </div>
+
+                <div class="timeline-times">
+                  <div class="time-item">
+                    <span class="time-label">Entrada:</span>
+                    <strong>{{ item.entrada || '—' }}</strong>
+                  </div>
+                  <div class="time-sep">→</div>
+                  <div class="time-item">
+                    <span class="time-label">Salida:</span>
+                    <strong>{{ item.salida || '—' }}</strong>
+                  </div>
+                </div>
+
+                @if (item.incidencia) {
+                  <div class="timeline-incident">
+                    <tui-icon icon="@tui.alert-circle" />
+                    <span>{{ item.incidencia }}</span>
+                  </div>
+                }
+              </div>
+            </article>
+          } @empty {
+            <div class="empty-state empty-state--compact">
+              <p>No se registran jornadas evaluadas para este integrante en el periodo.</p>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+  </aside>
+}

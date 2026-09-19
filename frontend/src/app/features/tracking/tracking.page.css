@@ -1,4 +1,276 @@
-:host{display:grid;gap:18px;color:#182230}.filters,.results,.summary{background:#fff;border:1px solid #e4e8ee;border-radius:14px;box-shadow:0 1px 2px #1018280a}.filters{display:grid;grid-template-columns:1.15fr 2fr 1fr;gap:16px;align-items:end;padding:18px}.field,.period-field{display:grid;gap:7px}.field>span,.period-field>span{font-size:12px;font-weight:700;color:#526173}select,input{width:100%;height:40px;border:1px solid #d8dee7;border-radius:9px;background:#fff;padding:0 11px;font:inherit;outline:none}select:focus,input:focus{border-color:#d7193f;box-shadow:0 0 0 3px #d7193f1a}.quick-periods{display:flex;padding:3px;background:#f3f5f8;border-radius:10px}.quick-periods button{flex:1;border:0;background:transparent;border-radius:7px;padding:9px 7px;color:#526173;font-weight:650;cursor:pointer;white-space:nowrap}.quick-periods button.active{color:#a70f2d;background:#fff;box-shadow:0 1px 4px #1018281f}.custom-dates{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(180px,260px));gap:12px}.alert{display:flex;align-items:center;gap:9px;padding:11px 14px;color:#a70f2d;background:#fff1f3;border:1px solid #ffd3db;border-radius:10px;font-size:13px}
-.summary{display:grid;grid-template-columns:repeat(6,1fr);overflow:hidden}.summary div{display:flex;min-width:0;flex-direction:column;gap:6px;padding:16px 18px;border-right:1px solid #e8ebf0}.summary div:last-child{border:0}.summary span{font-size:11px;font-weight:700;text-transform:uppercase;color:#6b7788}.summary strong{font-size:22px}.danger{color:#c31537!important}.results{overflow:hidden}.results>header{display:flex;justify-content:space-between;align-items:center;padding:17px 19px;border-bottom:1px solid #e8ebf0}.results h2{font-size:16px;margin:0}.results p{margin:4px 0 0;color:#748094;font-size:12px}.results>header>span{padding:5px 9px;border-radius:99px;background:#f3f5f8;color:#596679;font-size:12px;font-weight:650}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse}th{padding:11px 14px;text-align:left;background:#f8f9fb;color:#637083;font-size:11px;text-transform:uppercase;white-space:nowrap}td{padding:14px;border-top:1px solid #edf0f3;font-size:13px}td strong,td small{display:block}td small{margin-top:4px;color:#788497;font-size:11px}.attendance{display:block;font-weight:750;color:#087443}.attendance--low{color:#c31537}.detail-button{display:flex;align-items:center;gap:4px;border:0;background:transparent;color:#bd1233;font-weight:700;white-space:nowrap;cursor:pointer}.empty{display:flex;min-height:220px;align-items:center;justify-content:center;flex-direction:column;text-align:center;color:#69768a}.empty tui-icon{font-size:30px;margin-bottom:10px}.empty p{margin:5px}.empty--small{min-height:120px}.loading{display:grid;gap:12px;padding:24px}.loading span{height:48px;border-radius:8px;background:#f1f3f6}
-.drawer-backdrop{position:fixed;z-index:1000;inset:0;background:#0f172a47;backdrop-filter:blur(1px)}.drawer{position:fixed;z-index:1001;inset:0 0 0 auto;width:min(620px,95vw);overflow-y:auto;background:#fff;box-shadow:-12px 0 35px #0f172a29;padding:24px}.drawer-header{display:flex;justify-content:space-between;gap:16px;padding-bottom:20px;border-bottom:1px solid #e8ebf0}.drawer-header span{font-size:11px;font-weight:750;text-transform:uppercase;color:#bd1233}.drawer-header h2{margin:5px 0;font-size:21px}.drawer-header p{margin:0;color:#748094;font-size:12px}.drawer-header button{width:36px;height:36px;border:1px solid #e2e6ec;border-radius:9px;background:#fff}.drawer-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:18px 0}.drawer-summary div{padding:13px;background:#f7f8fa;border-radius:10px}.drawer-summary strong,.drawer-summary span{display:block}.drawer-summary strong{font-size:19px}.drawer-summary span{margin-top:4px;color:#6c788a;font-size:11px}.drawer h3{font-size:14px}.history{display:grid;gap:9px}.history article{display:grid;grid-template-columns:115px 1fr;gap:12px;padding:13px;border:1px solid #e6e9ee;border-radius:10px}.history-date span{display:block;margin-top:4px;font-size:11px;text-transform:capitalize;color:#7b8797}.history p{margin:6px 0 0;color:#6b7788;font-size:12px}.history .incident{grid-column:1/-1;padding-top:8px;border-top:1px solid #edf0f3}.status{display:inline-block;padding:4px 7px;border-radius:99px;font-size:10px;font-weight:750;text-transform:capitalize}.status--ok{color:#067647;background:#ecfdf3}.status--info{color:#175cd3;background:#eff8ff}.status--danger{color:#b42318;background:#fef3f2}.status--warning{color:#b54708;background:#fffaeb}.drawer-loading{display:grid;place-items:center;min-height:50vh;color:#687589}
-@media(max-width:1100px){.filters{grid-template-columns:1fr 1.5fr}.filters>.field:last-of-type{grid-column:1/-1}.summary{grid-template-columns:repeat(3,1fr)}}@media(max-width:720px){.filters{grid-template-columns:1fr;padding:14px}.filters>.field:last-of-type{grid-column:auto}.quick-periods{display:grid;grid-template-columns:1fr 1fr}.custom-dates{grid-template-columns:1fr 1fr}.summary{grid-template-columns:repeat(2,1fr)}.table-wrap{overflow:visible}table,tbody,tr,td{display:block}thead{display:none}tr{padding:14px;border-top:1px solid #e8ebf0}td{display:flex;justify-content:space-between;gap:14px;padding:7px 0;border:0;text-align:right}td:before{content:attr(data-label);color:#6b7788;font-size:11px;font-weight:650}td:last-child{justify-content:flex-end}.drawer{padding:18px}.drawer-summary{grid-template-columns:1fr}.history article{grid-template-columns:1fr}}
+:host{display:flex;flex-direction:column;gap:16px;color:var(--r21-text-primary,#181c23);font-family:var(--r21-font,Arial,sans-serif);width:100%}
+.filters-card,.kpi-card,.results-card{background:var(--r21-surface,#fff);border:1px solid var(--r21-border,#e4e7ec);border-radius:12px;box-shadow:0 1px 3px rgba(16,24,40,.04)}
+.filters-card{display:grid;grid-template-columns:1.2fr 2fr 1fr;gap:14px;align-items:flex-end;padding:14px 18px}
+.filter-group-field,.filter-order-field,.period-control,.custom-dates-row .date-field{display:flex;flex-direction:column;gap:5px}
+.filter-group-field label,.filter-order-field label,.period-label{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:650;color:var(--r21-text-secondary,#53616a)}
+.filter-group-field label tui-icon,.filter-order-field label tui-icon,.period-label tui-icon{font-size:14px;color:var(--r21-red,#c8102e)}
+.filter-group-field select,.filter-order-field select,.custom-dates-row input{width:100%;height:38px;border:1px solid var(--r21-border,#d8dee7);border-radius:8px;background:#fff;padding:0 10px;font-size:13px;color:var(--r21-text-primary,#181c23);outline:none;transition:border-color .15s}
+.filter-group-field select:focus,.filter-order-field select:focus,.custom-dates-row input:focus,.results-search-box:focus-within{border-color:var(--r21-red,#c8102e);box-shadow:0 0 0 3px rgba(200,16,46,.12)}
+.quick-periods{display:flex;padding:3px;background:#f2f4f7;border-radius:9px;border:1px solid #e4e7ec}
+.quick-periods button{flex:1;border:0;background:transparent;border-radius:7px;padding:7px 9px;color:#53616a;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .12s}
+.quick-periods button:hover:not(.active){color:#181c23}
+.quick-periods button.active{color:var(--r21-red,#c8102e);background:#fff;box-shadow:0 1px 3px rgba(16,24,40,.12)}
+.custom-dates-row{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(180px,240px));gap:12px;padding-top:6px;border-top:1px dashed var(--r21-border,#e4e7ec)}
+.custom-dates-row span{font-size:11px;font-weight:600;color:var(--r21-text-secondary,#53616a)}
+.alert{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:8px;font-size:12.5px;font-weight:500}
+.alert--danger{background:#fef3f2;border:1px solid #fee4e2;color:#b42318}
+.alert--danger tui-icon{font-size:17px}
+
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:100%}
+.kpi-card{display:flex;flex-direction:column;padding:16px;transition:box-shadow .15s}
+.kpi-card:hover{box-shadow:0 4px 12px rgba(16,24,40,.06)}
+.card-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.header-icon-wrap{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;font-size:17px;flex-shrink:0}
+.icon--green{background:#e7f6ed;color:#14804a}
+.icon--red{background:#fbecee;color:#c8102e}
+.icon--blue{background:#eff8ff;color:#175cd3}
+.icon--amber{background:#fef6e7;color:#b76e00}
+.header-titles{display:flex;flex-direction:column;gap:1px}
+.card-title{font-size:14px;font-weight:700;color:#181c23;margin:0}
+.card-subtitle{font-size:11px;color:#667085}
+
+.gauge-display-wrap{display:flex;align-items:center;gap:14px;margin:2px 0 10px}
+.gauge-svg-container,.donut-svg-wrap{position:relative;flex-shrink:0}
+.gauge-svg-container{width:80px;height:80px}
+.donut-svg-wrap{width:84px;height:84px}
+.gauge-svg,.donut-svg{width:100%;height:100%}
+.gauge-progress-ring{transition:stroke-dasharray .5s ease}
+.gauge-center-content,.donut-center-info{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;pointer-events:none}
+.gauge-value{font-size:17px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.gauge-unit,.donut-center-sub{font-size:9px;font-weight:600;color:#8b949e;margin-top:2px;text-transform:uppercase}
+.gauge-meta-details{display:flex;flex-direction:column;gap:3px;flex:1}
+.status-pill{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;padding:2px 7px;border-radius:99px;font-size:11px;font-weight:700}
+.status-dot,.chip-dot,.dot{width:6px;height:6px;border-radius:50%}
+.badge--ok{background:#e7f6ed;color:#087443}
+.badge--ok .status-dot,.dot--ok{background:#14804a}
+.badge--warning{background:#fef6e7;color:#b54708}
+.badge--warning .status-dot{background:#b76e00}
+.badge--danger{background:#fef3f2;color:#b42318}
+.badge--danger .status-dot,.dot--danger{background:#c8102e}
+.gauge-desc{font-size:10.5px;color:#667085;margin:2px 0 0;line-height:1.3}
+.gauge-stat-ratio{display:flex;align-items:center;gap:4px;margin-top:2px;font-size:11px;color:#53616a}
+.gauge-stat-ratio strong,.benchmark-label strong,.avg-row strong{color:#181c23}
+.card-footer-benchmark,.hours-average-footer,.cohort-filter-buttons{margin-top:auto;padding-top:7px;border-top:1px solid #edf0f2}
+.benchmark-label{display:block;font-size:10.5px;color:#53616a;margin-bottom:4px}
+.benchmark-bar-track{position:relative;height:6px;background:#eaecf0;border-radius:99px}
+.benchmark-bar-fill{height:100%;border-radius:99px;transition:width .5s ease}
+.benchmark-target-marker{position:absolute;top:-3px;bottom:-3px;width:2px;background:#475467;border-radius:1px;z-index:2}
+
+.donut-chart-layout{display:flex;align-items:center;gap:12px}
+.donut-segment{cursor:pointer;transition:stroke-width .14s ease}
+.donut-segment:hover,.donut-segment.donut-segment--hovered{stroke-width:6.2;filter:drop-shadow(0 2px 4px rgba(0,0,0,.2))}
+.donut-center-total{font-size:15px;font-weight:800;color:#181c23;line-height:1}
+.donut-legend{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+.legend-item{display:flex;align-items:center;gap:5px;padding:3px 5px;border:1px solid transparent;border-radius:5px;background:transparent;cursor:pointer;font-family:inherit;text-align:left;transition:all .12s}
+.legend-item:hover,.legend-item.legend-item--hovered{background:#f2f4f7}
+.legend-item.legend-item--active{background:#f8f9fb;border-color:var(--r21-red,#c8102e);box-shadow:0 1px 2px rgba(200,16,46,.08)}
+.legend-color-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.legend-name{font-size:10.5px;font-weight:500;color:#53616a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.legend-val{font-size:10.5px;color:#181c23;white-space:nowrap}
+.legend-val strong{font-weight:700}
+.legend-val small{font-size:9px;color:#8b949e;margin-left:2px}
+.card-note{display:flex;align-items:center;gap:4px;margin-top:auto;padding-top:6px;font-size:10px;color:#8b949e}
+.card-note tui-icon{font-size:12px;color:var(--r21-red,#c8102e)}
+
+.cohort-metrics-wrap{display:flex;flex-direction:column;gap:9px;margin-bottom:9px}
+.cohort-row{display:flex;flex-direction:column;gap:4px;padding:5px 6px;border-radius:7px;border:1px solid transparent;cursor:pointer;transition:all .12s}
+.cohort-row:hover,.cohort-row.cohort-row--active{background:#f8f9fb}
+.cohort-row.cohort-row--active{border-color:#d0d5dd}
+.cohort-row-head{display:flex;justify-content:space-between;align-items:center}
+.cohort-badge{font-size:10.5px;font-weight:700}
+.cohort-badge--ok{color:#087443}
+.cohort-badge--danger{color:#b42318}
+.cohort-numbers{font-size:11.5px;display:flex;align-items:center;gap:3px}
+.cohort-numbers strong{font-weight:800;color:#181c23}
+.cohort-fraction{color:#8b949e;font-size:10.5px}
+.cohort-pct{font-size:10.5px;font-weight:700;margin-left:2px}
+.font-ok{color:#087443}
+.font-danger{color:#b42318}
+.cohort-bar-track{height:6px;background:#eaecf0;border-radius:99px;overflow:hidden}
+.cohort-bar-fill{height:100%;border-radius:99px;transition:width .4s ease}
+.cohort-bar-fill--ok{background:#14804a}
+.cohort-bar-fill--danger{background:#c8102e}
+.cohort-filter-buttons{display:flex;gap:6px}
+.btn-cohort-filter{flex:1;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:5px 7px;border:1px solid #e4e7ec;border-radius:6px;background:#fff;font-size:10.5px;font-weight:600;color:#53616a;cursor:pointer;transition:all .12s}
+.btn-cohort-filter:hover{border-color:#cbd5e1;background:#f8f9fb}
+.btn-cohort-filter.active{border-color:var(--r21-red,#c8102e);background:#fef3f2;color:var(--r21-red,#c8102e)}
+
+.hours-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px}
+.stat-pill-box{display:flex;align-items:center;gap:8px;padding:8px;background:#f8f9fb;border:1px solid #eef2f6;border-radius:8px;transition:all .12s}
+.stat-icon-lead{width:28px;height:28px;border-radius:6px;background:#fff;border:1px solid #e4e7ec;display:grid;place-items:center;font-size:14px;color:var(--r21-red,#c8102e);flex-shrink:0}
+.stat-values{display:flex;flex-direction:column;min-width:0}
+.stat-num{font-size:15px;font-weight:800;color:#181c23;line-height:1.1}
+.stat-num small{font-size:11px;font-weight:600;color:#667085}
+.stat-label{font-size:10px;color:#667085;margin-top:1px;line-height:1.2}
+.stat-pill-box.stat-pill-box--clickable{cursor:pointer}
+.stat-pill-box.stat-pill-box--clickable:hover{background:#f2f5f9;border-color:#cbd5e1}
+.stat-pill-box.stat-pill-box--active{background:#fef6e7;border-color:#f79009}
+.hours-average-footer{display:flex;flex-direction:column;gap:3px}
+.avg-row{display:flex;justify-content:space-between;font-size:10.5px;color:#53616a}
+
+.results-card{display:flex;flex-direction:column;overflow:hidden}
+.results-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #e4e7ec;flex-wrap:wrap;gap:12px}
+.results-header-left{display:flex;flex-direction:column;gap:2px}
+.results-title-row{display:flex;align-items:center;gap:8px}
+.results-title{font-size:16px;font-weight:750;color:#181c23;margin:0}
+.results-count-pill{padding:2px 8px;border-radius:99px;background:#f2f4f7;color:#475467;font-size:11px;font-weight:700}
+.results-dates{display:flex;align-items:center;gap:5px;margin:0;font-size:11.5px;color:#667085}
+.results-dates tui-icon{font-size:13px;color:var(--r21-red,#c8102e)}
+.bullet-sep{color:#98a2b3}
+.results-search-box{display:flex;align-items:center;gap:6px;width:min(280px,100%);height:36px;background:#f8f9fb;border:1px solid #d8dee7;border-radius:7px;padding:0 10px}
+.results-search-box tui-icon{font-size:14px;color:#667085}
+.results-search-box input{border:0;background:transparent;outline:none;width:100%;font-size:12px;color:#181c23}
+.results-search-box input::placeholder{color:#98a2b3}
+.btn-clear-search{border:0;background:transparent;padding:0;cursor:pointer;color:#667085;display:grid;place-items:center}
+.btn-clear-search:hover{color:var(--r21-red,#c8102e)}
+
+.quick-filter-chips{display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:8px 18px;background:#fbfcfe;border-bottom:1px solid #edf0f2}
+.filter-lead-label{font-size:11px;font-weight:650;color:#667085;margin-right:2px}
+.chip-btn{display:inline-flex;align-items:center;gap:5px;padding:4px 9px;border-radius:99px;border:1px solid #d8dee7;background:#fff;font-size:11px;font-weight:600;color:#475467;cursor:pointer;transition:all .12s}
+.chip-btn:hover{background:#f2f4f7;border-color:#cbd5e1}
+.chip-btn.active{background:#181c23;border-color:#181c23;color:#fff}
+.chip-btn.active .chip-dot{background:#fff!important}
+.chip-btn.chip-btn--danger .chip-dot{background:#c8102e}
+.chip-btn.chip-btn--danger.active{background:#c8102e;border-color:#c8102e}
+.chip-btn.chip-btn--warning .chip-dot{background:#b76e00}
+.chip-btn.chip-btn--warning.active{background:#b76e00;border-color:#b76e00}
+.chip-btn.chip-btn--ok .chip-dot{background:#14804a}
+.chip-btn.chip-btn--ok.active{background:#14804a;border-color:#14804a}
+.chip-btn.chip-btn--purple .chip-dot{background:#7a5af8}
+.chip-btn.chip-btn--purple.active{background:#7a5af8;border-color:#7a5af8}
+.chip-btn.chip-btn--clear{border-style:dashed;color:var(--r21-red,#c8102e);border-color:#fda29b}
+.chip-btn.chip-btn--clear:hover{background:#fef3f2}
+.chip-btn.chip-btn--clear tui-icon{font-size:12px}
+
+.table-responsive{width:100%;overflow-x:auto}
+.tracking-table{width:100%;border-collapse:collapse;text-align:left}
+.tracking-table thead tr{background:#f8f9fb;border-bottom:1px solid #e4e7ec}
+.tracking-table th{padding:10px 14px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:#667085;white-space:nowrap}
+.tracking-table .th-member{width:30%}
+.tracking-table .th-attendance{width:22%}
+.tracking-table .th-incidents{width:11%;text-align:center}
+.tracking-table .th-hours{width:11%;text-align:center}
+.tracking-table .th-actions{width:15%;text-align:right}
+.tracking-table tbody tr{border-bottom:1px solid #edf0f2;transition:background .12s}
+.tracking-table tbody tr:hover{background:#fbfcfe}
+.tracking-table tbody tr:last-child{border-bottom:0}
+.tracking-table td{padding:11px 14px;vertical-align:middle}
+.tracking-table .td-incidents,.tracking-table .td-hours{text-align:center}
+.tracking-table .td-actions{text-align:right}
+
+.member-cell{display:flex;align-items:center;gap:10px}
+.member-avatar{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:750;flex-shrink:0;box-shadow:0 1px 2px rgba(16,24,40,.06)}
+.member-info{display:flex;flex-direction:column;gap:2px;min-width:0}
+.member-name{font-size:13px;font-weight:700;color:#181c23;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.member-sub{display:flex;align-items:center;gap:5px}
+.dni-pill{font-size:10.5px;color:#475467;font-weight:600;background:#f2f4f7;padding:1px 5px;border-radius:3px}
+.jornadas-pill{font-size:10.5px;color:#667085}
+
+.attendance-cell{display:flex;flex-direction:column;gap:4px;max-width:160px}
+.attendance-top{display:flex;justify-content:space-between;align-items:baseline}
+.attendance-pct{font-size:13px;font-weight:800}
+.text-ok{color:#087443}
+.text-warning{color:#b54708}
+.text-danger{color:#b42318}
+.attendance-ratio{font-size:10.5px;color:#667085;font-weight:600}
+.attendance-progress-track,.d-card-progress{height:5px;background:#eaecf0;border-radius:99px;overflow:hidden}
+.attendance-progress-fill,.d-card-progress-fill{height:100%;border-radius:99px;transition:width .35s ease}
+.progress-fill--high{background:#14804a}
+.progress-fill--mid{background:#b76e00}
+.progress-fill--low{background:#c8102e}
+
+.incident-badge,.hours-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:99px;font-size:11.5px;font-weight:700}
+.incident-badge tui-icon,.hours-badge tui-icon{font-size:12px}
+.badge--danger-solid{background:#fee4e2;color:#b42318;border:1px solid #fecdca}
+.badge--amber{background:#fef0c7;color:#b54708;border:1px solid #fedf89}
+.badge--purple{background:#f4ebff;color:#6941c6;border:1px solid #e9d7fe}
+.hours-badge{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}
+.badge--zero{display:inline-block;color:#98a2b3;font-size:11.5px;font-weight:500}
+
+.btn-detail{display:inline-flex;align-items:center;gap:5px;border:1px solid #e4e7ec;border-radius:6px;background:#fff;padding:5px 10px;color:var(--r21-red,#c8102e);font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;transition:all .14s ease}
+.btn-detail tui-icon{font-size:12px;transition:transform .14s ease}
+.btn-detail:hover{background:#fef3f2;border-color:#fecdca}
+.btn-detail:hover tui-icon{transform:translateX(3px)}
+
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center;color:#667085}
+.empty-icon-wrap{width:44px;height:44px;border-radius:10px;background:#f2f4f7;display:grid;place-items:center;font-size:20px;color:#475467;margin-bottom:10px}
+.empty-state h3{margin:0 0 5px;font-size:14.5px;font-weight:700;color:#181c23}
+.empty-state p{margin:0;font-size:12.5px;max-width:380px;line-height:1.4}
+.btn-reset-filters{margin-top:12px;display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:7px;border:1px solid #e4e7ec;background:#fff;font-size:12px;font-weight:600;color:var(--r21-red,#c8102e);cursor:pointer}
+.btn-reset-filters:hover{background:#fef3f2}
+.empty-state.empty-state--compact{padding:20px}
+
+.loading-state{display:flex;flex-direction:column;gap:10px;padding:20px}
+.skeleton-row{height:40px;border-radius:7px;background:linear-gradient(90deg,#f2f4f7 25%,#e4e7ec 50%,#f2f4f7 75%);background-size:200% 100%;animation:skeletonShimmer 1.5s infinite}
+@keyframes skeletonShimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+
+.drawer-backdrop{position:fixed;z-index:1000;inset:0;background:rgba(15,23,42,.45);backdrop-filter:blur(2px)}
+.drawer-panel{position:fixed;z-index:1001;inset:0 0 0 auto;width:min(580px,94vw);background:#fff;box-shadow:-12px 0 35px rgba(15,23,42,.2);padding:20px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.drawer-header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:14px;border-bottom:1px solid #e4e7ec}
+.drawer-header-info{display:flex;align-items:center;gap:12px}
+.drawer-avatar{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:800;flex-shrink:0}
+.drawer-title-col{display:flex;flex-direction:column;gap:2px}
+.drawer-pretitle{font-size:10.5px;font-weight:700;text-transform:uppercase;color:var(--r21-red,#c8102e)}
+.drawer-name{margin:0;font-size:17px;font-weight:750;color:#181c23}
+.drawer-meta-tags{display:flex;align-items:center;gap:6px;margin-top:2px}
+.drawer-meta-tags .meta-tag{font-size:10.5px;color:#667085}
+.btn-close-drawer{width:32px;height:32px;border-radius:7px;border:1px solid #e4e7ec;background:#fff;cursor:pointer;display:grid;place-items:center;color:#53616a;transition:all .12s}
+.btn-close-drawer:hover{background:#f2f4f7;color:var(--r21-red,#c8102e)}
+
+.drawer-summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.d-card{padding:10px;background:#f8f9fb;border:1px solid #eef2f6;border-radius:8px;display:flex;flex-direction:column;gap:3px}
+.d-card-label{font-size:10.5px;font-weight:600;color:#667085}
+.d-card-val-row{display:flex;align-items:baseline;gap:5px}
+.d-card-val-row strong{font-size:17px;font-weight:800;color:#181c23}
+.d-card-val-row small{font-size:10.5px;color:#667085}
+.d-card-sub{font-size:10px;color:#98a2b3}
+.d-card-progress{margin-top:3px}
+
+.drawer-history-section{display:flex;flex-direction:column;gap:10px}
+.history-header{display:flex;align-items:center;gap:6px}
+.history-header tui-icon{font-size:15px;color:var(--r21-red,#c8102e)}
+.history-header h3{font-size:13.5px;font-weight:700;margin:0;color:#181c23}
+.timeline-list{display:flex;flex-direction:column;gap:8px}
+.timeline-item{display:grid;grid-template-columns:78px 1fr;gap:10px;padding:10px;background:#fff;border:1px solid #e4e7ec;border-radius:8px}
+.timeline-date-box{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:5px;background:#f8f9fb;border-radius:6px;border:1px solid #eaecf0;text-align:center}
+.t-day{font-size:15px;font-weight:800;line-height:1;color:#181c23}
+.t-month{font-size:9.5px;color:#667085;margin-top:2px}
+.t-type-tag{margin-top:3px;font-size:9px;font-weight:700;color:#475467;background:#eaecf0;padding:1px 4px;border-radius:3px}
+.t-type-tag.t-type-tag--vol{color:#7a5af8;background:#f4ebff}
+.timeline-content{display:flex;flex-direction:column;gap:5px}
+.timeline-status-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.status-badge{display:inline-block;padding:2px 6px;border-radius:99px;font-size:10px;font-weight:700;text-transform:capitalize}
+.status-badge.status--ok{background:#ecfdf3;color:#027a48}
+.status-badge.status--warning{background:#fffaeb;color:#b54708}
+.status-badge.status--danger{background:#fef3f2;color:#b42318}
+.status-badge.status--info{background:#eff8ff;color:#175cd3}
+.badge-extra-time{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:#14804a}
+.timeline-times{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#53616a}
+.timeline-times .time-sep{color:#98a2b3}
+.timeline-times strong{color:#181c23}
+.timeline-incident{display:flex;align-items:center;gap:5px;padding-top:5px;border-top:1px dashed #eaecf0;font-size:11px;color:#b42318}
+.timeline-incident tui-icon{font-size:12px}
+
+.drawer-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:35vh;gap:10px;color:#667085;font-size:12.5px}
+.spinner{width:26px;height:26px;border:3px solid #e4e7ec;border-top-color:var(--r21-red,#c8102e);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media (max-width:1200px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:992px){.filters-card{grid-template-columns:1fr}}
+@media (max-width:680px){
+  .kpi-grid{grid-template-columns:1fr}
+  .quick-periods{display:grid;grid-template-columns:repeat(2,1fr)}
+  .results-header{flex-direction:column;align-items:stretch}
+  .results-search-box{width:100%}
+  .tracking-table,.tracking-table tbody,.tracking-table tr,.tracking-table td{display:block}
+  .tracking-table thead{display:none}
+  .tracking-table tbody tr{padding:12px;border-bottom:1px solid #e4e7ec}
+  .tracking-table td{display:flex;justify-content:space-between;align-items:center;padding:5px 0;text-align:right}
+  .tracking-table td::before{content:attr(data-label);font-size:11px;font-weight:650;color:#667085;text-align:left}
+  .tracking-table td.td-member{display:block;padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid #f2f4f7}
+  .tracking-table td.td-member::before{display:none}
+  .tracking-table td.td-actions{justify-content:flex-end;padding-top:8px;margin-top:5px;border-top:1px dashed #eaecf0}
+  .tracking-table td.td-actions::before{display:none}
+  .drawer-summary-cards{grid-template-columns:1fr}
+  .timeline-item{grid-template-columns:1fr}
+}
