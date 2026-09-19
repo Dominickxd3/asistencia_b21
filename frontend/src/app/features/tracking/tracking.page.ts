@@ -9,6 +9,9 @@ import { environment } from '../../../environments/environment';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
 export type FiltroDinamico = 'todos' | 'bueno' | 'con_faltas' | 'en_riesgo';
+export type VistaRanking = 'asistencia' | 'faltas' | 'horas';
+export type ModoRanking = 'integrantes' | 'grupos';
+export type ColumnaOrden = 'nombre' | 'asistencia' | 'fJustificadas' | 'fInjustificadas' | 'salidas' | 'horas';
 
 export interface Grupo {
   id: number;
@@ -64,6 +67,16 @@ export interface Detalle {
   historial: Historia[];
 }
 
+export interface ItemRanking {
+  posicion: number;
+  id?: number;
+  titulo: string;
+  subtitulo: string;
+  valorTexto: string;
+  porcentajeBarra: number;
+  claseColor: 'color-ok' | 'color-danger' | 'color-blue';
+}
+
 @Component({
   selector: 'app-tracking-page',
   standalone: true,
@@ -74,89 +87,196 @@ export interface Detalle {
 export class TrackingPageComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
+  // 1. Estados de Filtros Principales (Nivel 1)
   readonly grupos = signal<Grupo[]>([]);
   readonly grupoId = signal<number | null>(null);
-  readonly filas = signal<Fila[]>([]);
-  readonly resumen = signal<Resumen | null>(null);
-  readonly jornadasEsperadas = signal(0);
-  readonly cargando = signal(false);
-  readonly error = signal('');
-  readonly detalle = signal<Detalle | null>(null);
-  readonly cargandoDetalle = signal(false);
-
-  // 3 Opciones dinámicas (Predeterminado: 'todos')
   readonly filtroActivo = signal<FiltroDinamico>('todos');
   readonly busqueda = signal('');
 
-  // Rango de fechas con Calendario idéntico al inicio
+  // Rango de fechas con Calendario idéntico al de inicio
   rangeDates: Date[] = [];
   private inicioSeleccionIso: string | null = null;
   desde = '';
   hasta = '';
 
-  // 1. ¿Cómo va el cumplimiento obligatorio del grupo?
-  readonly asistenciaGrupo = computed(() => this.resumen()?.asistenciaGrupo ?? 0);
-  readonly metaAsistencia = 80.0;
-  readonly brechaMeta = computed(() => {
-    return Math.round((this.asistenciaGrupo() - this.metaAsistencia) * 10) / 10;
-  });
-  readonly totalJornadasEsperadas = computed(() => this.jornadasEsperadas());
-  readonly totalAsistencias = computed(() => this.filas().reduce((sum, f) => sum + f.asistencias, 0));
-  readonly totalAplicables = computed(() => this.filas().reduce((sum, f) => sum + f.jornadasAplicables, 0));
+  // 2. Estados del Bloque de Rankings (Nivel 2)
+  readonly vistaActiva = signal<VistaRanking>('asistencia');
+  readonly modoActivo = signal<ModoRanking>('integrantes');
+  readonly resumenesGrupos = signal<Array<{ grupo: Grupo; resumen: Resumen }>>([]);
+  readonly cargandoGrupos = signal(false);
 
-  // 2. ¿Cuántas faltas injustificadas existen?
-  readonly totalFaltasInjustificadas = computed(() => this.resumen()?.faltasInjustificadas ?? 0);
-  readonly totalFaltasJustificadas = computed(() => this.resumen()?.faltasJustificadas ?? 0);
-  readonly totalSalidasAnticipadas = computed(() => this.resumen()?.salidasAnticipadas ?? 0);
+  // 3. Datos de Integrantes y Estado General
+  readonly filas = signal<Fila[]>([]);
+  readonly resumen = signal<Resumen | null>(null);
+  readonly jornadasEsperadas = signal(0);
+  readonly cargando = signal(false);
+  readonly error = signal('');
 
-  // 3. ¿Quiénes concentran esas faltas?
-  readonly concentranFaltas = computed(() => {
-    return this.filas()
-      .filter(f => f.faltasInjustificadas > 0)
-      .sort((a, b) => b.faltasInjustificadas - a.faltasInjustificadas || a.porcentajeAsistencia - b.porcentajeAsistencia);
-  });
+  // Ordenamiento interactivo de la grilla (Nivel 3)
+  readonly columnaOrden = signal<ColumnaOrden>('nombre');
+  readonly ordenAsc = signal(true);
 
-  // 4. ¿Cómo viene la distribución de asistencia?
-  readonly distribucionVisual = computed(() => {
-    const total = this.totalAplicables();
-    if (!total) return { asistencias: 0, faltasInjust: 0, faltasJust: 0, sinRegistro: 0 };
-    const asist = this.totalAsistencias();
-    const fi = this.totalFaltasInjustificadas();
-    const fj = this.totalFaltasJustificadas();
-    const resto = Math.max(0, total - asist - fi - fj);
-    return {
-      asistencias: Math.round((asist / total) * 100),
-      faltasInjust: Math.round((fi / total) * 100),
-      faltasJust: Math.round((fj / total) * 100),
-      sinRegistro: Math.round((resto / total) * 100),
-    };
-  });
+  // Detalle lateral (Drawer)
+  readonly detalle = signal<Detalle | null>(null);
+  readonly cargandoDetalle = signal(false);
 
-  // 5. ¿Cuántas horas voluntarias se están realizando?
-  readonly totalHorasVoluntarias = computed(() => this.resumen()?.horasAdicionales ?? 0);
-  readonly integrantesConHoras = computed(() => this.filas().filter(f => f.horasAdicionales > 0));
-  readonly promedioHorasVoluntarias = computed(() => {
-    const n = this.filas().length;
-    return n ? (Math.round((this.totalHorasVoluntarias() / n) * 10) / 10).toFixed(1) : '0.0';
-  });
+  // Conteo de integrantes por categoría para el combo box
+  readonly integrantesBueno = computed(() => this.filas().filter(f => f.porcentajeAsistencia >= 80));
+  readonly integrantesConFaltas = computed(() => this.filas().filter(f => f.faltasInjustificadas > 0));
+  readonly integrantesEnRiesgo = computed(() => this.filas().filter(f => f.porcentajeAsistencia < 80));
 
-  // 6. ¿Quién requiere que revise su detalle?
-  readonly casosPrioritarios = computed(() => {
-    return this.filas()
-      .filter(f => f.faltasInjustificadas > 0 || f.porcentajeAsistencia < 80)
-      .sort((a, b) => b.faltasInjustificadas - a.faltasInjustificadas || a.porcentajeAsistencia - b.porcentajeAsistencia);
+  // ------------------------------------------------------------
+  // COMPUTADOS DE RANKINGS (TOP 5 POR INTEGRANTES)
+  // ------------------------------------------------------------
+  readonly top5Asistencia = computed<ItemRanking[]>(() => {
+    const sorted = [...this.filas()]
+      .sort((a, b) => b.porcentajeAsistencia - a.porcentajeAsistencia || b.asistencias - a.asistencias || a.nombreCompleto.localeCompare(b.nombreCompleto))
+      .slice(0, 5);
+
+    return sorted.map((f, i) => ({
+      posicion: i + 1,
+      id: f.personaId,
+      titulo: f.nombreCompleto,
+      subtitulo: `DNI ${f.dni || 'S/D'} · ${f.asistencias} de ${f.jornadasAplicables} asistencias`,
+      valorTexto: `${f.porcentajeAsistencia}%`,
+      porcentajeBarra: Math.min(100, Math.max(0, f.porcentajeAsistencia)),
+      claseColor: 'color-ok',
+    }));
   });
 
-  // Integrantes con rendimiento Bueno (≥ 80%)
-  readonly integrantesBueno = computed(() => {
-    return this.filas().filter(f => f.porcentajeAsistencia >= 80);
+  readonly top5Faltas = computed<ItemRanking[]>(() => {
+    const list = this.filas().filter(f => f.faltasInjustificadas > 0);
+    const sorted = [...list]
+      .sort((a, b) => b.faltasInjustificadas - a.faltasInjustificadas || a.porcentajeAsistencia - b.porcentajeAsistencia)
+      .slice(0, 5);
+
+    const maxVal = sorted.length ? Math.max(...sorted.map(s => s.faltasInjustificadas)) : 1;
+
+    return sorted.map((f, i) => ({
+      posicion: i + 1,
+      id: f.personaId,
+      titulo: f.nombreCompleto,
+      subtitulo: `DNI ${f.dni || 'S/D'} · Asistencia: ${f.porcentajeAsistencia}%`,
+      valorTexto: `${f.faltasInjustificadas} ${f.faltasInjustificadas === 1 ? 'falta' : 'faltas'}`,
+      porcentajeBarra: Math.min(100, Math.round((f.faltasInjustificadas / maxVal) * 100)),
+      claseColor: 'color-danger',
+    }));
   });
 
-  // Lista filtrada para la grilla
-  readonly filasFiltradas = computed(() => {
+  readonly top5Horas = computed<ItemRanking[]>(() => {
+    const list = this.filas().filter(f => f.horasAdicionales > 0);
+    const sorted = [...list]
+      .sort((a, b) => b.horasAdicionales - a.horasAdicionales || a.nombreCompleto.localeCompare(b.nombreCompleto))
+      .slice(0, 5);
+
+    const maxVal = sorted.length ? Math.max(...sorted.map(s => s.horasAdicionales)) : 1;
+
+    return sorted.map((f, i) => ({
+      posicion: i + 1,
+      id: f.personaId,
+      titulo: f.nombreCompleto,
+      subtitulo: `DNI ${f.dni || 'S/D'} · Asistencia obligatoria: ${f.porcentajeAsistencia}%`,
+      valorTexto: `${f.horasAdicionales} h`,
+      porcentajeBarra: Math.min(100, Math.round((f.horasAdicionales / maxVal) * 100)),
+      claseColor: 'color-blue',
+    }));
+  });
+
+  // ------------------------------------------------------------
+  // COMPUTADOS DE RANKINGS (POR GRUPOS)
+  // ------------------------------------------------------------
+  readonly rankingGrupos = computed<ItemRanking[]>(() => {
+    const vista = this.vistaActiva();
+    const list = this.resumenesGrupos();
+    if (!list.length) return [];
+
+    if (vista === 'asistencia') {
+      // REGLA INSTITUCIONAL OBLIGATORIA:
+      // No incluir ESBAS en comparación de cumplimiento obligatorio porque su asistencia es voluntaria.
+      const aplicables = list.filter(g => {
+        const etapa = (g.grupo.etapa || '').toUpperCase();
+        const nombre = (g.grupo.nombre || '').toUpperCase();
+        return !etapa.includes('ESBAS') && !nombre.includes('ESBAS') && !etapa.includes('BÁSICA');
+      });
+
+      const sorted = [...aplicables].sort((a, b) => b.resumen.asistenciaGrupo - a.resumen.asistenciaGrupo);
+      return sorted.map((g, i) => ({
+        posicion: i + 1,
+        id: g.grupo.id,
+        titulo: g.grupo.nombre,
+        subtitulo: `Etapa: ${g.grupo.etapa} · ${g.resumen.jornadasObligatorias} jornadas obligatorias`,
+        valorTexto: `${g.resumen.asistenciaGrupo}%`,
+        porcentajeBarra: Math.min(100, Math.max(0, g.resumen.asistenciaGrupo)),
+        claseColor: 'color-ok',
+      }));
+    }
+
+    if (vista === 'faltas') {
+      // Faltas injustificadas acumuladas por grupo
+      const sorted = [...list].sort((a, b) => b.resumen.faltasInjustificadas - a.resumen.faltasInjustificadas);
+      const maxVal = sorted.length ? Math.max(...sorted.map(s => s.resumen.faltasInjustificadas), 1) : 1;
+
+      return sorted.map((g, i) => ({
+        posicion: i + 1,
+        id: g.grupo.id,
+        titulo: g.grupo.nombre,
+        subtitulo: `Etapa: ${g.grupo.etapa}`,
+        valorTexto: `${g.resumen.faltasInjustificadas} faltas`,
+        porcentajeBarra: Math.min(100, Math.round((g.resumen.faltasInjustificadas / maxVal) * 100)),
+        claseColor: 'color-danger',
+      }));
+    }
+
+    // Horas voluntarias acumuladas por grupo (aplica para todos los grupos)
+    const sorted = [...list].sort((a, b) => b.resumen.horasAdicionales - a.resumen.horasAdicionales);
+    const maxVal = sorted.length ? Math.max(...sorted.map(s => s.resumen.horasAdicionales), 1) : 1;
+
+    return sorted.map((g, i) => ({
+      posicion: i + 1,
+      id: g.grupo.id,
+      titulo: g.grupo.nombre,
+      subtitulo: `Etapa: ${g.grupo.etapa}`,
+      valorTexto: `${g.resumen.horasAdicionales} h`,
+      porcentajeBarra: Math.min(100, Math.round((g.resumen.horasAdicionales / maxVal) * 100)),
+      claseColor: 'color-blue',
+    }));
+  });
+
+  // Ranking activo a mostrar en pantalla
+  readonly itemsRankingActivo = computed<ItemRanking[]>(() => {
+    if (this.modoActivo() === 'grupos') {
+      return this.rankingGrupos();
+    }
+    const vista = this.vistaActiva();
+    if (vista === 'asistencia') return this.top5Asistencia();
+    if (vista === 'faltas') return this.top5Faltas();
+    return this.top5Horas();
+  });
+
+  // Título del bloque de ranking
+  readonly tituloRanking = computed<string>(() => {
+    const modo = this.modoActivo();
+    const vista = this.vistaActiva();
+
+    if (modo === 'grupos') {
+      if (vista === 'asistencia') return 'Comparación de Cumplimiento por Grupos';
+      if (vista === 'faltas') return 'Faltas Injustificadas por Grupos';
+      return 'Mayor Acumulación de Horas Voluntarias por Grupos';
+    }
+
+    if (vista === 'asistencia') return 'Top 5 mayor cumplimiento';
+    if (vista === 'faltas') return 'Top 5 con más faltas injustificadas';
+    return 'Top 5 mayor participación voluntaria';
+  });
+
+  // ------------------------------------------------------------
+  // GRILLA DETALLADA INFERIOR (FILTRADA Y ORDENADA)
+  // ------------------------------------------------------------
+  readonly filasFiltradas = computed<Fila[]>(() => {
     let list = this.filas();
     const f = this.filtroActivo();
 
+    // Filtro por categoría
     if (f === 'bueno') {
       list = list.filter(item => item.porcentajeAsistencia >= 80);
     } else if (f === 'con_faltas') {
@@ -165,6 +285,7 @@ export class TrackingPageComponent implements OnInit {
       list = list.filter(item => item.porcentajeAsistencia < 80);
     }
 
+    // Buscador
     const q = this.busqueda().trim().toLowerCase();
     if (q) {
       list = list.filter(item =>
@@ -173,11 +294,37 @@ export class TrackingPageComponent implements OnInit {
       );
     }
 
-    return list;
+    // Ordenamiento interactivo por columna
+    const col = this.columnaOrden();
+    const asc = this.ordenAsc();
+
+    return [...list].sort((a, b) => {
+      let diff = 0;
+      switch (col) {
+        case 'nombre':
+          diff = a.nombreCompleto.localeCompare(b.nombreCompleto);
+          break;
+        case 'asistencia':
+          diff = a.porcentajeAsistencia - b.porcentajeAsistencia;
+          break;
+        case 'fJustificadas':
+          diff = a.faltasJustificadas - b.faltasJustificadas;
+          break;
+        case 'fInjustificadas':
+          diff = a.faltasInjustificadas - b.faltasInjustificadas;
+          break;
+        case 'salidas':
+          diff = a.salidasAnticipadas - b.salidasAnticipadas;
+          break;
+        case 'horas':
+          diff = a.horasAdicionales - b.horasAdicionales;
+          break;
+      }
+      return asc ? diff : -diff;
+    });
   });
 
   async ngOnInit(): Promise<void> {
-    // Inicializar fechas con el mes actual
     const hoy = new Date();
     const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
     const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
@@ -191,6 +338,7 @@ export class TrackingPageComponent implements OnInit {
       if (this.grupos().length) {
         this.grupoId.set(this.grupos()[0].id);
         await this.cargar();
+        void this.cargarComparativaGrupos();
       }
     } catch {
       this.error.set('No fue posible cargar los grupos de formación.');
@@ -200,6 +348,26 @@ export class TrackingPageComponent implements OnInit {
   cambiarGrupo(value: number) {
     this.grupoId.set(Number(value));
     void this.cargar();
+  }
+
+  setVista(vista: VistaRanking) {
+    this.vistaActiva.set(vista);
+  }
+
+  setModo(modo: ModoRanking) {
+    this.modoActivo.set(modo);
+    if (modo === 'grupos' && !this.resumenesGrupos().length) {
+      void this.cargarComparativaGrupos();
+    }
+  }
+
+  ordenar(columna: ColumnaOrden) {
+    if (this.columnaOrden() === columna) {
+      this.ordenAsc.update(v => !v);
+    } else {
+      this.columnaOrden.set(columna);
+      this.ordenAsc.set(columna === 'nombre');
+    }
   }
 
   alSeleccionarFecha(fecha: Date): void {
@@ -217,6 +385,7 @@ export class TrackingPageComponent implements OnInit {
       this.desde = seleccionIso;
       this.hasta = seleccionIso;
       void this.cargar();
+      void this.cargarComparativaGrupos();
       return;
     }
 
@@ -229,6 +398,7 @@ export class TrackingPageComponent implements OnInit {
       this.hasta = this.toIsoDate(d2);
       this.inicioSeleccionIso = null;
       void this.cargar();
+      void this.cargarComparativaGrupos();
     }
   }
 
@@ -239,6 +409,7 @@ export class TrackingPageComponent implements OnInit {
       this.desde = this.toIsoDate(d1);
       this.hasta = this.toIsoDate(d2);
       void this.cargar();
+      void this.cargarComparativaGrupos();
     }
   }
 
@@ -251,13 +422,11 @@ export class TrackingPageComponent implements OnInit {
     }
     this.cargando.set(true);
     this.error.set('');
-    // Orden por defecto: nombre alfabético para visualización limpia
-    const orden = this.filtroActivo() === 'con_faltas' ? 'faltas_injustificadas' : 'nombre';
     const params = new HttpParams()
       .set('grupoId', grupoId)
       .set('desde', this.desde)
       .set('hasta', this.hasta)
-      .set('orden', orden);
+      .set('orden', 'nombre');
     try {
       const r = await firstValueFrom(this.http.get<Respuesta>(`${environment.apiUrl}/tracking`, { params }));
       this.filas.set(r.integrantes);
@@ -272,7 +441,26 @@ export class TrackingPageComponent implements OnInit {
     }
   }
 
-  async abrirDetalle(personaId: number) {
+  async cargarComparativaGrupos() {
+    if (!this.desde || !this.hasta || !this.grupos().length) return;
+    this.cargandoGrupos.set(true);
+    try {
+      const requests = this.grupos().map(g =>
+        firstValueFrom(this.http.get<Respuesta>(`${environment.apiUrl}/tracking`, {
+          params: new HttpParams().set('grupoId', g.id).set('desde', this.desde).set('hasta', this.hasta).set('orden', 'nombre')
+        }))
+      );
+      const results = await Promise.all(requests);
+      this.resumenesGrupos.set(results.map(r => ({ grupo: r.grupo, resumen: r.resumen })));
+    } catch {
+      this.resumenesGrupos.set([]);
+    } finally {
+      this.cargandoGrupos.set(false);
+    }
+  }
+
+  async abrirDetalle(personaId?: number) {
+    if (!personaId) return;
     const grupoId = this.grupoId();
     if (!grupoId) return;
     this.detalle.set(null);

@@ -1,10 +1,12 @@
 <app-page-header
   titulo="Seguimiento de Asistencia"
-  subtitulo="Historial y Control de Formación"
-  descripcion="Evaluación de cumplimiento reglamentario, faltas injustificadas y horas voluntarias por grupo."
+  subtitulo="Control de Cumplimiento y Rankings"
+  descripcion="Evaluación operativa de asistencia, faltas y horas voluntarias por cohorte."
 />
 
-<!-- BARRA DE FILTROS MINIMALISTA: 3 CONTROLES BALANCEADOS -->
+<!-- ==================================================
+     NIVEL 1: BARRA SUPERIOR DE OPCIONES (3 CONTROLES)
+     ================================================== -->
 <section class="filters-bar" aria-label="Filtros principales">
   <!-- 1. Grupo de Formación -->
   <div class="filter-field">
@@ -37,14 +39,14 @@
     </div>
   </div>
 
-  <!-- 3. Combo Box con opciones dinámicas: Todos, Bueno, Faltas y En riesgo -->
+  <!-- 3. Combo Box con opciones dinámicas -->
   <div class="filter-field">
     <label for="select-filtro">Filtrar integrantes</label>
     <select id="select-filtro" [ngModel]="filtroActivo()" (ngModelChange)="filtroActivo.set($event)">
       <option value="todos">Todos ({{ filas().length }})</option>
       <option value="bueno">Bueno ({{ integrantesBueno().length }})</option>
-      <option value="con_faltas">Faltas ({{ concentranFaltas().length }})</option>
-      <option value="en_riesgo">En riesgo ({{ casosPrioritarios().length }})</option>
+      <option value="con_faltas">Faltas ({{ integrantesConFaltas().length }})</option>
+      <option value="en_riesgo">En riesgo ({{ integrantesEnRiesgo().length }})</option>
     </select>
   </div>
 </section>
@@ -56,168 +58,143 @@
   </div>
 }
 
-<!-- PANEL EJECUTIVO: 3 TARJETAS BALANCEADAS -->
-@if (resumen(); as r) {
-  <section class="executive-panel" aria-label="Resumen ejecutivo">
-
-    <!-- BLOQUE 1: Cumplimiento Obligatorio y Faltas Injustificadas -->
-    <article class="exec-block">
-      <header class="block-header">
-        <span class="block-label">Cumplimiento Obligatorio</span>
-        <span class="benchmark-pill" [class.benchmark-pill--danger]="asistenciaGrupo() < 80">
-          Meta: 80%
+<!-- ==================================================
+     NIVEL 2: BLOQUE DE RANKINGS (TOP 5 / COMPARATIVAS)
+     ================================================== -->
+<section class="ranking-block" aria-label="Bloque de rankings">
+  <header class="ranking-header">
+    <div class="ranking-header-left">
+      <div class="ranking-title-wrap">
+        <h2 class="ranking-title">{{ tituloRanking() }}</h2>
+        <span class="ranking-subtag">
+          {{ modoActivo() === 'integrantes' ? 'Top 5 de la cohorte' : 'Comparativa de grupos evaluados' }}
         </span>
-      </header>
+      </div>
 
-      <div class="exec-block-body">
-        <div class="main-rate-row">
-          <span class="main-rate" [class.main-rate--danger]="asistenciaGrupo() < 80">
-            {{ asistenciaGrupo() }}%
-          </span>
-          <div class="rate-sub">
-            @if (asistenciaGrupo() >= 80) {
-              <span class="tag-ok">Cumple meta</span>
-            } @else {
-              <span class="tag-danger">{{ brechaMeta() }}% bajo meta</span>
-            }
-            <small>{{ totalAsistencias() }} de {{ totalAplicables() }} asistencias</small>
-          </div>
-        </div>
+      <!-- Selector de Vista: Asistencia, Faltas, Horas voluntarias -->
+      <div class="view-segmented-tabs">
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="vistaActiva() === 'asistencia'"
+          (click)="setVista('asistencia')"
+        >
+          Asistencia
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="vistaActiva() === 'faltas'"
+          (click)="setVista('faltas')"
+        >
+          Faltas
+        </button>
+        <button
+          type="button"
+          class="tab-btn"
+          [class.active]="vistaActiva() === 'horas'"
+          (click)="setVista('horas')"
+        >
+          Horas voluntarias
+        </button>
+      </div>
+    </div>
 
-        <div class="compliance-track" title="Asistencia: {{ asistenciaGrupo() }}% (Meta: 80%)">
+    <!-- Selector de Modo: Por integrantes / Por grupos -->
+    <div class="ranking-header-right">
+      <div class="mode-select-wrap">
+        <label for="select-modo">Modo:</label>
+        <select id="select-modo" [ngModel]="modoActivo()" (ngModelChange)="setModo($event)">
+          <option value="integrantes">Por integrantes</option>
+          <option value="grupos">Por grupos</option>
+        </select>
+      </div>
+    </div>
+  </header>
+
+  <!-- Lista / Barras Horizontales de Ranking -->
+  <div class="ranking-body">
+    @if (cargando() || (modoActivo() === 'grupos' && cargandoGrupos())) {
+      <div class="ranking-loading">
+        <span>Cargando ranking de {{ vistaActiva() }}...</span>
+      </div>
+    }
+    @else if (itemsRankingActivo().length === 0) {
+      <div class="ranking-empty">
+        @if (vistaActiva() === 'faltas') {
+          <p>Excelente: No se registran faltas injustificadas en el periodo seleccionado.</p>
+        } @else if (vistaActiva() === 'horas') {
+          <p>No se registran horas voluntarias acumuladas en el periodo seleccionado.</p>
+        } @else {
+          <p>No hay datos disponibles para el ranking de cumplimiento.</p>
+        }
+      </div>
+    }
+    @else {
+      <div class="ranking-bars-list">
+        @for (item of itemsRankingActivo(); track (item.id || item.titulo)) {
           <div
-            class="compliance-fill"
-            [class.compliance-fill--danger]="asistenciaGrupo() < 80"
-            [style.width.%]="asistenciaGrupo() > 100 ? 100 : asistenciaGrupo()"
-          ></div>
-          <div class="compliance-marker" style="left: 80%;" title="Meta reglamentaria: 80%"></div>
-        </div>
-
-        <div class="injustificadas-callout">
-          <div class="callout-count">{{ totalFaltasInjustificadas() }}</div>
-          <div class="callout-text">
-            <strong>Faltas injustificadas</strong>
-            <span>En {{ r.jornadasObligatorias }} jornada(s) evaluada(s)</span>
-          </div>
-        </div>
-      </div>
-    </article>
-
-    <!-- BLOQUE 2: Concentración de Faltas y Revisión -->
-    <article class="exec-block">
-      <header class="block-header">
-        <span class="block-label">Concentración de Faltas</span>
-        <span class="badge-count">{{ concentranFaltas().length }} efectivos</span>
-      </header>
-
-      <div class="exec-block-body">
-        <div class="focus-members-list">
-          @if (concentranFaltas().length > 0) {
-            @for (m of concentranFaltas(); track m.personaId) {
-              <div class="focus-member-item" (click)="abrirDetalle(m.personaId)">
-                <div class="focus-member-identity">
-                  <span class="focus-name">{{ m.nombreCompleto }}</span>
-                  <span class="focus-dni">DNI {{ m.dni || 'S/D' }} · Asistencia {{ m.porcentajeAsistencia }}%</span>
-                </div>
-                <div class="focus-member-badge">
-                  <span class="faults-tag">{{ m.faltasInjustificadas }} falta</span>
-                  <span class="btn-review">Revisar →</span>
-                </div>
+            class="ranking-row"
+            [class.ranking-row--clickable]="modoActivo() === 'integrantes'"
+            (click)="modoActivo() === 'integrantes' ? abrirDetalle(item.id) : null"
+            title="{{ modoActivo() === 'integrantes' ? 'Clic para ver detalle de ' + item.titulo : '' }}"
+          >
+            <!-- Posición e Identidad -->
+            <div class="ranking-row-lead">
+              <span class="rank-pos">#{{ item.posicion }}</span>
+              <div class="rank-identity">
+                <span class="rank-name">{{ item.titulo }}</span>
+                <span class="rank-sub">{{ item.subtitulo }}</span>
               </div>
-            }
-          } @else {
-            <div class="empty-focus">
-              <tui-icon icon="@tui.circle-check" />
-              <p>Excelente: Ningún integrante registra faltas injustificadas en el rango seleccionado.</p>
             </div>
-          }
-        </div>
+
+            <!-- Barra Horizontal Proporcional -->
+            <div class="rank-track-wrap">
+              <div class="rank-bar-track">
+                <div
+                  class="rank-bar-fill {{ item.claseColor }}"
+                  [style.width.%]="item.porcentajeBarra"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Valor Numérico -->
+            <div class="rank-value-box">
+              <strong class="rank-val-text {{ item.claseColor }}">{{ item.valorTexto }}</strong>
+              @if (modoActivo() === 'integrantes') {
+                <span class="rank-link-hint">Detalle →</span>
+              }
+            </div>
+          </div>
+        }
       </div>
-    </article>
+    }
 
-    <!-- BLOQUE 3: Distribución y Horas Voluntarias -->
-    <article class="exec-block">
-      <header class="block-header">
-        <span class="block-label">Distribución y Horas</span>
-      </header>
-
-      <div class="exec-block-body">
-        <!-- Distribución minimalista -->
-        <div class="dist-chart-wrap">
-          <div class="dist-title-row">
-            <span class="dist-title">Sesiones evaluadas</span>
-            <span class="dist-counter">{{ totalAplicables() }} registros</span>
-          </div>
-          <div class="dist-bar-track">
-            @if (distribucionVisual().asistencias > 0) {
-              <div
-                class="dist-bar-seg seg--asist"
-                [style.width.%]="distribucionVisual().asistencias"
-                title="Asistencias: {{ distribucionVisual().asistencias }}%"
-              ></div>
-            }
-            @if (distribucionVisual().faltasInjust > 0) {
-              <div
-                class="dist-bar-seg seg--injust"
-                [style.width.%]="distribucionVisual().faltasInjust"
-                title="Faltas injustificadas: {{ distribucionVisual().faltasInjust }}%"
-              ></div>
-            }
-            @if (distribucionVisual().faltasJust > 0) {
-              <div
-                class="dist-bar-seg seg--just"
-                [style.width.%]="distribucionVisual().faltasJust"
-                title="Faltas justificadas: {{ distribucionVisual().faltasJust }}%"
-              ></div>
-            }
-          </div>
-
-          <div class="dist-legend-row">
-            <span class="legend-seg">
-              <i class="dot dot--asist"></i> Asist. ({{ distribucionVisual().asistencias }}%)
-            </span>
-            <span class="legend-seg">
-              <i class="dot dot--injust"></i> F. Injust. ({{ distribucionVisual().faltasInjust }}%)
-            </span>
-            @if (distribucionVisual().faltasJust > 0) {
-              <span class="legend-seg">
-                <i class="dot dot--just"></i> F. Just. ({{ distribucionVisual().faltasJust }}%)
-              </span>
-            }
-          </div>
-        </div>
-
-        <!-- Horas Voluntarias -->
-        <div class="volunteer-stat-box">
-          <div class="volunteer-num-row">
-            <span class="volunteer-num">{{ totalHorasVoluntarias() }} h</span>
-            <span class="volunteer-label">Horas voluntarias</span>
-          </div>
-          <span class="volunteer-detail">
-            {{ integrantesConHoras().length }} de {{ filas().length }} efectivos participaron · Promedio {{ promedioHorasVoluntarias() }} h
-          </span>
-        </div>
+    @if (modoActivo() === 'grupos' && vistaActiva() === 'asistencia') {
+      <div class="ranking-disclaimer">
+        <tui-icon icon="@tui.info" />
+        <span>ESBAS no se incluye en la comparación de cumplimiento obligatorio (régimen voluntario).</span>
       </div>
-    </article>
+    }
+  </div>
+</section>
 
-  </section>
-}
-
-<!-- GRILLA / TABLA LIMPIA Y SIN RUIDO -->
-<section class="grid-card" aria-label="Nómina de integrantes">
-  
+<!-- ==================================================
+     NIVEL 3: GRILLA DETALLADA INFERIOR
+     ================================================== -->
+<section class="grid-card" aria-label="Nómina detallada de integrantes">
   <header class="grid-toolbar">
     <div class="grid-toolbar-left">
       <h2 class="grid-title">Nómina del Grupo</h2>
       <span class="grid-counter">{{ filasFiltradas().length }} de {{ filas().length }} registrados</span>
     </div>
 
-    <!-- Buscador sutil -->
+    <!-- Buscador interno en el bloque de la grilla -->
     <div class="search-input-wrap">
       <tui-icon icon="@tui.search" />
       <input
         type="text"
-        placeholder="Buscar apellido, nombre o DNI..."
+        placeholder="Buscar por apellido, nombre o DNI..."
         [ngModel]="busqueda()"
         (ngModelChange)="busqueda.set($event)"
       />
@@ -231,12 +208,12 @@
 
   @if (cargando()) {
     <div class="grid-loading">
-      <span>Cargando datos de asistencia...</span>
+      <span>Cargando datos de la nómina...</span>
     </div>
   }
   @else if (jornadasEsperadas() === 0) {
     <div class="grid-empty">
-      <p>No se encontraron jornadas obligatorias programadas para este grupo en el rango de fechas seleccionado.</p>
+      <p>No se encontraron jornadas obligatorias programadas para este grupo en el rango seleccionado.</p>
     </div>
   }
   @else if (filas().length === 0) {
@@ -257,12 +234,79 @@
       <table class="clean-table">
         <thead>
           <tr>
-            <th class="col-member">Integrante</th>
-            <th class="col-pct">Asistencia</th>
-            <th class="col-num">F. Justificadas</th>
-            <th class="col-num">F. Injustificadas</th>
-            <th class="col-num">Salidas Anticipadas</th>
-            <th class="col-hours">Horas Voluntarias</th>
+            <!-- Columna 1: Integrante -->
+            <th class="col-member th-sortable" (click)="ordenar('nombre')">
+              <div class="th-content">
+                <span>Integrante</span>
+                @if (columnaOrden() === 'nombre') {
+                  <span class="sort-arrow">{{ ordenAsc() ? '↑' : '↓' }}</span>
+                }
+              </div>
+            </th>
+
+            <!-- Columna 2: Cumplimiento (Resaltada si vistaActiva === 'asistencia') -->
+            <th
+              class="col-pct th-sortable"
+              [class.col-highlight]="vistaActiva() === 'asistencia'"
+              (click)="ordenar('asistencia')"
+            >
+              <div class="th-content">
+                <span>Cumplimiento</span>
+                @if (columnaOrden() === 'asistencia') {
+                  <span class="sort-arrow">{{ ordenAsc() ? '↑' : '↓' }}</span>
+                }
+              </div>
+            </th>
+
+            <!-- Columna 3: F. justificadas -->
+            <th class="col-num th-sortable" (click)="ordenar('fJustificadas')">
+              <div class="th-content">
+                <span>F. justificadas</span>
+                @if (columnaOrden() === 'fJustificadas') {
+                  <span class="sort-arrow">{{ ordenAsc() ? '↑' : '↓' }}</span>
+                }
+              </div>
+            </th>
+
+            <!-- Columna 4: F. injustificadas (Resaltada si vistaActiva === 'faltas') -->
+            <th
+              class="col-num th-sortable"
+              [class.col-highlight]="vistaActiva() === 'faltas'"
+              (click)="ordenar('fInjustificadas')"
+            >
+              <div class="th-content">
+                <span>F. injustificadas</span>
+                @if (columnaOrden() === 'fInjustificadas') {
+                  <span class="sort-arrow">{{ ordenAsc() ? '↑' : '↓' }}</span>
+                }
+              </div>
+            </th>
+
+            <!-- Columna 5: Salidas anticipadas -->
+            <th class="col-num th-sortable" (click)="ordenar('salidas')">
+              <div class="th-content">
+                <span>Salidas anticipadas</span>
+                @if (columnaOrden() === 'salidas') {
+                  <span class="sort-arrow">{{ ordenAsc() ? '↑' : '↓' }}</span>
+                }
+              </div>
+            </th>
+
+            <!-- Columna 6: Horas voluntarias (Resaltada si vistaActiva === 'horas') -->
+            <th
+              class="col-hours th-sortable"
+              [class.col-highlight]="vistaActiva() === 'horas'"
+              (click)="ordenar('horas')"
+            >
+              <div class="th-content">
+                <span>Horas voluntarias</span>
+                @if (columnaOrden() === 'horas') {
+                  <span class="sort-arrow">{{ ordenAsc() ? '↑' : '↓' }}</span>
+                }
+              </div>
+            </th>
+
+            <!-- Columna 7: Acción -->
             <th class="col-action"></th>
           </tr>
         </thead>
@@ -275,8 +319,12 @@
                 <span class="member-sub">{{ f.dni || 'Sin DNI' }} · {{ f.jornadasAplicables }} jornada(s)</span>
               </td>
 
-              <!-- Asistencia Neta -->
-              <td class="col-pct" data-label="Asistencia">
+              <!-- Cumplimiento (Resaltado si vistaActiva === 'asistencia') -->
+              <td
+                class="col-pct"
+                [class.col-highlight]="vistaActiva() === 'asistencia'"
+                data-label="Cumplimiento"
+              >
                 <div class="pct-cell">
                   <div class="pct-val-row">
                     <strong [class.text-danger]="f.porcentajeAsistencia < 80">{{ f.porcentajeAsistencia }}%</strong>
@@ -292,13 +340,17 @@
                 </div>
               </td>
 
-              <!-- Faltas Justificadas -->
-              <td class="col-num" data-label="F. Justificadas">
+              <!-- F. Justificadas -->
+              <td class="col-num" data-label="F. justificadas">
                 <span [class.text-muted]="f.faltasJustificadas === 0">{{ f.faltasJustificadas }}</span>
               </td>
 
-              <!-- Faltas Injustificadas -->
-              <td class="col-num" data-label="F. Injustificadas">
+              <!-- F. Injustificadas (Resaltada si vistaActiva === 'faltas') -->
+              <td
+                class="col-num"
+                [class.col-highlight]="vistaActiva() === 'faltas'"
+                data-label="F. injustificadas"
+              >
                 @if (f.faltasInjustificadas > 0) {
                   <strong class="num-danger">{{ f.faltasInjustificadas }}</strong>
                 } @else {
@@ -307,12 +359,16 @@
               </td>
 
               <!-- Salidas Anticipadas -->
-              <td class="col-num" data-label="Salidas Anticipadas">
+              <td class="col-num" data-label="Salidas anticipadas">
                 <span [class.text-muted]="f.salidasAnticipadas === 0">{{ f.salidasAnticipadas }}</span>
               </td>
 
-              <!-- Horas Voluntarias -->
-              <td class="col-hours" data-label="Horas Voluntarias">
+              <!-- Horas Voluntarias (Resaltada si vistaActiva === 'horas') -->
+              <td
+                class="col-hours"
+                [class.col-highlight]="vistaActiva() === 'horas'"
+                data-label="Horas voluntarias"
+              >
                 @if (f.horasAdicionales > 0) {
                   <span>{{ f.horasAdicionales }} h</span>
                 } @else {
@@ -343,7 +399,6 @@
 @if (detalle() || cargandoDetalle()) {
   <div class="drawer-backdrop" (click)="cerrarDetalle()"></div>
   <aside class="drawer" aria-label="Historial del integrante">
-    
     @if (cargandoDetalle()) {
       <div class="drawer-loading">Cargando historial de jornadas...</div>
     }
@@ -361,7 +416,7 @@
 
       <div class="drawer-kpis">
         <div class="d-kpi">
-          <span>Asistencia</span>
+          <span>Cumplimiento</span>
           <strong [class.text-danger]="d.integrante.porcentajeAsistencia < 80">
             {{ d.integrante.porcentajeAsistencia }}%
           </strong>
@@ -372,12 +427,12 @@
           <strong [class.num-danger]="d.integrante.faltasInjustificadas > 0">
             {{ d.integrante.faltasInjustificadas }}
           </strong>
-          <small>Sin justificación reglamentaria</small>
+          <small>Sin justificación</small>
         </div>
         <div class="d-kpi">
           <span>Horas Voluntarias</span>
           <strong>{{ d.integrante.horasAdicionales }} h</strong>
-          <small>Actividades complementarias</small>
+          <small>Acumuladas</small>
         </div>
       </div>
 
@@ -412,6 +467,5 @@
         </div>
       </div>
     }
-
   </aside>
 }
