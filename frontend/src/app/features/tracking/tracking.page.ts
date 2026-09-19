@@ -8,7 +8,6 @@ import { environment } from '../../../environments/environment';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
 type Periodo = 'mes' | 'primera' | 'segunda' | 'personalizado';
-export type FiltroEstado = 'todos' | 'en_regla' | 'en_riesgo' | 'con_faltas' | 'con_adicionales' | 'asistencias' | 'faltas_justificadas' | 'salidas_anticipadas';
 
 export interface Grupo {
   id: number;
@@ -64,17 +63,6 @@ export interface Detalle {
   historial: Historia[];
 }
 
-export interface DonutSlice {
-  id: FiltroEstado;
-  label: string;
-  count: number;
-  porcentaje: number;
-  color: string;
-  bgLight: string;
-  dashArray: string;
-  dashOffset: number;
-}
-
 @Component({
   selector: 'app-tracking-page',
   standalone: true,
@@ -97,109 +85,77 @@ export class TrackingPageComponent implements OnInit {
   readonly detalle = signal<Detalle | null>(null);
   readonly cargandoDetalle = signal(false);
 
-  // Estados interactivos
+  // Filtros simples
   readonly busqueda = signal('');
-  readonly filtroEstado = signal<FiltroEstado>('todos');
-  readonly hoveredSegment = signal<string | null>(null);
+  readonly soloConFaltas = signal(false);
+  readonly soloEnRiesgo = signal(false);
 
   desde = '';
   hasta = '';
 
-  // Computados
-  readonly grupoActual = computed(() => this.grupos().find(g => g.id === this.grupoId()) ?? null);
-
-  readonly totalIntegrantes = computed(() => this.filas().length);
-
+  // 1. ¿Cómo va el cumplimiento obligatorio del grupo?
+  readonly asistenciaGrupo = computed(() => this.resumen()?.asistenciaGrupo ?? 0);
+  readonly metaAsistencia = 80.0;
+  readonly brechaMeta = computed(() => {
+    const diff = Math.round((this.asistenciaGrupo() - this.metaAsistencia) * 10) / 10;
+    return diff;
+  });
+  readonly totalJornadasEsperadas = computed(() => this.jornadasEsperadas());
   readonly totalAsistencias = computed(() => this.filas().reduce((sum, f) => sum + f.asistencias, 0));
+  readonly totalAplicables = computed(() => this.filas().reduce((sum, f) => sum + f.jornadasAplicables, 0));
 
-  readonly totalJornadasAplicables = computed(() => this.filas().reduce((sum, f) => sum + f.jornadasAplicables, 0));
+  // 2. ¿Cuántas faltas injustificadas existen?
+  readonly totalFaltasInjustificadas = computed(() => this.resumen()?.faltasInjustificadas ?? 0);
+  readonly totalFaltasJustificadas = computed(() => this.resumen()?.faltasJustificadas ?? 0);
+  readonly totalSalidasAnticipadas = computed(() => this.resumen()?.salidasAnticipadas ?? 0);
 
-  readonly integrantesEnRegla = computed(() => this.filas().filter(f => f.porcentajeAsistencia >= 80));
-
-  readonly integrantesEnRiesgo = computed(() => this.filas().filter(f => f.porcentajeAsistencia < 80));
-
-  readonly integrantesConFaltas = computed(() => this.filas().filter(f => f.faltasInjustificadas > 0));
-
-  readonly integrantesConAdicionales = computed(() => this.filas().filter(f => f.horasAdicionales > 0));
-
-  readonly pctEnRegla = computed(() => {
-    const total = this.totalIntegrantes();
-    return total ? Math.round((this.integrantesEnRegla().length / total) * 100) : 0;
+  // 3. ¿Quiénes concentran esas faltas?
+  readonly concentranFaltas = computed(() => {
+    return this.filas()
+      .filter(f => f.faltasInjustificadas > 0)
+      .sort((a, b) => b.faltasInjustificadas - a.faltasInjustificadas || a.porcentajeAsistencia - b.porcentajeAsistencia);
   });
 
-  readonly pctEnRiesgo = computed(() => {
-    const total = this.totalIntegrantes();
-    return total ? Math.round((this.integrantesEnRiesgo().length / total) * 100) : 0;
-  });
-
-  readonly promedioHorasAdicionales = computed(() => {
-    const total = this.totalIntegrantes();
-    const horas = this.resumen()?.horasAdicionales ?? 0;
-    return total ? (Math.round((horas / total) * 10) / 10).toFixed(1) : '0.0';
-  });
-
-  readonly gaugeStatus = computed(() => {
-    const pct = this.resumen()?.asistenciaGrupo ?? 0;
-    if (pct >= 80) return { label: 'Meta Cumplida', badgeClass: 'badge--ok', desc: 'Por encima del umbral institucional (80%)', color: '#14804A' };
-    if (pct >= 60) return { label: 'En Observación', badgeClass: 'badge--warning', desc: 'Requiere seguimiento preventivo', color: '#B76E00' };
-    return { label: 'Nivel Crítico', badgeClass: 'badge--danger', desc: 'Debajo del 60% de asistencia global', color: '#C8102E' };
-  });
-
-  readonly donutSlices = computed<DonutSlice[]>(() => {
-    const r = this.resumen();
-    if (!r) return [];
-
+  // 4. ¿Cómo viene la distribución de asistencia? (Gráfico de barra sobrio y minimalista)
+  readonly distribucionVisual = computed(() => {
+    const total = this.totalAplicables();
+    if (!total) return { asistencias: 0, faltasInjust: 0, faltasJust: 0, sinRegistro: 0 };
     const asist = this.totalAsistencias();
-    const fi = r.faltasInjustificadas;
-    const fj = r.faltasJustificadas;
-    const sa = r.salidasAnticipadas;
-    const totalEventos = asist + fi + fj + sa;
-
-    const raw = [
-      { id: 'asistencias' as FiltroEstado, label: 'Asistencias', count: asist, color: '#14804A', bgLight: '#E7F6ED' },
-      { id: 'con_faltas' as FiltroEstado, label: 'Faltas Injustificadas', count: fi, color: '#C8102E', bgLight: '#FBECEE' },
-      { id: 'faltas_justificadas' as FiltroEstado, label: 'Faltas Justificadas', count: fj, color: '#B76E00', bgLight: '#FEF6E7' },
-      { id: 'salidas_anticipadas' as FiltroEstado, label: 'Salidas Anticipadas', count: sa, color: '#7A5AF8', bgLight: '#F4EBFF' },
-    ];
-
-    let currentOffset = 25; // 12 o'clock in standard SVG ring
-    return raw.map(item => {
-      const pct = totalEventos > 0 ? (item.count / totalEventos) * 100 : 0;
-      const roundedPct = Math.round(pct * 10) / 10;
-      const dash = `${pct} ${Math.max(0, 100 - pct)}`;
-      const sliceOffset = currentOffset;
-      currentOffset -= pct;
-      return {
-        id: item.id,
-        label: item.label,
-        count: item.count,
-        porcentaje: roundedPct,
-        color: item.color,
-        bgLight: item.bgLight,
-        dashArray: dash,
-        dashOffset: sliceOffset,
-      };
-    });
+    const fi = this.totalFaltasInjustificadas();
+    const fj = this.totalFaltasJustificadas();
+    const resto = Math.max(0, total - asist - fi - fj);
+    return {
+      asistencias: Math.round((asist / total) * 100),
+      faltasInjust: Math.round((fi / total) * 100),
+      faltasJust: Math.round((fj / total) * 100),
+      sinRegistro: Math.round((resto / total) * 100),
+    };
   });
 
+  // 5. ¿Cuántas horas voluntarias se están realizando?
+  readonly totalHorasVoluntarias = computed(() => this.resumen()?.horasAdicionales ?? 0);
+  readonly integrantesConHoras = computed(() => this.filas().filter(f => f.horasAdicionales > 0));
+  readonly promedioHorasVoluntarias = computed(() => {
+    const n = this.filas().length;
+    return n ? (Math.round((this.totalHorasVoluntarias() / n) * 10) / 10).toFixed(1) : '0.0';
+  });
+
+  // 6. ¿Quién requiere que revise su detalle? (Prioritarios con faltas injustificadas o asistencia < 80%)
+  readonly casosPrioritarios = computed(() => {
+    return this.filas()
+      .filter(f => f.faltasInjustificadas > 0 || f.porcentajeAsistencia < 80)
+      .sort((a, b) => b.faltasInjustificadas - a.faltasInjustificadas || a.porcentajeAsistencia - b.porcentajeAsistencia);
+  });
+
+  // Integrantes filtrados para la grilla
   readonly filasFiltradas = computed(() => {
     let list = this.filas();
-    const filtro = this.filtroEstado();
 
-    if (filtro === 'en_regla') {
-      list = list.filter(f => f.porcentajeAsistencia >= 80);
-    } else if (filtro === 'en_riesgo') {
-      list = list.filter(f => f.porcentajeAsistencia < 80);
-    } else if (filtro === 'con_faltas') {
+    if (this.soloConFaltas()) {
       list = list.filter(f => f.faltasInjustificadas > 0);
-    } else if (filtro === 'con_adicionales') {
-      list = list.filter(f => f.horasAdicionales > 0);
-    } else if (filtro === 'asistencias') {
-      list = list.filter(f => f.asistencias > 0);
-    } else if (filtro === 'faltas_justificadas') {
-      list = list.filter(f => f.faltasJustificadas > 0);
-    } else if (filtro === 'salidas_anticipadas') {
-      list = list.filter(f => f.salidasAnticipadas > 0);
+    }
+    if (this.soloEnRiesgo()) {
+      list = list.filter(f => f.porcentajeAsistencia < 80);
     }
 
     const q = this.busqueda().trim().toLowerCase();
@@ -252,20 +208,19 @@ export class TrackingPageComponent implements OnInit {
     if (this.desde && this.hasta && this.desde <= this.hasta) void this.cargar();
   }
 
-  setFiltro(tipo: FiltroEstado) {
-    if (this.filtroEstado() === tipo) {
-      this.filtroEstado.set('todos');
-    } else {
-      this.filtroEstado.set(tipo);
-    }
+  toggleSoloConFaltas() {
+    this.soloConFaltas.update(v => !v);
+    if (this.soloConFaltas()) this.soloEnRiesgo.set(false);
   }
 
-  setHoveredSegment(id: string | null) {
-    this.hoveredSegment.set(id);
+  toggleSoloEnRiesgo() {
+    this.soloEnRiesgo.update(v => !v);
+    if (this.soloEnRiesgo()) this.soloConFaltas.set(false);
   }
 
   limpiarFiltros() {
-    this.filtroEstado.set('todos');
+    this.soloConFaltas.set(false);
+    this.soloEnRiesgo.set(false);
     this.busqueda.set('');
   }
 
@@ -335,37 +290,6 @@ export class TrackingPageComponent implements OnInit {
     if (e === 'FALTA_JUSTIFICADA') return 'status--info';
     if (['FALTA_INJUSTIFICADA', 'SIN_REGISTRO'].includes(e)) return 'status--danger';
     return 'status--warning';
-  }
-
-  obtenerIniciales(nombre: string): string {
-    if (!nombre) return 'NA';
-    const parts = nombre.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
-  }
-
-  obtenerColorAvatar(nombre: string): { bg: string; color: string } {
-    const palette = [
-      { bg: '#FEE4E2', color: '#B42318' },
-      { bg: '#FEF0C7', color: '#B54708' },
-      { bg: '#D1FADF', color: '#027A48' },
-      { bg: '#D1E9FF', color: '#175CD3' },
-      { bg: '#E0EAFF', color: '#3538CD' },
-      { bg: '#F4EBFF', color: '#6941C6' },
-      { bg: '#ECEFF3', color: '#344054' },
-    ];
-    let hash = 0;
-    for (let i = 0; i < nombre.length; i++) {
-      hash = (hash << 5) - hash + nombre.charCodeAt(i);
-    }
-    const idx = Math.abs(hash) % palette.length;
-    return palette[idx];
-  }
-
-  obtenerClaseAsistencia(pct: number): string {
-    if (pct >= 80) return 'progress-fill--high';
-    if (pct >= 60) return 'progress-fill--mid';
-    return 'progress-fill--low';
   }
 
   private fechaLocal(d: Date) {
