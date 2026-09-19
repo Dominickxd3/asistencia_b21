@@ -4,8 +4,9 @@
   descripcion="Evaluación de cumplimiento reglamentario, faltas injustificadas y horas voluntarias por grupo."
 />
 
-<!-- Controles y Filtros de Periodo -->
-<section class="filters-bar" aria-label="Filtros de periodo y grupo">
+<!-- BARRA DE FILTROS MINIMALISTA: 3 CONTROLES CLAROS -->
+<section class="filters-bar" aria-label="Filtros principales">
+  <!-- 1. Grupo de Formación -->
   <div class="filter-field">
     <label for="select-grupo">Grupo de formación</label>
     <select id="select-grupo" [ngModel]="grupoId()" (ngModelChange)="cambiarGrupo($event)">
@@ -15,33 +16,55 @@
     </select>
   </div>
 
-  <div class="filter-field filter-field--period">
-    <label>Periodo</label>
-    <div class="period-pills">
-      <button type="button" [class.active]="periodo() === 'mes'" (click)="aplicarPeriodo('mes')">Mes actual</button>
-      <button type="button" [class.active]="periodo() === 'primera'" (click)="aplicarPeriodo('primera')">1.ª quincena</button>
-      <button type="button" [class.active]="periodo() === 'segunda'" (click)="aplicarPeriodo('segunda')">2.ª quincena</button>
-      <button type="button" [class.active]="periodo() === 'personalizado'" (click)="aplicarPeriodo('personalizado', false)">Personalizado</button>
+  <!-- 2. Calendario de Rango de Fechas (Idéntico al Inicio) -->
+  <div class="filter-field filter-field--calendar">
+    <label>Rango de fechas</label>
+    <div class="calendar-picker-wrapper">
+      <p-calendar
+        [(ngModel)]="rangeDates"
+        selectionMode="range"
+        [readonlyInput]="true"
+        dateFormat="dd/mm/yy"
+        [showIcon]="true"
+        iconDisplay="input"
+        icon="pi pi-calendar"
+        placeholder="Seleccionar rango de fechas"
+        (onSelect)="alSeleccionarFecha($event)"
+        (onClose)="alCerrarCalendario()"
+      />
     </div>
   </div>
 
-  <div class="filter-field">
-    <label for="select-orden">Ordenar por</label>
-    <select id="select-orden" [ngModel]="orden()" (ngModelChange)="cambiarOrden($event)">
-      <option value="faltas_injustificadas">Más faltas injustificadas</option>
-      <option value="menor_asistencia">Menor porcentaje de asistencia</option>
-      <option value="nombre">Nombre alfabético</option>
-      <option value="faltas_justificadas">Más faltas justificadas</option>
-      <option value="horas_adicionales">Más horas voluntarias</option>
-    </select>
-  </div>
-
-  @if (periodo() === 'personalizado') {
-    <div class="custom-dates-bar">
-      <label>Desde <input type="date" [(ngModel)]="desde" (change)="fechasPersonalizadas()" /></label>
-      <label>Hasta <input type="date" [(ngModel)]="hasta" (change)="fechasPersonalizadas()" /></label>
+  <!-- 3. Tres Opciones Dinámicas (Todos preseleccionado por defecto) -->
+  <div class="filter-field filter-field--dynamic">
+    <label>Filtrar integrantes</label>
+    <div class="dynamic-pills">
+      <button
+        type="button"
+        class="pill-btn"
+        [class.active]="filtroActivo() === 'todos'"
+        (click)="filtroActivo.set('todos')"
+      >
+        Todos ({{ filas().length }})
+      </button>
+      <button
+        type="button"
+        class="pill-btn pill-btn--danger"
+        [class.active]="filtroActivo() === 'con_faltas'"
+        (click)="filtroActivo.set('con_faltas')"
+      >
+        Con Faltas ({{ concentranFaltas().length }})
+      </button>
+      <button
+        type="button"
+        class="pill-btn pill-btn--warning"
+        [class.active]="filtroActivo() === 'en_riesgo'"
+        (click)="filtroActivo.set('en_riesgo')"
+      >
+        En Riesgo ({{ casosPrioritarios().length }})
+      </button>
     </div>
-  }
+  </div>
 </section>
 
 @if (error()) {
@@ -51,11 +74,11 @@
   </div>
 }
 
-<!-- PANEL EJECUTIVO: RESPUESTAS DIRECTAS A LAS 6 PREGUNTAS -->
+<!-- PANEL EJECUTIVO: RESPUESTAS DIRECTAS A LAS PREGUNTAS CLAVE -->
 @if (resumen(); as r) {
   <section class="executive-panel" aria-label="Resumen ejecutivo">
 
-    <!-- BLOQUE 1: ¿Cómo va el cumplimiento obligatorio? y ¿Cuántas faltas injustificadas existen? -->
+    <!-- BLOQUE 1: Cumplimiento Obligatorio y Faltas Injustificadas -->
     <article class="exec-block">
       <header class="block-header">
         <span class="block-label">Cumplimiento Obligatorio</span>
@@ -82,15 +105,15 @@
         <div class="callout-count">{{ totalFaltasInjustificadas() }}</div>
         <div class="callout-text">
           <strong>Faltas injustificadas acumuladas</strong>
-          <span>En {{ r.jornadasObligatorias }} jornada(s) obligatoria(s) evaluada(s)</span>
+          <span>En {{ r.jornadasObligatorias }} jornada(s) evaluada(s)</span>
         </div>
       </div>
     </article>
 
-    <!-- BLOQUE 2: ¿Quiénes concentran esas faltas? y ¿Quién requiere revisión? -->
+    <!-- BLOQUE 2: Concentración de Faltas y Revisión -->
     <article class="exec-block">
       <header class="block-header">
-        <span class="block-label">Concentración de Faltas y Revisión</span>
+        <span class="block-label">Concentración de Faltas</span>
         <span class="badge-count">{{ concentranFaltas().length }} efectivos</span>
       </header>
 
@@ -111,21 +134,21 @@
         } @else {
           <div class="empty-focus">
             <tui-icon icon="@tui.circle-check" />
-            <p>Excelente: Ningún integrante registra faltas injustificadas en este periodo.</p>
+            <p>Excelente: Ningún integrante registra faltas injustificadas en el rango seleccionado.</p>
           </div>
         }
       </div>
     </article>
 
-    <!-- BLOQUE 3: ¿Cómo evoluciona la asistencia? y ¿Cuántas horas voluntarias? -->
+    <!-- BLOQUE 3: Distribución y Horas Voluntarias -->
     <article class="exec-block">
       <header class="block-header">
         <span class="block-label">Distribución y Horas Voluntarias</span>
       </header>
 
-      <!-- Mini gráfico minimalista sobrio de distribución -->
+      <!-- Distribución minimalista -->
       <div class="dist-chart-wrap">
-        <span class="dist-title">Distribución de registros de la cohorte:</span>
+        <span class="dist-title">Distribución de sesiones evaluadas:</span>
         <div class="dist-bar-track">
           @if (distribucionVisual().asistencias > 0) {
             <div
@@ -165,7 +188,7 @@
         </div>
       </div>
 
-      <!-- Horas Voluntarias Realizadas -->
+      <!-- Horas Voluntarias -->
       <div class="volunteer-stat-box">
         <div class="volunteer-num-row">
           <span class="volunteer-num">{{ totalHorasVoluntarias() }} h</span>
@@ -180,7 +203,7 @@
   </section>
 }
 
-<!-- SECCIÓN TABULAR: GRILLA LIMPIA Y PROFESIONAL -->
+<!-- GRILLA / TABLA LIMPIA Y SIN RUIDO -->
 <section class="grid-card" aria-label="Nómina de integrantes">
   
   <header class="grid-toolbar">
@@ -189,50 +212,20 @@
       <span class="grid-counter">{{ filasFiltradas().length }} de {{ filas().length }} registrados</span>
     </div>
 
-    <div class="grid-toolbar-actions">
-      <!-- Filtros rápidos discretos -->
-      <div class="quick-toggles">
-        <button
-          type="button"
-          class="toggle-pill"
-          [class.active]="!soloConFaltas() && !soloEnRiesgo()"
-          (click)="limpiarFiltros()"
-        >
-          Todos
+    <!-- Buscador sutil -->
+    <div class="search-input-wrap">
+      <tui-icon icon="@tui.search" />
+      <input
+        type="text"
+        placeholder="Buscar apellido, nombre o DNI..."
+        [ngModel]="busqueda()"
+        (ngModelChange)="busqueda.set($event)"
+      />
+      @if (busqueda()) {
+        <button type="button" class="btn-clear" (click)="busqueda.set('')" title="Borrar">
+          <tui-icon icon="@tui.x" />
         </button>
-        <button
-          type="button"
-          class="toggle-pill"
-          [class.active]="soloConFaltas()"
-          (click)="toggleSoloConFaltas()"
-        >
-          Con Faltas ({{ concentranFaltas().length }})
-        </button>
-        <button
-          type="button"
-          class="toggle-pill"
-          [class.active]="soloEnRiesgo()"
-          (click)="toggleSoloEnRiesgo()"
-        >
-          En Riesgo &lt; 80% ({{ casosPrioritarios().length }})
-        </button>
-      </div>
-
-      <!-- Buscador sutil -->
-      <div class="search-input-wrap">
-        <tui-icon icon="@tui.search" />
-        <input
-          type="text"
-          placeholder="Buscar apellido, nombre o DNI..."
-          [ngModel]="busqueda()"
-          (ngModelChange)="busqueda.set($event)"
-        />
-        @if (busqueda()) {
-          <button type="button" class="btn-clear" (click)="busqueda.set('')" title="Borrar">
-            <tui-icon icon="@tui.x" />
-          </button>
-        }
-      </div>
+      }
     </div>
   </header>
 
@@ -243,18 +236,20 @@
   }
   @else if (jornadasEsperadas() === 0) {
     <div class="grid-empty">
-      <p>No se encontraron jornadas obligatorias programadas para este grupo en el periodo seleccionado.</p>
+      <p>No se encontraron jornadas obligatorias programadas para este grupo en el rango de fechas seleccionado.</p>
     </div>
   }
   @else if (filas().length === 0) {
     <div class="grid-empty">
-      <p>No existen integrantes asignados al grupo en este rango de fechas.</p>
+      <p>No existen integrantes asignados al grupo en las fechas seleccionadas.</p>
     </div>
   }
   @else if (filasFiltradas().length === 0) {
     <div class="grid-empty">
       <p>Ningún integrante coincide con la búsqueda o filtro aplicado.</p>
-      <button type="button" class="btn-link" (click)="limpiarFiltros()">Restablecer filtros</button>
+      <button type="button" class="btn-link" (click)="filtroActivo.set('todos'); busqueda.set('')">
+        Ver todos los integrantes
+      </button>
     </div>
   }
   @else {
@@ -344,7 +339,7 @@
   }
 </section>
 
-<!-- DRAWER LATERAL: HISTORIAL DE JORNADAS DEL INTEGRANTE -->
+<!-- DRAWER LATERAL: HISTORIAL DE JORNADAS -->
 @if (detalle() || cargandoDetalle()) {
   <div class="drawer-backdrop" (click)="cerrarDetalle()"></div>
   <aside class="drawer" aria-label="Historial del integrante">
@@ -412,7 +407,7 @@
               </div>
             </div>
           } @empty {
-            <p class="empty-text">No se registran jornadas en este periodo.</p>
+            <p class="empty-text">No se registran jornadas en este rango de fechas.</p>
           }
         </div>
       </div>

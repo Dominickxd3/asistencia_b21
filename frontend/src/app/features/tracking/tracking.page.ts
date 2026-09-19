@@ -2,12 +2,13 @@ import { Component, HostListener, OnInit, computed, inject, signal } from '@angu
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { SlicePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CalendarModule } from 'primeng/calendar';
 import { firstValueFrom } from 'rxjs';
 import { TuiIcon } from '@taiga-ui/core';
 import { environment } from '../../../environments/environment';
 import { PageHeaderComponent } from '../../shared/components/page-header.component';
 
-type Periodo = 'mes' | 'primera' | 'segunda' | 'personalizado';
+export type FiltroDinamico = 'todos' | 'con_faltas' | 'en_riesgo';
 
 export interface Grupo {
   id: number;
@@ -66,7 +67,7 @@ export interface Detalle {
 @Component({
   selector: 'app-tracking-page',
   standalone: true,
-  imports: [FormsModule, PageHeaderComponent, TuiIcon, SlicePipe],
+  imports: [FormsModule, CalendarModule, PageHeaderComponent, TuiIcon, SlicePipe],
   templateUrl: './tracking.page.html',
   styleUrl: './tracking.page.css',
 })
@@ -75,8 +76,6 @@ export class TrackingPageComponent implements OnInit {
 
   readonly grupos = signal<Grupo[]>([]);
   readonly grupoId = signal<number | null>(null);
-  readonly orden = signal('faltas_injustificadas');
-  readonly periodo = signal<Periodo>('mes');
   readonly filas = signal<Fila[]>([]);
   readonly resumen = signal<Resumen | null>(null);
   readonly jornadasEsperadas = signal(0);
@@ -85,11 +84,13 @@ export class TrackingPageComponent implements OnInit {
   readonly detalle = signal<Detalle | null>(null);
   readonly cargandoDetalle = signal(false);
 
-  // Filtros simples
+  // 3 Opciones dinámicas (Predeterminado: 'todos')
+  readonly filtroActivo = signal<FiltroDinamico>('todos');
   readonly busqueda = signal('');
-  readonly soloConFaltas = signal(false);
-  readonly soloEnRiesgo = signal(false);
 
+  // Rango de fechas con Calendario idéntico al inicio
+  rangeDates: Date[] = [];
+  private inicioSeleccionIso: string | null = null;
   desde = '';
   hasta = '';
 
@@ -97,8 +98,7 @@ export class TrackingPageComponent implements OnInit {
   readonly asistenciaGrupo = computed(() => this.resumen()?.asistenciaGrupo ?? 0);
   readonly metaAsistencia = 80.0;
   readonly brechaMeta = computed(() => {
-    const diff = Math.round((this.asistenciaGrupo() - this.metaAsistencia) * 10) / 10;
-    return diff;
+    return Math.round((this.asistenciaGrupo() - this.metaAsistencia) * 10) / 10;
   });
   readonly totalJornadasEsperadas = computed(() => this.jornadasEsperadas());
   readonly totalAsistencias = computed(() => this.filas().reduce((sum, f) => sum + f.asistencias, 0));
@@ -116,7 +116,7 @@ export class TrackingPageComponent implements OnInit {
       .sort((a, b) => b.faltasInjustificadas - a.faltasInjustificadas || a.porcentajeAsistencia - b.porcentajeAsistencia);
   });
 
-  // 4. ¿Cómo viene la distribución de asistencia? (Gráfico de barra sobrio y minimalista)
+  // 4. ¿Cómo viene la distribución de asistencia?
   readonly distribucionVisual = computed(() => {
     const total = this.totalAplicables();
     if (!total) return { asistencias: 0, faltasInjust: 0, faltasJust: 0, sinRegistro: 0 };
@@ -140,29 +140,29 @@ export class TrackingPageComponent implements OnInit {
     return n ? (Math.round((this.totalHorasVoluntarias() / n) * 10) / 10).toFixed(1) : '0.0';
   });
 
-  // 6. ¿Quién requiere que revise su detalle? (Prioritarios con faltas injustificadas o asistencia < 80%)
+  // 6. ¿Quién requiere que revise su detalle?
   readonly casosPrioritarios = computed(() => {
     return this.filas()
       .filter(f => f.faltasInjustificadas > 0 || f.porcentajeAsistencia < 80)
       .sort((a, b) => b.faltasInjustificadas - a.faltasInjustificadas || a.porcentajeAsistencia - b.porcentajeAsistencia);
   });
 
-  // Integrantes filtrados para la grilla
+  // Lista filtrada para la grilla
   readonly filasFiltradas = computed(() => {
     let list = this.filas();
+    const f = this.filtroActivo();
 
-    if (this.soloConFaltas()) {
-      list = list.filter(f => f.faltasInjustificadas > 0);
-    }
-    if (this.soloEnRiesgo()) {
-      list = list.filter(f => f.porcentajeAsistencia < 80);
+    if (f === 'con_faltas') {
+      list = list.filter(item => item.faltasInjustificadas > 0);
+    } else if (f === 'en_riesgo') {
+      list = list.filter(item => item.porcentajeAsistencia < 80);
     }
 
     const q = this.busqueda().trim().toLowerCase();
     if (q) {
-      list = list.filter(f =>
-        f.nombreCompleto.toLowerCase().includes(q) ||
-        (f.dni && f.dni.includes(q))
+      list = list.filter(item =>
+        item.nombreCompleto.toLowerCase().includes(q) ||
+        (item.dni && item.dni.includes(q))
       );
     }
 
@@ -170,7 +170,14 @@ export class TrackingPageComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    this.aplicarPeriodo('mes', false);
+    // Inicializar fechas con el mes actual
+    const hoy = new Date();
+    const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+    const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+    this.rangeDates = [primerDia, ultimoDia];
+    this.desde = this.toIsoDate(primerDia);
+    this.hasta = this.toIsoDate(ultimoDia);
+
     try {
       const grupos = await firstValueFrom(this.http.get<any[]>(`${environment.apiUrl}/groups`));
       this.grupos.set(grupos.map(x => ({ id: Number(x.id), nombre: x.nombre, etapa: x.etapa })));
@@ -188,40 +195,44 @@ export class TrackingPageComponent implements OnInit {
     void this.cargar();
   }
 
-  cambiarOrden(value: string) {
-    this.orden.set(value);
-    void this.cargar();
-  }
+  alSeleccionarFecha(fecha: Date): void {
+    const seleccionIso = this.toIsoDate(fecha);
 
-  aplicarPeriodo(periodo: Periodo, recargar = true) {
-    this.periodo.set(periodo);
-    if (periodo !== 'personalizado') {
-      const hoy = new Date(), y = hoy.getFullYear(), m = hoy.getMonth(), ultimo = new Date(y, m + 1, 0).getDate();
-      this.desde = this.fechaLocal(new Date(y, m, periodo === 'segunda' ? 16 : 1));
-      this.hasta = this.fechaLocal(new Date(y, m, periodo === 'primera' ? 15 : ultimo));
+    if (this.inicioSeleccionIso === seleccionIso && !this.rangeDates?.[1]) {
+      this.rangeDates = [];
+      this.inicioSeleccionIso = null;
+      return;
     }
-    if (recargar) void this.cargar();
+
+    if (!this.inicioSeleccionIso || !this.rangeDates?.[0]) {
+      this.rangeDates = [fecha];
+      this.inicioSeleccionIso = seleccionIso;
+      this.desde = seleccionIso;
+      this.hasta = seleccionIso;
+      void this.cargar();
+      return;
+    }
+
+    if (this.inicioSeleccionIso !== seleccionIso) {
+      const inicio = new Date(`${this.inicioSeleccionIso}T00:00:00`);
+      const d1 = inicio <= fecha ? inicio : fecha;
+      const d2 = inicio <= fecha ? fecha : inicio;
+      this.rangeDates = [d1, d2];
+      this.desde = this.toIsoDate(d1);
+      this.hasta = this.toIsoDate(d2);
+      this.inicioSeleccionIso = null;
+      void this.cargar();
+    }
   }
 
-  fechasPersonalizadas() {
-    this.periodo.set('personalizado');
-    if (this.desde && this.hasta && this.desde <= this.hasta) void this.cargar();
-  }
-
-  toggleSoloConFaltas() {
-    this.soloConFaltas.update(v => !v);
-    if (this.soloConFaltas()) this.soloEnRiesgo.set(false);
-  }
-
-  toggleSoloEnRiesgo() {
-    this.soloEnRiesgo.update(v => !v);
-    if (this.soloEnRiesgo()) this.soloConFaltas.set(false);
-  }
-
-  limpiarFiltros() {
-    this.soloConFaltas.set(false);
-    this.soloEnRiesgo.set(false);
-    this.busqueda.set('');
+  alCerrarCalendario(): void {
+    if (this.rangeDates && this.rangeDates[0]) {
+      const d1 = this.rangeDates[0];
+      const d2 = this.rangeDates[1] || d1;
+      this.desde = this.toIsoDate(d1);
+      this.hasta = this.toIsoDate(d2);
+      void this.cargar();
+    }
   }
 
   async cargar() {
@@ -233,11 +244,13 @@ export class TrackingPageComponent implements OnInit {
     }
     this.cargando.set(true);
     this.error.set('');
+    // Orden por defecto: nombre alfabético para visualización limpia
+    const orden = this.filtroActivo() === 'con_faltas' ? 'faltas_injustificadas' : 'nombre';
     const params = new HttpParams()
       .set('grupoId', grupoId)
       .set('desde', this.desde)
       .set('hasta', this.hasta)
-      .set('orden', this.orden());
+      .set('orden', orden);
     try {
       const r = await firstValueFrom(this.http.get<Respuesta>(`${environment.apiUrl}/tracking`, { params }));
       this.filas.set(r.integrantes);
@@ -292,7 +305,10 @@ export class TrackingPageComponent implements OnInit {
     return 'status--warning';
   }
 
-  private fechaLocal(d: Date) {
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  private toIsoDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
   }
 }
