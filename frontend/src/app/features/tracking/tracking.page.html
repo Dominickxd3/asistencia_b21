@@ -4,7 +4,7 @@
   descripcion="Evaluación de cumplimiento reglamentario, faltas injustificadas y horas voluntarias por grupo."
 />
 
-<!-- BARRA DE FILTROS MINIMALISTA: 3 CONTROLES CLAROS -->
+<!-- BARRA DE FILTROS MINIMALISTA: 3 CONTROLES BALANCEADOS -->
 <section class="filters-bar" aria-label="Filtros principales">
   <!-- 1. Grupo de Formación -->
   <div class="filter-field">
@@ -16,7 +16,7 @@
     </select>
   </div>
 
-  <!-- 2. Calendario de Rango de Fechas (Idéntico al Inicio) -->
+  <!-- 2. Calendario de Rango de Fechas (Idéntico a Inicio) -->
   <div class="filter-field filter-field--calendar">
     <label>Rango de fechas</label>
     <div class="calendar-picker-wrapper">
@@ -29,6 +29,8 @@
         iconDisplay="input"
         icon="pi pi-calendar"
         placeholder="Seleccionar rango de fechas"
+        [style]="{ width: '100%' }"
+        [inputStyle]="{ width: '100%' }"
         (onSelect)="alSeleccionarFecha($event)"
         (onClose)="alCerrarCalendario()"
       />
@@ -54,7 +56,7 @@
   </div>
 }
 
-<!-- PANEL EJECUTIVO: RESPUESTAS DIRECTAS A LAS PREGUNTAS CLAVE -->
+<!-- PANEL EJECUTIVO: 3 TARJETAS BALANCEADAS -->
 @if (resumen(); as r) {
   <section class="executive-panel" aria-label="Resumen ejecutivo">
 
@@ -67,25 +69,36 @@
         </span>
       </header>
 
-      <div class="main-rate-row">
-        <span class="main-rate" [class.main-rate--danger]="asistenciaGrupo() < 80">
-          {{ asistenciaGrupo() }}%
-        </span>
-        <div class="rate-sub">
-          @if (asistenciaGrupo() >= 80) {
-            <span class="tag-ok">Cumple meta institucional</span>
-          } @else {
-            <span class="tag-danger">{{ brechaMeta() }}% bajo la meta</span>
-          }
-          <small>{{ totalAsistencias() }} de {{ totalAplicables() }} asistencias registradas</small>
+      <div class="exec-block-body">
+        <div class="main-rate-row">
+          <span class="main-rate" [class.main-rate--danger]="asistenciaGrupo() < 80">
+            {{ asistenciaGrupo() }}%
+          </span>
+          <div class="rate-sub">
+            @if (asistenciaGrupo() >= 80) {
+              <span class="tag-ok">Cumple meta</span>
+            } @else {
+              <span class="tag-danger">{{ brechaMeta() }}% bajo meta</span>
+            }
+            <small>{{ totalAsistencias() }} de {{ totalAplicables() }} asistencias</small>
+          </div>
         </div>
-      </div>
 
-      <div class="injustificadas-callout">
-        <div class="callout-count">{{ totalFaltasInjustificadas() }}</div>
-        <div class="callout-text">
-          <strong>Faltas injustificadas acumuladas</strong>
-          <span>En {{ r.jornadasObligatorias }} jornada(s) evaluada(s)</span>
+        <div class="compliance-track" title="Asistencia: {{ asistenciaGrupo() }}% (Meta: 80%)">
+          <div
+            class="compliance-fill"
+            [class.compliance-fill--danger]="asistenciaGrupo() < 80"
+            [style.width.%]="asistenciaGrupo() > 100 ? 100 : asistenciaGrupo()"
+          ></div>
+          <div class="compliance-marker" style="left: 80%;" title="Meta reglamentaria: 80%"></div>
+        </div>
+
+        <div class="injustificadas-callout">
+          <div class="callout-count">{{ totalFaltasInjustificadas() }}</div>
+          <div class="callout-text">
+            <strong>Faltas injustificadas</strong>
+            <span>En {{ r.jornadasObligatorias }} jornada(s) evaluada(s)</span>
+          </div>
         </div>
       </div>
     </article>
@@ -97,86 +110,93 @@
         <span class="badge-count">{{ concentranFaltas().length }} efectivos</span>
       </header>
 
-      <div class="focus-members-list">
-        @if (concentranFaltas().length > 0) {
-          @for (m of concentranFaltas(); track m.personaId) {
-            <div class="focus-member-item" (click)="abrirDetalle(m.personaId)">
-              <div class="focus-member-info">
-                <span class="focus-name">{{ m.nombreCompleto }}</span>
-                <span class="focus-sub">DNI {{ m.dni || 'S/D' }} · Asistencia: {{ m.porcentajeAsistencia }}%</span>
+      <div class="exec-block-body">
+        <div class="focus-members-list">
+          @if (concentranFaltas().length > 0) {
+            @for (m of concentranFaltas(); track m.personaId) {
+              <div class="focus-member-item" (click)="abrirDetalle(m.personaId)">
+                <div class="focus-member-identity">
+                  <span class="focus-name">{{ m.nombreCompleto }}</span>
+                  <span class="focus-dni">DNI {{ m.dni || 'S/D' }} · Asistencia {{ m.porcentajeAsistencia }}%</span>
+                </div>
+                <div class="focus-member-badge">
+                  <span class="faults-tag">{{ m.faltasInjustificadas }} falta</span>
+                  <span class="btn-review">Revisar →</span>
+                </div>
               </div>
-              <div class="focus-action-col">
-                <span class="faults-tag">{{ m.faltasInjustificadas }} falta(s)</span>
-                <button type="button" class="btn-review" title="Revisar detalle">Revisar →</button>
-              </div>
+            }
+          } @else {
+            <div class="empty-focus">
+              <tui-icon icon="@tui.circle-check" />
+              <p>Excelente: Ningún integrante registra faltas injustificadas en el rango seleccionado.</p>
             </div>
           }
-        } @else {
-          <div class="empty-focus">
-            <tui-icon icon="@tui.circle-check" />
-            <p>Excelente: Ningún integrante registra faltas injustificadas en el rango seleccionado.</p>
-          </div>
-        }
+        </div>
       </div>
     </article>
 
     <!-- BLOQUE 3: Distribución y Horas Voluntarias -->
     <article class="exec-block">
       <header class="block-header">
-        <span class="block-label">Distribución y Horas Voluntarias</span>
+        <span class="block-label">Distribución y Horas</span>
       </header>
 
-      <!-- Distribución minimalista -->
-      <div class="dist-chart-wrap">
-        <span class="dist-title">Distribución de sesiones evaluadas:</span>
-        <div class="dist-bar-track">
-          @if (distribucionVisual().asistencias > 0) {
-            <div
-              class="dist-bar-seg seg--asist"
-              [style.width.%]="distribucionVisual().asistencias"
-              title="Asistencias: {{ distribucionVisual().asistencias }}%"
-            ></div>
-          }
-          @if (distribucionVisual().faltasInjust > 0) {
-            <div
-              class="dist-bar-seg seg--injust"
-              [style.width.%]="distribucionVisual().faltasInjust"
-              title="Faltas injustificadas: {{ distribucionVisual().faltasInjust }}%"
-            ></div>
-          }
-          @if (distribucionVisual().faltasJust > 0) {
-            <div
-              class="dist-bar-seg seg--just"
-              [style.width.%]="distribucionVisual().faltasJust"
-              title="Faltas justificadas: {{ distribucionVisual().faltasJust }}%"
-            ></div>
-          }
-        </div>
+      <div class="exec-block-body">
+        <!-- Distribución minimalista -->
+        <div class="dist-chart-wrap">
+          <div class="dist-title-row">
+            <span class="dist-title">Sesiones evaluadas</span>
+            <span class="dist-counter">{{ totalAplicables() }} registros</span>
+          </div>
+          <div class="dist-bar-track">
+            @if (distribucionVisual().asistencias > 0) {
+              <div
+                class="dist-bar-seg seg--asist"
+                [style.width.%]="distribucionVisual().asistencias"
+                title="Asistencias: {{ distribucionVisual().asistencias }}%"
+              ></div>
+            }
+            @if (distribucionVisual().faltasInjust > 0) {
+              <div
+                class="dist-bar-seg seg--injust"
+                [style.width.%]="distribucionVisual().faltasInjust"
+                title="Faltas injustificadas: {{ distribucionVisual().faltasInjust }}%"
+              ></div>
+            }
+            @if (distribucionVisual().faltasJust > 0) {
+              <div
+                class="dist-bar-seg seg--just"
+                [style.width.%]="distribucionVisual().faltasJust"
+                title="Faltas justificadas: {{ distribucionVisual().faltasJust }}%"
+              ></div>
+            }
+          </div>
 
-        <div class="dist-legend-row">
-          <span class="legend-seg">
-            <i class="dot dot--asist"></i> Asistencias ({{ distribucionVisual().asistencias }}%)
-          </span>
-          <span class="legend-seg">
-            <i class="dot dot--injust"></i> F. Injustificadas ({{ distribucionVisual().faltasInjust }}%)
-          </span>
-          @if (distribucionVisual().faltasJust > 0) {
+          <div class="dist-legend-row">
             <span class="legend-seg">
-              <i class="dot dot--just"></i> F. Justificadas ({{ distribucionVisual().faltasJust }}%)
+              <i class="dot dot--asist"></i> Asist. ({{ distribucionVisual().asistencias }}%)
             </span>
-          }
+            <span class="legend-seg">
+              <i class="dot dot--injust"></i> F. Injust. ({{ distribucionVisual().faltasInjust }}%)
+            </span>
+            @if (distribucionVisual().faltasJust > 0) {
+              <span class="legend-seg">
+                <i class="dot dot--just"></i> F. Just. ({{ distribucionVisual().faltasJust }}%)
+              </span>
+            }
+          </div>
         </div>
-      </div>
 
-      <!-- Horas Voluntarias -->
-      <div class="volunteer-stat-box">
-        <div class="volunteer-num-row">
-          <span class="volunteer-num">{{ totalHorasVoluntarias() }} h</span>
-          <span class="volunteer-label">Horas voluntarias realizadas</span>
+        <!-- Horas Voluntarias -->
+        <div class="volunteer-stat-box">
+          <div class="volunteer-num-row">
+            <span class="volunteer-num">{{ totalHorasVoluntarias() }} h</span>
+            <span class="volunteer-label">Horas voluntarias</span>
+          </div>
+          <span class="volunteer-detail">
+            {{ integrantesConHoras().length }} de {{ filas().length }} efectivos participaron · Promedio {{ promedioHorasVoluntarias() }} h
+          </span>
         </div>
-        <span class="volunteer-detail">
-          {{ integrantesConHoras().length }} de {{ filas().length }} efectivos participaron · Promedio {{ promedioHorasVoluntarias() }} h/efectivo
-        </span>
       </div>
     </article>
 

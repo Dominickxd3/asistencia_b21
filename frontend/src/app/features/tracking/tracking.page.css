@@ -11,12 +11,12 @@
   width: 100%;
 }
 
-/* 1. BARRA DE FILTROS MINIMALISTA: 3 CONTROLES DINÁMICOS */
+/* 1. BARRA DE FILTROS MINIMALISTA: 3 COLUMNAS BALANCEADAS */
 .filters-bar {
   display: grid;
-  grid-template-columns: 1fr 1.15fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   align-items: flex-end;
-  gap: 14px;
+  gap: 16px;
   background: #ffffff;
   border: 1px solid #e4e7ec;
   border-radius: 10px;
@@ -27,7 +27,8 @@
 .filter-field {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
+  width: 100%;
   min-width: 0;
 }
 
@@ -40,16 +41,17 @@
 }
 
 .filter-field select {
-  height: 36px;
+  height: 38px;
+  width: 100%;
   border: 1px solid #d8dee7;
   border-radius: 6px;
   background: #ffffff;
-  padding: 0 10px;
-  font-size: 12.5px;
+  padding: 0 12px;
+  font-size: 13px;
   color: #181c23;
   outline: none;
-  width: 100%;
-  transition: border-color 0.15s ease;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .filter-field select:focus,
@@ -58,7 +60,7 @@
   box-shadow: 0 0 0 2px rgba(200, 16, 46, 0.1);
 }
 
-/* Calendario PrimeNG Rango (Idéntico a Inicio) */
+/* Calendario PrimeNG Rango a 100% de Ancho */
 .calendar-picker-wrapper {
   display: flex;
   align-items: center;
@@ -66,20 +68,24 @@
 }
 
 :host ::ng-deep .p-calendar {
-  width: 100%;
-  height: 36px;
+  width: 100% !important;
+  display: flex !important;
+  height: 38px;
 }
 
 :host ::ng-deep .p-calendar .p-inputtext {
-  height: 36px;
+  width: 100% !important;
+  flex: 1 1 auto;
+  height: 38px;
   border: 1px solid #d8dee7;
   border-radius: 6px;
   background: #ffffff;
-  padding: 0 10px;
-  font-size: 12.5px;
+  padding: 0 12px;
+  font-size: 13px;
   font-weight: 500;
   color: #181c23;
-  width: 100%;
+  outline: none;
+  transition: border-color 0.15s ease;
 }
 
 :host ::ng-deep .p-calendar .p-inputtext:enabled:focus {
@@ -103,12 +109,13 @@
   font-size: 12.5px;
 }
 
-/* 2. PANEL EJECUTIVO: 3 BLOQUES LIMPIOS */
+/* 2. PANEL EJECUTIVO: 3 TARJETAS BALANCEADAS */
 .executive-panel {
   display: grid;
-  grid-template-columns: 1fr 1.25fr 1fr;
-  gap: 14px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
   width: 100%;
+  align-items: stretch;
 }
 
 .exec-block {
@@ -117,7 +124,7 @@
   background: #ffffff;
   border: 1px solid #e4e7ec;
   border-radius: 10px;
-  padding: 16px;
+  padding: 16px 18px;
   box-shadow: 0 1px 2px rgba(16, 24, 40, 0.03);
 }
 
@@ -157,16 +164,23 @@
   font-weight: 700;
   color: #53616a;
   background: #f2f4f7;
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 4px;
 }
 
-/* BLOQUE 1: Cumplimiento y Faltas Injustificadas */
+.exec-block-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* BLOQUE 1: Cumplimiento Obligatorio y Faltas Injustificadas */
 .main-rate-row {
   display: flex;
   align-items: baseline;
   gap: 12px;
-  margin-bottom: 14px;
 }
 
 .main-rate {
@@ -204,11 +218,40 @@
   color: #667085;
 }
 
+.compliance-track {
+  position: relative;
+  height: 6px;
+  background: #eaecf0;
+  border-radius: 99px;
+  overflow: visible;
+  margin: 4px 0;
+}
+
+.compliance-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: #14804a;
+  transition: width 0.4s ease;
+}
+
+.compliance-fill--danger {
+  background: #c8102e;
+}
+
+.compliance-marker {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  background: #344054;
+  border-radius: 1px;
+  z-index: 2;
+}
+
 .injustificadas-callout {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: auto;
   padding: 10px 12px;
   background: #fcfcfd;
   border: 1px solid #eaecf0;
@@ -239,33 +282,31 @@
   color: #667085;
 }
 
-/* BLOQUE 2: Concentración de faltas */
+/* BLOQUE 2: Concentración de Faltas (Limpio y Sin Scrollbar) */
 .focus-members-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: 155px;
-  overflow-y: auto;
+  gap: 5px;
 }
 
 .focus-member-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 8px;
+  padding: 6px 10px;
   border-radius: 6px;
   background: #f8f9fb;
-  border: 1px solid #f2f4f7;
+  border: 1px solid #edf0f2;
   cursor: pointer;
   transition: all 120ms ease;
 }
 
 .focus-member-item:hover {
   background: #f2f4f7;
-  border-color: #e4e7ec;
+  border-color: #d8dee7;
 }
 
-.focus-member-info {
+.focus-member-identity {
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -281,12 +322,12 @@
   text-overflow: ellipsis;
 }
 
-.focus-sub {
+.focus-dni {
   font-size: 10.5px;
   color: #667085;
 }
 
-.focus-action-col {
+.focus-member-badge {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -300,17 +341,15 @@
 }
 
 .btn-review {
-  border: 0;
-  background: transparent;
   color: #53616a;
   font-size: 11px;
   font-weight: 600;
-  cursor: pointer;
-  padding: 2px 4px;
+  white-space: nowrap;
 }
 
-.btn-review:hover {
+.focus-member-item:hover .btn-review {
   color: #c8102e;
+  text-decoration: underline;
 }
 
 .empty-focus {
@@ -326,18 +365,29 @@
 .dist-chart-wrap {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 12px;
+  gap: 5px;
+}
+
+.dist-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
 }
 
 .dist-title {
   font-size: 11px;
-  color: #667085;
+  font-weight: 600;
+  color: #53616a;
+}
+
+.dist-counter {
+  font-size: 10.5px;
+  color: #8b949e;
 }
 
 .dist-bar-track {
   display: flex;
-  height: 8px;
+  height: 7px;
   background: #eaecf0;
   border-radius: 99px;
   overflow: hidden;
@@ -379,12 +429,11 @@
 .dot--just { background: #98a2b3; }
 
 .volunteer-stat-box {
-  margin-top: auto;
-  padding-top: 10px;
-  border-top: 1px solid #f2f4f7;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-top: 8px;
+  border-top: 1px solid #f2f4f7;
 }
 
 .volunteer-num-row {
@@ -458,10 +507,10 @@
   align-items: center;
   gap: 6px;
   width: 260px;
-  height: 32px;
+  height: 34px;
   border: 1px solid #d8dee7;
   border-radius: 6px;
-  padding: 0 8px;
+  padding: 0 10px;
   background: #ffffff;
 }
 
@@ -474,7 +523,7 @@
   border: 0;
   outline: none;
   width: 100%;
-  font-size: 11.5px;
+  font-size: 12px;
   color: #181c23;
 }
 
@@ -838,11 +887,6 @@
 }
 
 @media (max-width: 680px) {
-  .dynamic-pills {
-    height: auto;
-    flex-direction: column;
-  }
-
   .clean-table,
   .clean-table tbody,
   .clean-table tr,
