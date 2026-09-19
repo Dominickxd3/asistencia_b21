@@ -19,7 +19,7 @@ import { PizarraItem, AccionFila, SolicitudAccion } from './attendance.models';
           class="member-avatar"
           [class.avatar-present]="item().estado === 'PRESENTE'"
           (click)="emitir('ver-qr')"
-          title="Ver carnet con código QR de {{ item().nombreCompleto }}"
+          title="Ver código QR de {{ item().nombreCompleto }}"
           role="button"
           tabindex="0"
         >
@@ -456,7 +456,7 @@ export class AttendanceMemberRowComponent {
         });
       }
       items.push({
-        label: 'Ver carnet / QR',
+        label: 'Ver código QR',
         command: () => this.emitir('ver-qr'),
       });
       if (this.puedeAnular()) {
@@ -487,7 +487,7 @@ export class AttendanceMemberRowComponent {
         });
       }
       items.push({
-        label: 'Ver carnet / QR',
+        label: 'Ver código QR',
         command: () => this.emitir('ver-qr'),
       });
       if (this.puedeAnular()) {
@@ -516,7 +516,7 @@ export class AttendanceMemberRowComponent {
         command: () => this.emitir('observacion'),
       });
       items.push({
-        label: 'Ver carnet / QR',
+        label: 'Ver código QR',
         command: () => this.emitir('ver-qr'),
       });
       return items;
@@ -533,7 +533,7 @@ export class AttendanceMemberRowComponent {
         command: () => this.emitir('observacion'),
       });
       items.push({
-        label: 'Ver carnet / QR',
+        label: 'Ver código QR',
         command: () => this.emitir('ver-qr'),
       });
       return items;
@@ -546,7 +546,7 @@ export class AttendanceMemberRowComponent {
         command: () => this.emitir('observacion'),
       });
       items.push({
-        label: 'Ver carnet / QR',
+        label: 'Ver código QR',
         command: () => this.emitir('ver-qr'),
       });
       if (this.puedeAnular()) {
