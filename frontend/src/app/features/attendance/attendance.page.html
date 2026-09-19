@@ -55,17 +55,6 @@
         </div>
 
         <div class="session-header-actions">
-          <button
-            type="button"
-            class="btn-escanear-qr"
-            (click)="abrirEscanerQr()"
-            [disabled]="j.estado === 'CERRADA' || j.estado === 'FINALIZADA'"
-            title="Abrir escáner continuo de QR"
-          >
-            <i class="pi pi-qrcode"></i>
-            <span>Escanear QR</span>
-          </button>
-
           <span class="session-status-badge" [class]="formatearEstadoJornada(j.estado).cssClass">
             <span class="status-dot"></span>
             <span>{{ formatearEstadoJornada(j.estado).texto }}</span>

@@ -204,44 +204,6 @@
   flex-wrap: wrap;
 }
 
-.btn-escanear-qr {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 38px;
-  padding: 0 16px;
-  background: #087443;
-  color: #FFFFFF;
-  border: 1px solid #065F36;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1);
-  transition: all 0.15s ease;
-
-  i {
-    font-size: 15px;
-  }
-
-  &:hover:not(:disabled) {
-    background: #065F36;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(8, 116, 67, 0.25);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  &:disabled {
-    background: #98A2B3;
-    border-color: #98A2B3;
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-}
-
 .session-status-badge {
   display: inline-flex;
   align-items: center;
@@ -388,7 +350,7 @@
 }
 
 .operative-roster-section {
-  --attendance-grid-cols: minmax(240px, 1fr) 95px 95px 105px 140px 185px;
+  --attendance-grid-cols: minmax(220px, 1fr) 90px 90px 100px 135px 215px;
   --attendance-grid-gap: 16px;
   --attendance-grid-padding: 12px 20px;
   display: flex;

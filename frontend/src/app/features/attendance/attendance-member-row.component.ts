@@ -64,6 +64,18 @@ import { PizarraItem, AccionFila, SolicitudAccion } from './attendance.models';
           >{{ procesando() ? 'Procesando…' : ap.texto }}</button>
         }
 
+        <!-- Botón Escanear con cámara (icono de foto) -->
+        <button
+          type="button"
+          class="btn-camera-action"
+          (click)="emitir('escanear')"
+          [disabled]="procesando()"
+          title="Escanear con cámara"
+          aria-label="Escanear con cámara"
+        >
+          <i class="pi pi-camera"></i>
+        </button>
+
         <!-- Botón Ver QR asignado al integrante -->
         <button
           type="button"
@@ -86,7 +98,22 @@ import { PizarraItem, AccionFila, SolicitudAccion } from './attendance.models';
             title="Más acciones"
             aria-label="Más acciones"
           >⋮</button>
-          @if (menuAbierto()) {<div class="context-menu">@for (opcion of menuItems(); track opcion.label) {@if (opcion.separator) {<hr>} @else {<button type="button" [class.danger]="opcion.danger" (click)="ejecutarMenu(opcion)">{{ opcion.label }}</button>}}</div>}
+          @if (menuAbierto()) {
+            <div class="context-menu">
+              @for (opcion of menuItems(); track opcion.label) {
+                @if (opcion.separator) {
+                  <hr>
+                } @else {
+                  <button type="button" [class.danger]="opcion.danger" (click)="ejecutarMenu(opcion)">
+                    @if (opcion.icon) {
+                      <i [class]="opcion.icon"></i>
+                    }
+                    <span>{{ opcion.label }}</span>
+                  </button>
+                }
+              }
+            </div>
+          }
         }
       </div>
     </div>
@@ -94,7 +121,7 @@ import { PizarraItem, AccionFila, SolicitudAccion } from './attendance.models';
   styles: [`
     .r21-attendance-row {
       display: grid;
-      grid-template-columns: var(--attendance-grid-cols, minmax(240px, 1fr) 95px 95px 105px 140px 185px);
+      grid-template-columns: var(--attendance-grid-cols, minmax(220px, 1fr) 90px 90px 100px 135px 215px);
       align-items: center;
       gap: var(--attendance-grid-gap, 16px);
       padding: var(--attendance-grid-padding, 12px 20px);
@@ -285,6 +312,7 @@ import { PizarraItem, AccionFila, SolicitudAccion } from './attendance.models';
       cursor: pointer;
     }
 
+    .btn-camera-action,
     .btn-qr-action {
       color: var(--r21-text-secondary);
       width: 32px;
@@ -361,7 +389,7 @@ import { PizarraItem, AccionFila, SolicitudAccion } from './attendance.models';
         color: #B42318;
         border: 1px solid #FECDCA;
       }
-    .btn-main-action{min-height:34px;border:1px solid #d0d5dd;border-radius:8px;padding:0 12px;background:#fff;font-weight:650}.btn-success{background:#087443;color:#fff;border-color:#087443}.member-actions-col{position:relative}.context-menu{position:absolute;z-index:20;right:0;top:38px;width:190px;padding:5px;background:#fff;border:1px solid #e4e7ec;border-radius:9px;box-shadow:0 10px 24px #10182824}.context-menu button{width:100%;border:0;background:transparent;padding:8px 10px;text-align:left;border-radius:6px}.context-menu button:hover{background:#f2f4f7}.context-menu button.danger{color:#b42318}.context-menu hr{border:0;border-top:1px solid #eaecf0}
+    .btn-main-action{min-height:34px;border:1px solid #d0d5dd;border-radius:8px;padding:0 12px;background:#fff;font-weight:650}.btn-success{background:#087443;color:#fff;border-color:#087443}.member-actions-col{position:relative}.context-menu{position:absolute;z-index:20;right:0;top:38px;width:200px;padding:5px;background:#fff;border:1px solid #e4e7ec;border-radius:9px;box-shadow:0 10px 24px #10182824}.context-menu button{width:100%;border:0;background:transparent;padding:8px 10px;text-align:left;border-radius:6px;display:flex;align-items:center;gap:8px;font-size:12.5px}.context-menu button i{font-size:13px;color:#667085}.context-menu button:hover{background:#f2f4f7}.context-menu button.danger{color:#b42318}.context-menu button.danger i{color:#b42318}.context-menu hr{border:0;border-top:1px solid #eaecf0}
 
     /* Móvil: Adaptación a Card Compacta */
     @media (max-width: 1050px) {
@@ -481,11 +509,11 @@ export class AttendanceMemberRowComponent {
     return null;
   });
 
-  protected readonly menuItems = computed<Array<{label?:string; separator?:boolean; danger?:boolean; command?:()=>void}>>(() => {
+  protected readonly menuItems = computed<Array<{label?:string; icon?:string; separator?:boolean; danger?:boolean; command?:()=>void}>>(() => {
     const estado = this.item().estado;
-    const items: Array<{ label?: string; separator?: boolean; danger?: boolean; command?: () => void }> = [];
+    const items: Array<{ label?: string; icon?: string; separator?: boolean; danger?: boolean; command?: () => void }> = [];
 
-    // 1. FINALIZADO: Agregar observación, Corregir horario, Ver carnet / QR, [separador], Anular asistencia
+    // 1. FINALIZADO: Agregar observación, Corregir horario, Escanear con cámara, Ver código QR, [separador], Anular asistencia
     if (estado === 'FINALIZADO') {
       items.push({
         label: 'Agregar observación',
@@ -498,7 +526,13 @@ export class AttendanceMemberRowComponent {
         });
       }
       items.push({
+        label: 'Escanear con cámara',
+        icon: 'pi pi-camera',
+        command: () => this.emitir('escanear'),
+      });
+      items.push({
         label: 'Ver código QR',
+        icon: 'pi pi-qrcode',
         command: () => this.emitir('ver-qr'),
       });
       if (this.puedeAnular()) {
@@ -512,7 +546,7 @@ export class AttendanceMemberRowComponent {
       return items;
     }
 
-    // 2. PRESENTE: Agregar observación, Registrar salida anticipada, Corregir hora de entrada, Ver carnet / QR, [separador], Anular asistencia
+    // 2. PRESENTE: Agregar observación, Registrar salida anticipada, Corregir hora de entrada, Escanear con cámara, Ver código QR, [separador], Anular asistencia
     if (estado === 'PRESENTE') {
       items.push({
         label: 'Agregar observación',
@@ -529,7 +563,13 @@ export class AttendanceMemberRowComponent {
         });
       }
       items.push({
+        label: 'Escanear con cámara',
+        icon: 'pi pi-camera',
+        command: () => this.emitir('escanear'),
+      });
+      items.push({
         label: 'Ver código QR',
+        icon: 'pi pi-qrcode',
         command: () => this.emitir('ver-qr'),
       });
       if (this.puedeAnular()) {
@@ -543,7 +583,7 @@ export class AttendanceMemberRowComponent {
       return items;
     }
 
-    // 3. SIN REGISTRO EN JORNADA OBLIGATORIA: Registrar hora manual, Falta justificada, Agregar observación, Ver carnet / QR
+    // 3. SIN REGISTRO EN JORNADA OBLIGATORIA: Registrar hora manual, Falta justificada, Agregar observación, Escanear con cámara, Ver código QR
     if ((!estado || estado === 'PENDIENTE') && !this.voluntaria()) {
       items.push({
         label: 'Registrar hora manual',
@@ -558,13 +598,19 @@ export class AttendanceMemberRowComponent {
         command: () => this.emitir('observacion'),
       });
       items.push({
+        label: 'Escanear con cámara',
+        icon: 'pi pi-camera',
+        command: () => this.emitir('escanear'),
+      });
+      items.push({
         label: 'Ver código QR',
+        icon: 'pi pi-qrcode',
         command: () => this.emitir('ver-qr'),
       });
       return items;
     }
 
-    // 4. SIN REGISTRO EN JORNADA VOLUNTARIA: Registrar hora manual, Agregar observación, Ver carnet / QR
+    // 4. SIN REGISTRO EN JORNADA VOLUNTARIA: Registrar hora manual, Agregar observación, Escanear con cámara, Ver código QR
     if ((!estado || estado === 'PENDIENTE') && this.voluntaria()) {
       items.push({
         label: 'Registrar hora manual',
@@ -575,7 +621,13 @@ export class AttendanceMemberRowComponent {
         command: () => this.emitir('observacion'),
       });
       items.push({
+        label: 'Escanear con cámara',
+        icon: 'pi pi-camera',
+        command: () => this.emitir('escanear'),
+      });
+      items.push({
         label: 'Ver código QR',
+        icon: 'pi pi-qrcode',
         command: () => this.emitir('ver-qr'),
       });
       return items;
@@ -588,7 +640,13 @@ export class AttendanceMemberRowComponent {
         command: () => this.emitir('observacion'),
       });
       items.push({
+        label: 'Escanear con cámara',
+        icon: 'pi pi-camera',
+        command: () => this.emitir('escanear'),
+      });
+      items.push({
         label: 'Ver código QR',
+        icon: 'pi pi-qrcode',
         command: () => this.emitir('ver-qr'),
       });
       if (this.puedeAnular()) {

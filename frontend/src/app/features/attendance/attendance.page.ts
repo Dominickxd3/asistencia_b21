@@ -221,6 +221,9 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
       case 'ver-qr':
         this.abrirQrIndividual(sol.item);
         break;
+      case 'escanear':
+        this.abrirEscanerQr();
+        break;
     }
   }
 

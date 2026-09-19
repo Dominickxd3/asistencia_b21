@@ -38,7 +38,8 @@ export type AccionFila =
   | 'observacion'
   | 'ajustar'
   | 'anular'
-  | 'ver-qr';
+  | 'ver-qr'
+  | 'escanear';
 
 export interface SolicitudAccion {
   accion: AccionFila;
