@@ -242,43 +242,6 @@
   }
 }
 
-.btn-carnets-grupo {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 38px;
-  padding: 0 16px;
-  background: #0F172A;
-  color: #FFFFFF;
-  border: 1px solid #1E293B;
-  border-radius: 8px;
-  font-size: 13.5px;
-  font-weight: 700;
-  cursor: pointer;
-  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.1);
-  transition: all 0.15s ease;
-
-  i {
-    font-size: 15px;
-    color: #94A3B8;
-  }
-
-  &:hover {
-    background: #1E293B;
-    border-color: #334155;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(15, 23, 42, 0.25);
-
-    i {
-      color: #FFFFFF;
-    }
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-}
-
 .session-status-badge {
   display: inline-flex;
   align-items: center;

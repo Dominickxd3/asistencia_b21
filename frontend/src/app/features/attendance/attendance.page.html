@@ -66,16 +66,6 @@
             <span>Escanear QR</span>
           </button>
 
-          <button
-            type="button"
-            class="btn-carnets-grupo"
-            (click)="abrirCarnetsGrupo()"
-            title="Ver e imprimir códigos QR del grupo"
-          >
-            <i class="pi pi-qrcode"></i>
-            <span>Códigos QR</span>
-          </button>
-
           <span class="session-status-badge" [class]="formatearEstadoJornada(j.estado).cssClass">
             <span class="status-dot"></span>
             <span>{{ formatearEstadoJornada(j.estado).texto }}</span>
@@ -191,14 +181,5 @@
   [item]="memberQrItem()"
   [nombreGrupo]="jornadaActual() ? nombreGrupoVisible(jornadaActual()!) : ''"
   (cerrar)="cerrarQrIndividual()"
-/>
-
-<!-- Credenciales / carnets grupales para imprimir (A4) -->
-<app-group-qr-print-dialog
-  [visible]="groupQrPrintVisible()"
-  [integrantes]="pizarra()"
-  [nombreGrupo]="jornadaActual() ? nombreGrupoVisible(jornadaActual()!) : ''"
-  [fechaJornada]="fechaHoy"
-  (cerrar)="cerrarCarnetsGrupo()"
 />
 

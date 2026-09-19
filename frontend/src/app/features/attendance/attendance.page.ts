@@ -24,7 +24,6 @@ import { HoraManualDialogComponent } from './hora-manual-dialog.component';
 import { CierreDialogComponent } from './cierre-dialog.component';
 import { QrScannerDialogComponent } from './qr-scanner-dialog.component';
 import { MemberQrDialogComponent } from './member-qr-dialog.component';
-import { GroupQrPrintDialogComponent } from './group-qr-print-dialog.component';
 
 type DialogoActivo = 'motivo' | 'horaManual' | 'cierre' | null;
 
@@ -44,7 +43,6 @@ type DialogoActivo = 'motivo' | 'horaManual' | 'cierre' | null;
     CierreDialogComponent,
     QrScannerDialogComponent,
     MemberQrDialogComponent,
-    GroupQrPrintDialogComponent,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './attendance.page.html',
@@ -71,7 +69,6 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
   readonly escanerQrAbierto = signal(false);
   readonly memberQrVisible = signal(false);
   readonly memberQrItem = signal<PizarraItem | null>(null);
-  readonly groupQrPrintVisible = signal(false);
   readonly dialogo = signal<DialogoActivo>(null);
   readonly solicitud = signal<SolicitudAccion | null>(null);
   readonly pendientesCierre = signal<PendienteItem[]>([]);
@@ -524,13 +521,5 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
   cerrarQrIndividual(): void {
     this.memberQrVisible.set(false);
     this.memberQrItem.set(null);
-  }
-
-  abrirCarnetsGrupo(): void {
-    this.groupQrPrintVisible.set(true);
-  }
-
-  cerrarCarnetsGrupo(): void {
-    this.groupQrPrintVisible.set(false);
   }
 }
