@@ -3,7 +3,6 @@ import {
   ElementRef,
   OnDestroy,
   ViewChild,
-  computed,
   effect,
   inject,
   input,
@@ -11,9 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { DialogModule } from 'primeng/dialog';
-import { ButtonModule } from 'primeng/button';
 import { JornadaItem, ResultadoEscaneoQr } from './attendance.models';
 import { AttendanceApiService } from './attendance-api.service';
 import { GeoService } from '../../core/services/geo.service';
@@ -22,7 +19,7 @@ import jsQR from 'jsqr';
 @Component({
   selector: 'app-qr-scanner-dialog',
   standalone: true,
-  imports: [CommonModule, FormsModule, DialogModule, ButtonModule],
+  imports: [CommonModule, DialogModule],
   template: `
     <p-dialog
       [visible]="visible()"
@@ -30,23 +27,24 @@ import jsQR from 'jsqr';
       [closable]="false"
       [draggable]="false"
       [resizable]="false"
-      [style]="{ width: '92vw', maxWidth: '620px' }"
+      [style]="{ width: '92vw', maxWidth: '540px' }"
       styleClass="r21-scanner-dialog"
     >
       <ng-template pTemplate="header">
         <div class="scanner-header-wrap">
           <div class="scanner-title-box">
+            <h2>Escáner de asistencia</h2>
             <div class="scanner-live-badge">
               <span class="pulse-dot"></span>
               <span>Cámara activa</span>
             </div>
-            <h2>Escáner de asistencia</h2>
           </div>
           <button
             type="button"
             class="btn-close-scanner"
             (click)="cerrarDialogo()"
             title="Cerrar escáner"
+            aria-label="Cerrar"
           >
             <i class="pi pi-times"></i>
           </button>
@@ -54,23 +52,20 @@ import jsQR from 'jsqr';
       </ng-template>
 
       <div class="scanner-content-body">
-        <!-- Indicador de Jornada Actual -->
+        <!-- Indicador sutil de jornada -->
         @if (jornada(); as j) {
-          <div class="session-info-banner">
-            <div class="session-label-wrap">
-              <span class="session-eyebrow">Jornada actual:</span>
-              <strong class="session-name">{{ nombreGrupoVisible(j) }}</strong>
-            </div>
-            <div class="session-type-tags">
-              <span class="type-pill" [class.mandatory]="j.tipoJornada === 'OBLIGATORIA'">
+          <div class="session-info-strip">
+            <span class="session-name">{{ nombreGrupoVisible(j) }}</span>
+            <div class="session-tags">
+              <span class="tag-type" [class.mandatory]="j.tipoJornada === 'OBLIGATORIA'">
                 {{ j.tipoJornada === 'OBLIGATORIA' ? 'Obligatoria' : 'Voluntaria' }}
               </span>
-              <span class="status-live-tag">En curso</span>
+              <span class="tag-status">En curso</span>
             </div>
           </div>
         }
 
-        <!-- Contenedor del Visor de la Cámara -->
+        <!-- Visor de la Cámara -->
         <div class="camera-viewport-container">
           <video
             #videoElement
@@ -82,7 +77,7 @@ import jsQR from 'jsqr';
 
           <canvas #canvasElement style="display: none;"></canvas>
 
-          <!-- Overlay con miras de encuadre y mensaje guía -->
+          <!-- Overlay con miras de encuadre en blanco y línea láser -->
           <div class="scanner-overlay-aim">
             <div class="scanner-reticle-box">
               <div class="reticle-corner corner-tl"></div>
@@ -93,7 +88,7 @@ import jsQR from 'jsqr';
             </div>
             <div class="scanner-guide-text">
               <i class="pi pi-qrcode"></i>
-              <span>Acerque el QR al lector</span>
+              <span>Apunte al código QR</span>
             </div>
           </div>
 
@@ -101,12 +96,12 @@ import jsQR from 'jsqr';
           @if (procesando()) {
             <div class="processing-curtain">
               <i class="pi pi-spin pi-spinner"></i>
-              <span>Validando registro…</span>
+              <span>Registrando…</span>
             </div>
           }
         </div>
 
-        <!-- Alerta de advertencia suave (ej. duplicado o advertencia) -->
+        <!-- Alerta suave de advertencia (duplicado o nota) -->
         @if (avisoReciente()) {
           <div class="scanner-notice-banner" [class.is-warning]="avisoTipo() === 'DUPLICADO'">
             <i class="pi" [class.pi-exclamation-triangle]="avisoTipo() === 'DUPLICADO'" [class.pi-info-circle]="avisoTipo() !== 'DUPLICADO'"></i>
@@ -133,14 +128,9 @@ import jsQR from 'jsqr';
           </div>
         }
 
-        <!-- TARJETA: Último registro -->
+        <!-- TARJETA: Último registro con UX clara y limpia -->
         <div class="last-record-section">
-          <div class="section-title-line">
-            <span class="section-label">Último registro</span>
-            @if (ultimoRegistro()) {
-              <span class="realtime-tag">✓ Confirmado</span>
-            }
-          </div>
+          <span class="section-label">Último registro</span>
 
           @if (ultimoRegistro(); as ult) {
             <div
@@ -148,26 +138,26 @@ import jsQR from 'jsqr';
               [class.card-entrada]="ult.resultado === 'ENTRADA'"
               [class.card-salida]="ult.resultado === 'SALIDA'"
             >
-              <div class="check-icon-bubble">
+              <div class="check-bubble">
                 <i class="pi pi-check"></i>
               </div>
-              <div class="record-info-col">
-                <div class="member-name">{{ ult.persona.nombreCompleto }}</div>
-                <div class="record-meta-row">
+              <div class="record-data">
+                <span class="member-name">{{ ult.persona.nombreCompleto }}</span>
+                <div class="record-meta">
                   <span
-                    class="action-pill"
-                    [class.pill-entry]="ult.resultado === 'ENTRADA'"
-                    [class.pill-exit]="ult.resultado === 'SALIDA'"
+                    class="badge-action"
+                    [class.badge-entry]="ult.resultado === 'ENTRADA'"
+                    [class.badge-exit]="ult.resultado === 'SALIDA'"
                   >
                     {{ ult.resultado === 'ENTRADA' ? 'Entrada' : 'Salida' }}
                   </span>
-                  <span class="meta-dot">·</span>
+                  <span class="meta-sep">·</span>
                   <span class="meta-time">{{ ult.hora }}</span>
 
                   @if (ult.resultado === 'SALIDA' && ult.duracion) {
-                    <span class="meta-dot">·</span>
+                    <span class="meta-sep">·</span>
                     <span class="meta-duration">
-                      <i class="pi pi-clock"></i> Duración · {{ ult.duracion }}
+                      <i class="pi pi-clock"></i> {{ ult.duracion }}
                     </span>
                   }
                 </div>
@@ -175,33 +165,10 @@ import jsQR from 'jsqr';
             </div>
           } @else {
             <div class="empty-record-card">
-              <i class="pi pi-id-card"></i>
-              <span>Aún no se ha realizado ninguna lectura en esta sesión.</span>
+              <i class="pi pi-qrcode"></i>
+              <span>Esperando lectura de código QR…</span>
             </div>
           }
-        </div>
-
-        <!-- Entrada alternativa para lector de códigos USB o manual -->
-        <div class="scanner-manual-input-row">
-          <div class="manual-input-box">
-            <i class="pi pi-barcode"></i>
-            <input
-              #manualInput
-              type="text"
-              placeholder="O ingrese DNI / carnet manualmente…"
-              [(ngModel)]="codigoManual"
-              (keydown.enter)="procesarManual()"
-              [disabled]="procesando()"
-            />
-          </div>
-          <button
-            type="button"
-            class="btn-submit-code"
-            (click)="procesarManual()"
-            [disabled]="!codigoManual.trim() || procesando()"
-          >
-            Registrar
-          </button>
         </div>
       </div>
     </p-dialog>
@@ -211,18 +178,19 @@ import jsQR from 'jsqr';
       display: block;
     }
 
-    ::ng-deep .r21-scanner-dialog .p-dialog-content {
-      padding: 0;
-      overflow: hidden;
-      border-radius: 12px;
-      background: #FFFFFF;
-    }
-
     ::ng-deep .r21-scanner-dialog .p-dialog-header {
       padding: 16px 20px;
-      background: #0D141C;
-      color: #FFFFFF;
-      border-bottom: 1px solid #1E293B;
+      background: var(--r21-surface, #FFFFFF);
+      color: var(--r21-text-primary, #181C23);
+      border-bottom: 1px solid var(--r21-border, #E4E7EC);
+    }
+
+    ::ng-deep .r21-scanner-dialog .p-dialog-content {
+      padding: 16px 20px 20px;
+      background: var(--r21-surface, #FFFFFF);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
     .scanner-header-wrap {
@@ -234,34 +202,35 @@ import jsQR from 'jsqr';
 
     .scanner-title-box {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      align-items: center;
+      gap: 10px;
 
       h2 {
         margin: 0;
-        font-size: 18px;
-        font-weight: 750;
-        color: #F8FAFC;
-        letter-spacing: -0.01em;
+        font-size: 16.5px;
+        font-weight: 700;
+        color: var(--r21-text-primary, #181C23);
       }
     }
 
     .scanner-live-badge {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
       font-size: 11px;
       font-weight: 700;
-      color: #4ADE80;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
+      color: var(--r21-green, #14804A);
+      background: var(--r21-green-bg, #E7F6ED);
+      border: 1px solid #A6F4C5;
+      padding: 2px 7px;
+      border-radius: 99px;
 
       .pulse-dot {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
-        background-color: #22C55E;
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+        background-color: var(--r21-green, #14804A);
+        box-shadow: 0 0 0 0 rgba(20, 128, 74, 0.7);
         animation: pulse-green 1.8s infinite;
       }
     }
@@ -269,105 +238,87 @@ import jsQR from 'jsqr';
     @keyframes pulse-green {
       0% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+        box-shadow: 0 0 0 0 rgba(20, 128, 74, 0.7);
       }
       70% {
         transform: scale(1);
-        box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+        box-shadow: 0 0 0 6px rgba(20, 128, 74, 0);
       }
       100% {
         transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+        box-shadow: 0 0 0 0 rgba(20, 128, 74, 0);
       }
     }
 
     .btn-close-scanner {
-      width: 34px;
-      height: 34px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: #1E293B;
-      color: #94A3B8;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--r21-border, #E4E7EC);
+      background: #FFFFFF;
+      color: var(--r21-text-secondary, #667085);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      font-size: 14px;
+      font-size: 13px;
       transition: all 0.15s ease;
 
       &:hover {
-        background: #334155;
-        color: #FFFFFF;
+        background: #F4F5F6;
+        color: var(--r21-text-primary, #181C23);
       }
     }
 
     .scanner-content-body {
-      padding: 16px 20px 20px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      background: #FAFAFA;
+      gap: 12px;
     }
 
-    /* Banner de Jornada Actual */
-    .session-info-banner {
+    /* Franja de información de jornada */
+    .session-info-strip {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 14px;
-      background: #FFFFFF;
-      border: 1px solid #E2E8F0;
-      border-radius: 9px;
-    }
-
-    .session-label-wrap {
-      display: flex;
-      flex-direction: column;
-
-      .session-eyebrow {
-        font-size: 11px;
-        color: #64748B;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-      }
+      padding: 8px 12px;
+      background: #F8F9FA;
+      border: 1px solid var(--r21-border, #E4E7EC);
+      border-radius: 6px;
 
       .session-name {
-        font-size: 14px;
-        color: #0F172A;
+        font-size: 13px;
         font-weight: 700;
+        color: var(--r21-text-primary, #181C23);
       }
-    }
 
-    .session-type-tags {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+      .session-tags {
+        display: flex;
+        align-items: center;
+        gap: 6px;
 
-      .type-pill {
-        font-size: 11px;
-        font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 99px;
-        background: #F1F5F9;
-        color: #334155;
-        border: 1px solid #CBD5E1;
+        .tag-type {
+          font-size: 10.5px;
+          font-weight: 700;
+          padding: 2px 7px;
+          border-radius: 99px;
+          background: #ECEFF3;
+          color: #475467;
 
-        &.mandatory {
-          background: #EFF6FF;
-          color: #1D4ED8;
-          border-color: #BFDBFE;
+          &.mandatory {
+            background: var(--r21-red-light, #FBECEE);
+            color: var(--r21-red, #C8102E);
+          }
         }
-      }
 
-      .status-live-tag {
-        font-size: 11px;
-        font-weight: 700;
-        padding: 3px 8px;
-        border-radius: 99px;
-        background: #ECFDF5;
-        color: #047857;
-        border: 1px solid #A7F3D0;
+        .tag-status {
+          font-size: 10.5px;
+          font-weight: 700;
+          padding: 2px 7px;
+          border-radius: 99px;
+          background: var(--r21-green-bg, #E7F6ED);
+          color: var(--r21-green, #14804A);
+        }
       }
     }
 
@@ -375,14 +326,14 @@ import jsQR from 'jsqr';
     .camera-viewport-container {
       position: relative;
       width: 100%;
-      height: 270px;
-      background: #0F172A;
-      border-radius: 12px;
+      height: 280px;
+      background: #181C23;
+      border-radius: 8px;
+      border: 1px solid var(--r21-border, #E4E7EC);
       overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
     }
 
     .camera-video-stream {
@@ -391,7 +342,7 @@ import jsQR from 'jsqr';
       object-fit: cover;
     }
 
-    /* Retícula y láser de escaneo */
+    /* Retícula blanca de encuadre */
     .scanner-overlay-aim {
       position: absolute;
       inset: 0;
@@ -404,49 +355,50 @@ import jsQR from 'jsqr';
 
     .scanner-reticle-box {
       position: relative;
-      width: 190px;
-      height: 190px;
+      width: 180px;
+      height: 180px;
     }
 
     .reticle-corner {
       position: absolute;
-      width: 24px;
-      height: 24px;
-      border-color: #38BDF8;
+      width: 22px;
+      height: 22px;
+      border-color: #FFFFFF;
       border-style: solid;
       border-width: 0;
+      filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
     }
 
     .corner-tl {
       top: 0;
       left: 0;
-      border-top-width: 3.5px;
-      border-left-width: 3.5px;
-      border-top-left-radius: 6px;
+      border-top-width: 3px;
+      border-left-width: 3px;
+      border-top-left-radius: 4px;
     }
 
     .corner-tr {
       top: 0;
       right: 0;
-      border-top-width: 3.5px;
-      border-right-width: 3.5px;
-      border-top-right-radius: 6px;
+      border-top-width: 3px;
+      border-right-width: 3px;
+      border-top-right-radius: 4px;
     }
 
     .corner-bl {
       bottom: 0;
       left: 0;
-      border-bottom-width: 3.5px;
-      border-left-width: 3.5px;
-      border-bottom-left-radius: 6px;
+      border-bottom-width: 3px;
+      border-left-width: 3px;
+      border-bottom-left-radius: 4px;
     }
 
     .corner-br {
       bottom: 0;
       right: 0;
-      border-bottom-width: 3.5px;
-      border-right-width: 3.5px;
-      border-bottom-right-radius: 6px;
+      border-bottom-width: 3px;
+      border-right-width: 3px;
+      border-bottom-right-radius: 4px;
     }
 
     .scanner-laser-line {
@@ -454,75 +406,78 @@ import jsQR from 'jsqr';
       left: 6px;
       right: 6px;
       height: 2px;
-      background: linear-gradient(90deg, transparent, #38BDF8, #E0F2FE, #38BDF8, transparent);
-      box-shadow: 0 0 8px #38BDF8;
+      background: linear-gradient(90deg, transparent, #22C55E, #86EFAC, #22C55E, transparent);
+      box-shadow: 0 0 6px #22C55E;
       animation: scan-vertical 2.2s ease-in-out infinite alternate;
     }
 
     @keyframes scan-vertical {
       0% {
-        top: 8px;
+        top: 6px;
         opacity: 0.3;
       }
       50% {
         opacity: 1;
       }
       100% {
-        top: 178px;
+        top: 170px;
         opacity: 0.3;
       }
     }
 
     .scanner-guide-text {
-      margin-top: 10px;
+      margin-top: 12px;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       padding: 5px 12px;
-      background: rgba(15, 23, 42, 0.75);
+      background: rgba(24, 28, 35, 0.8);
       backdrop-filter: blur(4px);
       border-radius: 99px;
-      color: #F8FAFC;
+      color: #FFFFFF;
       font-size: 12px;
       font-weight: 600;
-      letter-spacing: 0.02em;
-      border: 1px solid rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+
+      i {
+        font-size: 13px;
+      }
     }
 
     .processing-curtain {
       position: absolute;
       inset: 0;
-      background: rgba(15, 23, 42, 0.85);
-      backdrop-filter: blur(3px);
+      background: rgba(24, 28, 35, 0.85);
+      backdrop-filter: blur(2px);
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      gap: 10px;
+      gap: 8px;
       color: #FFFFFF;
       font-size: 13px;
       font-weight: 600;
 
       i {
-        font-size: 26px;
-        color: #38BDF8;
+        font-size: 24px;
+        color: #FFFFFF;
       }
     }
 
-    /* Avisos y duplicados */
+    /* Avisos / advertencias */
     .scanner-notice-banner {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 10px 14px;
-      border-radius: 8px;
-      background: #FEF3C7;
-      border: 1px solid #FDE68A;
-      color: #92400E;
-      font-size: 13px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: var(--r21-amber-bg, #FEF6E7);
+      border: 1px solid #FEDF89;
+      color: var(--r21-amber, #B76E00);
+      font-size: 12.5px;
 
       i {
-        font-size: 16px;
+        font-size: 15px;
         flex-shrink: 0;
       }
 
@@ -535,7 +490,7 @@ import jsQR from 'jsqr';
         }
 
         span {
-          font-size: 12px;
+          font-size: 11.5px;
         }
       }
     }
@@ -543,32 +498,31 @@ import jsQR from 'jsqr';
     .camera-error-banner {
       display: flex;
       align-items: flex-start;
-      gap: 12px;
-      padding: 12px 14px;
-      background: #FEF2F2;
-      border: 1px solid #FECACA;
-      border-radius: 8px;
-      color: #991B1B;
-      font-size: 13px;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--r21-red-light, #FBECEE);
+      border: 1px solid #FECDCA;
+      border-radius: 6px;
+      color: var(--r21-red-dark, #9F0B24);
+      font-size: 12.5px;
 
       i {
-        font-size: 20px;
+        font-size: 18px;
         margin-top: 2px;
       }
 
       p {
-        margin: 4px 0 8px;
-        font-size: 12px;
-        color: #B91C1C;
+        margin: 2px 0 6px;
+        font-size: 11.5px;
       }
 
       .btn-retry-camera {
         padding: 4px 10px;
-        background: #DC2626;
+        background: var(--r21-red, #C8102E);
         color: #FFFFFF;
         border: 0;
-        border-radius: 6px;
-        font-size: 12px;
+        border-radius: 4px;
+        font-size: 11.5px;
         font-weight: 600;
         cursor: pointer;
       }
@@ -578,130 +532,117 @@ import jsQR from 'jsqr';
     .last-record-section {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 6px;
     }
 
-    .section-title-line {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-
-      .section-label {
-        font-size: 12px;
-        font-weight: 700;
-        color: #475467;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-      }
-
-      .realtime-tag {
-        font-size: 11px;
-        font-weight: 700;
-        color: #087443;
-      }
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--r21-text-secondary, #667085);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
     }
 
     .last-record-card {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 14px 16px;
-      border-radius: 10px;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
       background: #FFFFFF;
-      border: 1.5px solid #D0D5DD;
-      transition: all 0.2s ease;
-      box-shadow: 0 2px 6px rgba(16, 24, 40, 0.04);
+      border: 1px solid var(--r21-border, #E4E7EC);
 
       &.card-entrada {
         border-color: #A6F4C5;
-        background: #F6FEF9;
+        background: var(--r21-green-bg, #E7F6ED);
 
-        .check-icon-bubble {
-          background: #ECFDF3;
-          color: #087443;
+        .check-bubble {
+          background: #FFFFFF;
+          color: var(--r21-green, #14804A);
           border-color: #A6F4C5;
         }
       }
 
       &.card-salida {
-        border-color: #B9E6FE;
-        background: #F0F9FF;
+        border-color: #E4E7EC;
+        background: #F8F9FA;
 
-        .check-icon-bubble {
-          background: #E0F2FE;
-          color: #026AA2;
-          border-color: #B9E6FE;
+        .check-bubble {
+          background: #FFFFFF;
+          color: var(--r21-text-primary, #181C23);
+          border-color: #D0D5DD;
         }
       }
 
-      .check-icon-bubble {
-        width: 38px;
-        height: 38px;
+      .check-bubble {
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 18px;
+        font-size: 14px;
         font-weight: 800;
-        border: 1px solid #D0D5DD;
+        border: 1px solid var(--r21-border, #E4E7EC);
         flex-shrink: 0;
       }
 
-      .record-info-col {
+      .record-data {
         display: flex;
         flex-direction: column;
-        gap: 3px;
+        gap: 2px;
         min-width: 0;
 
         .member-name {
-          font-size: 15px;
-          font-weight: 750;
-          color: #101828;
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--r21-text-primary, #181C23);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
         }
 
-        .record-meta-row {
+        .record-meta {
           display: flex;
           align-items: center;
           gap: 6px;
-          flex-wrap: wrap;
-          font-size: 12.5px;
-          color: #475467;
+          font-size: 12px;
+          color: var(--r21-text-secondary, #667085);
 
-          .action-pill {
+          .badge-action {
             font-weight: 700;
-            padding: 2px 7px;
-            border-radius: 6px;
-            font-size: 11px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 10.5px;
 
-            &.pill-entry {
-              background: #D1FADF;
-              color: #087443;
+            &.badge-entry {
+              background: #FFFFFF;
+              color: var(--r21-green, #14804A);
+              border: 1px solid #A6F4C5;
             }
 
-            &.pill-exit {
-              background: #BAE6FD;
-              color: #026AA2;
+            &.badge-exit {
+              background: #FFFFFF;
+              color: var(--r21-text-primary, #181C23);
+              border: 1px solid #D0D5DD;
             }
           }
 
-          .meta-dot {
-            color: #98A2B3;
+          .meta-sep {
+            color: #D0D5DD;
           }
 
           .meta-time {
-            font-weight: 650;
-            color: #1D2939;
+            font-weight: 600;
+            color: var(--r21-text-primary, #181C23);
           }
 
           .meta-duration {
-            font-weight: 650;
-            color: #026AA2;
+            font-weight: 600;
+            color: var(--r21-text-secondary, #667085);
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
 
             i {
               font-size: 11px;
@@ -714,77 +655,16 @@ import jsQR from 'jsqr';
     .empty-record-card {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
+      gap: 8px;
+      padding: 10px 14px;
       background: #FFFFFF;
-      border: 1px dashed #D0D5DD;
-      border-radius: 8px;
-      color: #667085;
-      font-size: 12.5px;
+      border: 1px dashed var(--r21-border, #E4E7EC);
+      border-radius: 6px;
+      color: var(--r21-text-muted, #8B949E);
+      font-size: 12px;
 
       i {
-        font-size: 16px;
-        color: #98A2B3;
-      }
-    }
-
-    /* Entrada manual / Lector USB */
-    .scanner-manual-input-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
-    .manual-input-box {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 0 12px;
-      background: #FFFFFF;
-      border: 1px solid #D0D5DD;
-      border-radius: 8px;
-      height: 38px;
-
-      i {
-        color: #667085;
         font-size: 14px;
-      }
-
-      input {
-        border: 0;
-        background: transparent;
-        width: 100%;
-        outline: none;
-        font-size: 13px;
-        color: #101828;
-
-        &::placeholder {
-          color: #98A2B3;
-        }
-      }
-    }
-
-    .btn-submit-code {
-      height: 38px;
-      padding: 0 14px;
-      background: #087443;
-      color: #FFFFFF;
-      border: 0;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 650;
-      cursor: pointer;
-      transition: background-color 0.15s ease;
-
-      &:hover:not(:disabled) {
-        background: #065F36;
-      }
-
-      &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
       }
     }
   `],
@@ -800,9 +680,7 @@ export class QrScannerDialogComponent implements OnDestroy {
 
   @ViewChild('videoElement') videoElementRef?: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElementRef?: ElementRef<HTMLCanvasElement>;
-  @ViewChild('manualInput') manualInputRef?: ElementRef<HTMLInputElement>;
 
-  codigoManual = '';
   readonly procesando = signal(false);
   readonly errorCamara = signal('');
   readonly ultimoRegistro = signal<ResultadoEscaneoQr | null>(null);
@@ -823,7 +701,6 @@ export class QrScannerDialogComponent implements OnDestroy {
       if (this.visible()) {
         setTimeout(() => {
           void this.iniciarCamara();
-          this.manualInputRef?.nativeElement?.focus();
         }, 150);
       } else {
         this.detenerCamara();
@@ -856,26 +733,32 @@ export class QrScannerDialogComponent implements OnDestroy {
           audio: false,
         });
         this.mediaStream = stream;
-        if (this.videoElementRef?.nativeElement) {
-          const video = this.videoElementRef.nativeElement;
+
+        const video = this.videoElementRef?.nativeElement;
+        if (video) {
           video.srcObject = stream;
           video.setAttribute('playsinline', 'true');
           await video.play();
           this.iniciarBucleEscaneo();
         }
       } else {
-        this.errorCamara.set('Tu navegador o dispositivo no soporta acceso a la cámara.');
+        this.errorCamara.set('Tu navegador no admite acceso a la cámara mediante MediaDevices.');
       }
     } catch (err: any) {
-      this.errorCamara.set(
-        err?.message ?? 'No se pudo activar la cámara. Revisa los permisos de tu navegador.',
-      );
+      console.warn('Error al acceder a la cámara:', err);
+      if (err.name === 'NotAllowedError') {
+        this.errorCamara.set('Permiso de cámara denegado. Permite el acceso a la cámara en el navegador.');
+      } else if (err.name === 'NotFoundError') {
+        this.errorCamara.set('No se encontró ninguna cámara disponible en el dispositivo.');
+      } else {
+        this.errorCamara.set('No se pudo inicializar la cámara: ' + (err.message || 'Error desconocido'));
+      }
     }
   }
 
-  private detenerCamara(): void {
+  detenerCamara(): void {
     this.isScanningLoopActive = false;
-    if (this.animFrameId) {
+    if (this.animFrameId !== null) {
       cancelAnimationFrame(this.animFrameId);
       this.animFrameId = null;
     }
@@ -883,8 +766,9 @@ export class QrScannerDialogComponent implements OnDestroy {
       this.mediaStream.getTracks().forEach((track) => track.stop());
       this.mediaStream = null;
     }
-    if (this.videoElementRef?.nativeElement) {
-      this.videoElementRef.nativeElement.srcObject = null;
+    const video = this.videoElementRef?.nativeElement;
+    if (video) {
+      video.srcObject = null;
     }
   }
 
@@ -892,29 +776,32 @@ export class QrScannerDialogComponent implements OnDestroy {
     if (this.isScanningLoopActive) return;
     this.isScanningLoopActive = true;
 
-    // Verificar si BarcodeDetector nativo está disponible
-    const hasNativeBarcodeDetector = 'BarcodeDetector' in window;
-    let detector: any = null;
-    if (hasNativeBarcodeDetector) {
+    // Verificar si BarcodeDetector nativo está disponible (acelerado por hardware)
+    const hasBarcodeDetector = 'BarcodeDetector' in window;
+    let nativeDetector: any = null;
+    if (hasBarcodeDetector) {
       try {
-        detector = new (window as any).BarcodeDetector({ formats: ['qr_code', 'code_128', 'ean_13'] });
+        nativeDetector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
       } catch {
-        detector = null;
+        nativeDetector = null;
       }
     }
 
     const tick = async () => {
-      if (!this.isScanningLoopActive || !this.visible()) return;
+      if (!this.isScanningLoopActive) return;
 
       const video = this.videoElementRef?.nativeElement;
       const canvas = this.canvasElementRef?.nativeElement;
 
       if (video && video.readyState === video.HAVE_ENOUGH_DATA && !this.procesando()) {
         try {
-          if (detector) {
-            const barcodes = await detector.detect(video);
-            if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-              await this.procesarCodigoDetectado(barcodes[0].rawValue);
+          if (nativeDetector) {
+            const barcodes = await nativeDetector.detect(video);
+            if (barcodes && barcodes.length > 0) {
+              const valor = barcodes[0].rawValue;
+              if (valor) {
+                await this.procesarCodigoDetectado(valor);
+              }
             }
           } else if (canvas) {
             canvas.width = video.videoWidth;
@@ -922,8 +809,8 @@ export class QrScannerDialogComponent implements OnDestroy {
             const ctx = canvas.getContext('2d', { willReadFrequently: true });
             if (ctx) {
               ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              const code = jsQR(imageData.data, imageData.width, imageData.height, {
+              const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imgData.data, imgData.width, imgData.height, {
                 inversionAttempts: 'dontInvert',
               });
               if (code && code.data) {
@@ -940,13 +827,6 @@ export class QrScannerDialogComponent implements OnDestroy {
     };
 
     this.animFrameId = requestAnimationFrame(tick);
-  }
-
-  async procesarManual(): Promise<void> {
-    const cod = this.codigoManual.trim();
-    if (!cod || this.procesando()) return;
-    this.codigoManual = '';
-    await this.procesarCodigoDetectado(cod);
   }
 
   private async procesarCodigoDetectado(qrCode: string): Promise<void> {
@@ -1002,8 +882,6 @@ export class QrScannerDialogComponent implements OnDestroy {
       this.playTone('error');
     } finally {
       this.procesando.set(false);
-      // Mantener foco en el input para lectores de pistola USB
-      setTimeout(() => this.manualInputRef?.nativeElement?.focus(), 100);
     }
   }
 
