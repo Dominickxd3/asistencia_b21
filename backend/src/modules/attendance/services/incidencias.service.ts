@@ -1,7 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-} from '@nestjs/common';
+import { ConflictException, Injectable, UnprocessableEntityException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Asistencia } from '../entities/asistencia.entity';
@@ -16,6 +13,7 @@ import { GeoService } from './geo.service';
 import { AuditoriaService } from '../../audit/auditoria.service';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { GeoDto } from '../dto/asistencia.dto';
+import { resolverReglaAsistencia } from '../../../common/domain/attendance-rule';
 
 /**
  * Casos de uso de incidencias: falta justificada, salida anticipada,
@@ -50,6 +48,15 @@ export class IncidenciasService extends AsistenciaBaseService {
   ) {
     const jornada = await this.validarAccesoJornada(jornadaId, usuarioId);
     this.validarJornadaAbierta(jornada);
+    const [clasificacion] = await this.jornadaRepo.query(
+      `SELECT j.fecha, j.tipo_jornada AS tipoJornada, e.codigo AS etapaCodigo
+       FROM jornadas j JOIN grupos_formacion g ON g.grupo_id = j.grupo_id
+       JOIN etapas_formacion e ON e.etapa_id = g.etapa_id WHERE j.jornada_id = @0`,
+      [jornadaId],
+    );
+    if (clasificacion.tipoJornada !== 'OBLIGATORIA' || resolverReglaAsistencia(clasificacion.etapaCodigo, clasificacion.fecha).tipoJornada !== 'OBLIGATORIA') {
+      throw new UnprocessableEntityException('Una jornada voluntaria no genera faltas');
+    }
 
     const integrante = await this.integranteRepo.findOne({
       where: { grupoId: jornada.grupoId, personaId, estado: 'ACTIVO' },

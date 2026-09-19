@@ -44,13 +44,7 @@ const GRUPOS_SEED = [
   },
 ];
 
-/** Postulantes/aspirantes: lunes voluntario; mie, vie y dom obligatorio */
-const HORARIO = [
-  { dia: 1, tipo: 'VOLUNTARIA' },
-  { dia: 3, tipo: 'OBLIGATORIA' },
-  { dia: 5, tipo: 'OBLIGATORIA' },
-  { dia: 7, tipo: 'OBLIGATORIA' },
-];
+const DIAS = [1, 2, 3, 4, 5, 6, 7];
 
 export async function seedFormacionDemo(
   ds: DataSource,
@@ -108,14 +102,17 @@ export async function seedFormacionDemo(
     });
 
     const detalles = await ds.getRepository(ProgramacionDetalle).save(
-      HORARIO.map((h) => ({
+      DIAS.map((dia) => {
+        const esEsbas = g.etapaCodigo === 'ASPIRANTE_ESBAS';
+        const obligatoria = !esEsbas && [3, 5, 7].includes(dia);
+        return {
         programacionId: programacion.id,
-        diaSemana: h.dia,
-        horaInicio: '19:00:00',
+        diaSemana: dia,
+        horaInicio: obligatoria ? (dia === 7 ? '07:00:00' : '19:30:00') : null,
         horaFin: '22:00:00',
-        tipoJornada: h.tipo,
+        tipoJornada: obligatoria ? 'OBLIGATORIA' : 'VOLUNTARIA',
         estado: 'ACTIVO',
-      })),
+      }}),
     );
 
     let secuenciaDni = 1000;

@@ -6,11 +6,11 @@
 :root {
   --r21-bg: #F5F6F8;
   --r21-surface: #FFFFFF;
-  --r21-sidebar: #171B21;
-  --r21-sidebar-hover: #222831;
-  --r21-sidebar-border: rgba(255, 255, 255, 0.08);
-  --r21-sidebar-text: #9AA0A8;
-  --r21-sidebar-text-active: #FFFFFF;
+  --r21-sidebar: #FFFFFF;
+  --r21-sidebar-hover: #F4F5F6;
+  --r21-sidebar-border: #E4E7EC;
+  --r21-sidebar-text: #53616A;
+  --r21-sidebar-text-active: #9F0B24;
   --r21-text-primary: #181C23;
   --r21-text-secondary: #667085;
   --r21-text-muted: #8B949E;
@@ -36,4 +36,15 @@
   --r21-font: Arial, Helvetica, sans-serif;
   --tui-font-text: var(--r21-font);
   --tui-font-heading: var(--r21-font);
+  --tui-background-base: #F5F6F8;
+  --tui-background-elevation-1: #FFFFFF;
+  --tui-background-elevation-2: #FFFFFF;
+  --tui-background-elevation-3: #FFFFFF;
+  --tui-background-neutral-1: #F2F4F7;
+  --tui-background-neutral-2: #E4E7EC;
+  --tui-text-primary: #181C23;
+  --tui-text-secondary: #667085;
+  --tui-text-tertiary: #8B949E;
+  --tui-border-normal: #E4E7EC;
+  color-scheme: light;
 }

@@ -1,6 +1,8 @@
 export interface PizarraItemView {
   personaId: number;
   nombreCompleto: string;
+  dni: string | null;
+  fotoUrl: string | null;
   asistenciaId: number | null;
   estado: string | null;
   fechaHoraEntrada: Date | null;

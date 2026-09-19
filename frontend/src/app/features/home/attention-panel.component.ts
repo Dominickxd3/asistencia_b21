@@ -10,7 +10,6 @@ import { AtencionItem } from '../../core/models/api.models';
     <section class="attention-section" aria-labelledby="attention-title">
       <div class="section-heading">
         <h2 id="attention-title">Requieren atención</h2>
-        @if (items().length) { <span>{{ items().length }}</span> }
       </div>
 
       <div class="attention-card">
@@ -38,7 +37,6 @@ import { AtencionItem } from '../../core/models/api.models';
     .attention-section { display: flex; flex-direction: column; gap: 12px; }
     .section-heading { display: flex; align-items: center; justify-content: space-between; }
     h2 { margin: 0; color: var(--r21-text-primary); font-size: 17px; font-weight: 680; }
-    .section-heading > span { display: grid; width: 22px; height: 22px; place-items: center; border-radius: 50%; background: var(--r21-amber-bg); color: var(--r21-amber); font-size: 10.5px; font-weight: 700; }
     .attention-card { overflow: hidden; background: var(--r21-surface); border: 1px solid var(--r21-border); border-radius: var(--r21-radius-md); box-shadow: var(--r21-shadow-sm); }
     .all-clear { display: flex; align-items: center; gap: 10px; min-height: 72px; padding: 16px; color: var(--r21-green); font-size: 13px; }
     .attention-row { display: flex; align-items: center; gap: 11px; min-height: 68px; padding: 12px 14px; color: inherit; text-decoration: none; transition: background var(--r21-transition-fast); }

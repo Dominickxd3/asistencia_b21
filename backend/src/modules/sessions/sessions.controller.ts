@@ -15,7 +15,9 @@ export class JornadasController {
   @Get()
   @RequirePermissions(PermissionCode.ATTENDANCE_VIEW)
   listarPorFecha(@Query('fecha') fecha: string | undefined, @CurrentUser() user: CurrentUserData) {
-    const fechaObjetivo = fecha ?? new Date().toISOString().slice(0, 10);
+    const fechaObjetivo = fecha ?? new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Lima', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date());
     return this.jornadas.listarPorFecha(fechaObjetivo, user.id);
   }
 

@@ -211,6 +211,20 @@
     }
   }
 
+  &.p-input-icon-right {
+    > .p-inputtext {
+      padding-right: 38px;
+      border-radius: var(--r21-radius-sm);
+    }
+
+    > .p-icon-wrapper,
+    > .p-calendar-icon {
+      right: 12px;
+      color: var(--r21-text-secondary);
+      pointer-events: none;
+    }
+  }
+
   &.p-calendar-w-btn {
     .p-inputtext {
       border-top-right-radius: 0;
@@ -326,4 +340,3 @@
     }
   }
 }
-

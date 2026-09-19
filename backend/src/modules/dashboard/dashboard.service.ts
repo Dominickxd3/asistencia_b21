@@ -125,13 +125,18 @@ export class DashboardService {
     for (const r of rows) {
       const [conteo] = await this.ds.query(
         `SELECT
-           COUNT(DISTINCT j.jornada_id) AS jornadas,
+           COUNT(DISTINCT CASE WHEN j.tipo_jornada = 'OBLIGATORIA'
+             AND e.codigo IN ('POSTULANTE','ASPIRANTE_COMPANIA')
+             AND (DATEDIFF(day, CONVERT(date, '19000107'), j.fecha) % 7) IN (0,3,5)
+             THEN j.jornada_id END) AS jornadas,
            COUNT(DISTINCT gi.persona_id) AS integrantes,
            SUM(CASE WHEN a.estado_asistencia IN ('PRESENTE', 'FINALIZADO') THEN 1 ELSE 0 END) AS presentes,
            SUM(CASE WHEN a.estado_asistencia = 'FINALIZADO' THEN 1 ELSE 0 END) AS finalizados,
            SUM(CASE WHEN a.estado_asistencia = 'FALTA_JUSTIFICADA' THEN 1 ELSE 0 END) AS justificados,
            SUM(CASE WHEN a.asistencia_id IS NOT NULL AND a.estado_asistencia <> 'ANULADO' THEN 1 ELSE 0 END) AS conRegistro
          FROM jornadas j
+         JOIN grupos_formacion g ON g.grupo_id = j.grupo_id
+         JOIN etapas_formacion e ON e.etapa_id = g.etapa_id
          LEFT JOIN grupo_integrantes gi ON gi.grupo_id = j.grupo_id AND gi.estado = 'ACTIVO'
          LEFT JOIN asistencias a ON a.jornada_id = j.jornada_id AND a.persona_id = gi.persona_id
          WHERE j.grupo_id = @0 AND j.fecha >= @1 AND j.fecha < @2`,
@@ -213,7 +218,7 @@ export class DashboardService {
         integrantes,
         presentes: conteo?.presentes ?? 0,
         finalizados: conteo?.finalizados ?? 0,
-        pendientes: Math.max(integrantes - conRegistro, 0),
+        pendientes: r.tipo_jornada === 'OBLIGATORIA' ? Math.max(integrantes - conRegistro, 0) : 0,
         justificados: conteo?.justificados ?? 0,
         primeraEntrada: conteo?.primeraEntrada ?? null,
         ultimaSalida: conteo?.ultimaSalida ?? null,

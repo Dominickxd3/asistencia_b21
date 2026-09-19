@@ -8,7 +8,7 @@ import { ActividadItem } from '../../core/models/api.models';
   imports: [DatePipe, TuiIcon],
   template: `
     <section class="activity-section" aria-labelledby="activity-title">
-      <div class="activity-heading"><h2 id="activity-title">Últimos movimientos</h2><span>Top 5</span></div>
+      <div class="activity-heading"><h2 id="activity-title">Últimos movimientos</h2></div>
       <div class="activity-card">
         @if (actividadVisible().length === 0) {
           <div class="empty-state">
@@ -33,7 +33,7 @@ import { ActividadItem } from '../../core/models/api.models';
   styles: [`
     .activity-section { display: flex; flex-direction: column; gap: 12px; }
     h2 { margin: 0; color: var(--r21-text-primary); font-size: 17px; font-weight: 680; }
-    .activity-heading{display:flex;align-items:center;justify-content:space-between}.activity-heading>span{padding:3px 7px;border-radius:99px;background:#eef1f5;color:var(--r21-text-secondary);font-size:10px;font-weight:700;text-transform:uppercase}
+    .activity-heading{display:flex;align-items:center;justify-content:space-between}
     .activity-card { overflow: hidden; background: var(--r21-surface); border: 1px solid var(--r21-border); border-radius: var(--r21-radius-md); box-shadow: var(--r21-shadow-sm); }
     .activity-row { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; padding: 12px 14px; }
     .activity-row + .activity-row { border-top: 1px solid var(--r21-border-subtle); }

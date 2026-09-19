@@ -44,6 +44,10 @@
           "options": {
             "browser": "src/main.ts",
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+              "jsqr",
+              "qrcode"
+            ],
             "assets": [
               {
                 "glob": "**/*",
@@ -58,6 +62,11 @@
                 "glob": "**/*",
                 "input": "node_modules/@taiga-ui/icons/src",
                 "output": "assets/taiga-ui/icons"
+              },
+              {
+                "glob": "*.woff2",
+                "input": "node_modules/primeng/resources/themes/lara-light-blue/fonts",
+                "output": "media"
               }
             ],
             "styles": [
@@ -79,8 +88,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "6kB",
-                  "maximumError": "10kB"
+                  "maximumWarning": "16kB",
+                  "maximumError": "24kB"
                 }
               ],
               "outputHashing": "all"

@@ -164,3 +164,17 @@ export class AnularDto {
   @Type(() => GeoDto)
   geo?: GeoDto;
 }
+
+export class ScanQrDto {
+  @ApiProperty({ description: 'Código QR, DNI o identificador de la persona' })
+  @IsString()
+  @IsNotEmpty()
+  qrCode: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => GeoDto)
+  geo?: GeoDto;
+}
+

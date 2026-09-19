@@ -3,6 +3,10 @@
 <p-confirmDialog />
 
 <div class="r21-attendance-view">
+  <header class="attendance-page-heading">
+    <div><h1>Asistencia</h1><p>{{ fechaHoy }}</p></div>
+    <button type="button" class="refresh-button" (click)="cargarJornadas()" [disabled]="cargando()"><i class="pi pi-refresh"></i> Actualizar</button>
+  </header>
   <!-- ESTADO 1: CARGANDO -->
   @if (cargando()) {
     <div class="loading-state-box">
@@ -13,101 +17,105 @@
 
   <!-- ESTADO 2: CON JORNADA ACTIVA / PROGRAMADA -->
   @else if (jornadaActual(); as j) {
-    <!-- ENCABEZADO DE LA JORNADA OPERATIVA -->
-    <header class="session-header-card">
-      <!-- Selector de Jornada si hay más de una -->
-      @if (jornadas().length > 1) {
-        <div class="session-switcher-bar">
-          <span class="switcher-label">Jornadas:</span>
+    @if (jornadas().length > 1) {
+      <section class="attendance-choice" aria-labelledby="attendance-choice-title">
+        <div class="choice-heading">
+          <div><span class="choice-eyebrow">Registro disponible</span><h2 id="attendance-choice-title">¿Qué asistencia deseas registrar?</h2></div>
+          <span class="choice-help">Selecciona la jornada correcta antes de registrar</span>
+        </div>
+        <div class="choice-grid">
           @for (item of jornadas(); track item.id) {
-            <button
-              type="button"
-              class="session-tab-btn"
-              [class.active]="item.id === j.id"
-              (click)="cambiarJornada(item.id)"
-            >
-              {{ item.grupo }} · {{ item.tipoJornada }}
+            <button type="button" class="choice-card" [class.active]="item.id === j.id" [class.mandatory]="item.tipoJornada === 'OBLIGATORIA'" (click)="cambiarJornada(item.id)">
+              <span class="choice-icon"><i [class]="item.tipoJornada === 'OBLIGATORIA' ? 'pi pi-shield' : 'pi pi-clock'"></i></span>
+              <span class="choice-copy"><strong [title]="nombreGrupoVisible(item)">{{ nombreGrupoVisible(item) }}</strong><span>{{ item.tipoJornada === 'OBLIGATORIA' ? 'Instrucción obligatoria' : 'Participación voluntaria' }}</span><small>{{ descripcionJornada(item) }}</small></span>
+              <span class="choice-state" [class.open]="item.estado === 'ABIERTA'">{{ item.estado === 'ABIERTA' ? 'Abierta' : item.estado === 'CERRADA' ? 'Finalizada' : 'Próxima' }}</span>
+              @if (item.id === j.id) { <i class="pi pi-check-circle selected-check"></i> }
             </button>
           }
         </div>
-      }
+      </section>
+    }
+    <!-- ENCABEZADO DE LA JORNADA OPERATIVA -->
+    <header class="session-header-card">
+      <!-- Selector de Jornada si hay más de una -->
 
       <!-- Título del Grupo, Tipo, Horario y Estado -->
       <div class="session-main-header-row">
         <div class="session-title-group">
-          <h1 class="session-group-name">{{ j.grupo }}</h1>
+          <h1 class="session-group-name">{{ nombreGrupoVisible(j) }}</h1>
           <div class="session-schedule-line">
-            <span>{{ j.tipoJornada === 'OBLIGATORIA' ? 'Obligatoria' : 'Voluntaria' }}</span>
-            <span class="dot-sep">·</span>
-            <span class="schedule-time">{{ formatearHorario(j) }}</span>
+            @if (esVoluntaria()) {
+              <span class="schedule-time">Registro voluntario disponible todo el día</span>
+            } @else {
+              <span>Instrucción obligatoria</span>
+              <span class="dot-sep">·</span>
+              <span class="schedule-time">Ingreso {{ formatearHorario(j).split('—')[0] }}</span>
+            }
           </div>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
+        <div class="session-header-actions">
+          <button
+            type="button"
+            class="btn-escanear-qr"
+            (click)="abrirEscanerQr()"
+            [disabled]="j.estado === 'CERRADA' || j.estado === 'FINALIZADA'"
+            title="Abrir escáner continuo de QR"
+          >
+            <i class="pi pi-qrcode"></i>
+            <span>Escanear QR</span>
+          </button>
+
+          <button
+            type="button"
+            class="btn-carnets-grupo"
+            (click)="abrirCarnetsGrupo()"
+            title="Ver e imprimir carnets con QR de todo el grupo"
+          >
+            <i class="pi pi-id-card"></i>
+            <span>Carnets del grupo</span>
+          </button>
+
           <span class="session-status-badge" [class]="formatearEstadoJornada(j.estado).cssClass">
             <span class="status-dot"></span>
             <span>{{ formatearEstadoJornada(j.estado).texto }}</span>
           </span>
 
-          @if (j.estado === 'ABIERTA') {
-            <button
-              type="button"
-              class="r21-secondary-button"
-              (click)="intentarCierre()"
-            ><i class="pi pi-lock"></i> Cerrar jornada</button>
+          @if (j.estado === 'PROGRAMADA' && j.tipoJornada === 'OBLIGATORIA') {
+            <span class="session-status-badge status-programada"><i class="pi pi-clock"></i> Apertura automática</span>
           }
         </div>
       </div>
 
       <!-- Resumen Compacto: Presentes y Pendientes -->
-      <div class="session-summary-pills-row">
-        <div class="summary-pills-wrap">
-          <span class="pill-presentes">
-            <i class="pi pi-check"></i>
-            {{ presentesCount() }} / {{ totalIntegrantes() }} presentes
-          </span>
-          <span class="pill-pendientes" [class.all-clear]="pendientesCount() === 0">
-            <i class="pi pi-clock"></i>
-            {{ pendientesCount() }} pendiente{{ pendientesCount() === 1 ? '' : 's' }}
-          </span>
+      @if (!esVoluntaria()) {
+        <div class="session-summary-pills-row">
+          <div class="summary-pills-wrap">
+            <span class="pill-presentes"><i class="pi pi-check"></i> {{ presentesCount() }} / {{ totalIntegrantes() }} presentes</span>
+            <span class="pill-pendientes" [class.all-clear]="pendientesCount() === 0">
+              <i class="pi pi-clock"></i>
+              {{ pendientesCount() }} pendiente{{ pendientesCount() === 1 ? '' : 's' }}
+            </span>
+          </div>
         </div>
-      </div>
+      }
     </header>
 
     <!-- BARRA DE BÚSQUEDA RÁPIDA -->
-    <div class="quick-search-container">
-      <div class="search-input-wrap">
-        <i class="pi pi-search search-lead-icon"></i>
-        <input
-          type="text"
-          placeholder="Buscar integrante por nombre o apellido…"
-          [ngModel]="filtroBusqueda()"
-          (ngModelChange)="filtroBusqueda.set($event)"
-          class="search-box-input"
-        />
-        @if (filtroBusqueda()) {
-          <button
-            type="button"
-            class="clear-search-icon-btn"
-            (click)="filtroBusqueda.set('')"
-            title="Limpiar búsqueda"
-            aria-label="Limpiar búsqueda"
-          >
-            <i class="pi pi-times"></i>
-          </button>
-        }
-      </div>
-      <span class="search-counter-badge">
-        {{ itemsOrdenadosYFiltrados().length }} de {{ totalIntegrantes() }} integrantes
-      </span>
-    </div>
-
     <!-- LISTA OPERATIVA DE INTEGRANTES -->
     <section class="operative-roster-section" aria-label="Nómina de integrantes de la jornada">
+      <div class="roster-columns" aria-hidden="true">
+        <span class="col-member">Integrante</span>
+        <span class="col-time">Entrada</span>
+        <span class="col-time">Salida</span>
+        <span class="col-duration">Duración</span>
+        <span class="col-status">Estado</span>
+        <span class="col-actions">Acción</span>
+      </div>
       @if (itemsOrdenadosYFiltrados().length === 0) {
         <div class="empty-search-alert">
-          <i class="pi pi-search"></i>
-          <span>No se encontraron integrantes que coincidan con "{{ filtroBusqueda() }}"</span>
+          <i class="pi pi-users"></i>
+          <span>Este grupo todavía no tiene integrantes registrados.</span>
         </div>
       } @else {
         @for (item of itemsOrdenadosYFiltrados(); track item.personaId) {
@@ -116,6 +124,7 @@
             [procesando]="procesandoId() === item.personaId"
             [puedeAjustar]="puedeAjustar()"
             [puedeAnular]="puedeAnular()"
+            [voluntaria]="esVoluntaria()"
             (accion)="ejecutar($event)"
           />
         }
@@ -125,16 +134,12 @@
 
   <!-- ESTADO 3: SIN JORNADA PROGRAMADA -->
   @else {
-    <div class="empty-jornada-compact">
-      <div class="empty-icon-box">
-        <i class="pi pi-calendar-times"></i>
-      </div>
-      <div class="empty-text-wrap">
-        <span class="empty-main-text">No hay jornadas programadas para hoy</span>
-        <p class="empty-sub-text">
-          Cuando exista una jornada, podrás registrar entradas, salidas e incidencias desde aquí.
-        </p>
-      </div>
+    <div class="empty-jornada">
+      <div class="empty-icon-box"><i class="pi pi-calendar-times"></i></div>
+      <span class="empty-status">Sin jornada activa</span>
+      <h2>{{ errorCarga() ? 'No pudimos cargar la jornada' : 'No hay jornadas programadas para hoy' }}</h2>
+      <p>{{ errorCarga() || 'Cuando se programe una jornada para uno de tus grupos, aquí aparecerán sus integrantes para registrar entradas, salidas e incidencias.' }}</p>
+      <button type="button" class="refresh-button" (click)="cargarJornadas()"><i class="pi pi-refresh"></i> Volver a consultar</button>
     </div>
   }
 </div>
@@ -171,3 +176,29 @@
   (confirmar)="confirmarCierre()"
   (cancelar)="dialogo.set(null)"
 />
+
+<!-- Escáner continuo de asistencia por QR -->
+<app-qr-scanner-dialog
+  [visible]="escanerQrAbierto()"
+  [jornada]="jornadaActual()"
+  (cerrar)="cerrarEscanerQr()"
+  (registroExitoso)="onRegistroQrExitoso($event)"
+/>
+
+<!-- Carnet digital individual con QR -->
+<app-member-qr-dialog
+  [visible]="memberQrVisible()"
+  [item]="memberQrItem()"
+  [nombreGrupo]="jornadaActual() ? nombreGrupoVisible(jornadaActual()!) : ''"
+  (cerrar)="cerrarQrIndividual()"
+/>
+
+<!-- Credenciales / carnets grupales para imprimir (A4) -->
+<app-group-qr-print-dialog
+  [visible]="groupQrPrintVisible()"
+  [integrantes]="pizarra()"
+  [nombreGrupo]="jornadaActual() ? nombreGrupoVisible(jornadaActual()!) : ''"
+  [fechaJornada]="fechaHoy"
+  (cerrar)="cerrarCarnetsGrupo()"
+/>
+

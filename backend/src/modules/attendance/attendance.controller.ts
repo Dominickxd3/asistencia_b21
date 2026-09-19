@@ -20,6 +20,7 @@ import {
   RegistrarManualDto,
   RegistrarSalidaDto,
   SalidaAnticipadaDto,
+  ScanQrDto,
 } from './dto/asistencia.dto';
 import { RequirePermissions } from '../auth/decorators/auth.decorators';
 import { PermissionCode } from '../../common/constants/permissions.constants';
@@ -138,6 +139,27 @@ export class AttendanceController {
     @CurrentUser() user: CurrentUserData,
   ) {
     return this.registro.agregarObservacion(id, dto.observacion, user.id);
+  }
+
+  @Post('sessions/:jornadaId/scan-qr')
+  @RequirePermissions(PermissionCode.ATTENDANCE_REGISTER)
+  escanearQr(
+    @Param('jornadaId', ParseIntPipe) jornadaId: number,
+    @Body() dto: ScanQrDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.registro.escanearQr(jornadaId, dto.qrCode, user.id, dto.geo);
+  }
+
+  @Post('sessions/:jornadaId/persons/:personaId/observation')
+  @RequirePermissions(PermissionCode.ATTENDANCE_REGISTER)
+  observacionPersona(
+    @Param('jornadaId', ParseIntPipe) jornadaId: number,
+    @Param('personaId', ParseIntPipe) personaId: number,
+    @Body() dto: ObservacionDto,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.registro.agregarObservacionPersona(jornadaId, personaId, dto.observacion, user.id);
   }
 
   // ---------- Cierre ----------

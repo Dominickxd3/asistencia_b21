@@ -12,9 +12,10 @@ export class CreateJornadaDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
   fecha: string;
 
-  @ApiProperty({ enum: ['OBLIGATORIA', 'VOLUNTARIA'] })
+  @ApiPropertyOptional({ enum: ['OBLIGATORIA', 'VOLUNTARIA'], description: 'Informativo; el backend resuelve el valor efectivo' })
+  @IsOptional()
   @IsIn(['OBLIGATORIA', 'VOLUNTARIA'])
-  tipoJornada: string;
+  tipoJornada?: string;
 
   @ApiPropertyOptional({ enum: ['PROGRAMADA', 'EXTRAORDINARIA'], default: 'PROGRAMADA' })
   @IsOptional()

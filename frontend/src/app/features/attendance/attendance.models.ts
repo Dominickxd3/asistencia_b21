@@ -1,6 +1,8 @@
 export interface PizarraItem {
   personaId: number;
   nombreCompleto: string;
+  dni?: string | null;
+  fotoUrl?: string | null;
   asistenciaId: number | null;
   estado: string | null;
   fechaHoraEntrada: string | null;
@@ -35,7 +37,8 @@ export type AccionFila =
   | 'salida-anticipada'
   | 'observacion'
   | 'ajustar'
-  | 'anular';
+  | 'anular'
+  | 'ver-qr';
 
 export interface SolicitudAccion {
   accion: AccionFila;
@@ -47,3 +50,22 @@ export interface HoraManualResult {
   horaSalida?: string;
   motivo: string;
 }
+
+export interface ResultadoEscaneoQr {
+  resultado: 'ENTRADA' | 'SALIDA' | 'DUPLICADO' | 'YA_FINALIZADO' | 'INCIDENCIA';
+  mensaje: string;
+  asistenciaId?: number;
+  persona: {
+    id: number;
+    nombreCompleto: string;
+    dni?: string | null;
+  };
+  hora?: string;
+  horaEntrada?: string;
+  horaSalida?: string;
+  duracion?: string;
+  segundos?: number;
+  fechaHoraEntrada?: string | Date;
+  fechaHoraSalida?: string | Date;
+}
+

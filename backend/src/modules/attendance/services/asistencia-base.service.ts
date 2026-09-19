@@ -89,7 +89,7 @@ export class AsistenciaBaseService {
     opciones: {
       nuevoEstado: string;
       usuarioId: number;
-      tipoRegistro: 'AUTOMATICO' | 'MANUAL';
+      tipoRegistro: 'AUTOMATICO' | 'MANUAL' | 'QR' | string;
       entrada: 'SERVIDOR' | string | null;
       motivoManual?: string | null;
       observacion?: string | null;

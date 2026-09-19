@@ -29,9 +29,14 @@ export class TrackingService {
 
     const [periodo] = await this.ds.query(
       `SELECT COUNT(*) AS jornadasObligatorias
-       FROM jornadas
-       WHERE grupo_id = @0 AND fecha BETWEEN @1 AND @2
-         AND tipo_jornada = 'OBLIGATORIA' AND estado IN ('PROGRAMADA','ABIERTA','CERRADA')`,
+       FROM jornadas j
+       JOIN grupos_formacion g ON g.grupo_id = j.grupo_id
+       JOIN etapas_formacion e ON e.etapa_id = g.etapa_id
+       WHERE j.grupo_id = @0 AND j.fecha BETWEEN @1 AND @2
+         AND j.tipo_jornada = 'OBLIGATORIA'
+         AND e.codigo IN ('POSTULANTE','ASPIRANTE_COMPANIA')
+         AND (DATEDIFF(day, CONVERT(date, '19000107'), j.fecha) % 7) IN (0,3,5)
+         AND j.estado IN ('PROGRAMADA','ABIERTA','CERRADA')`,
       [grupoId, desde, hasta],
     );
 
@@ -47,7 +52,11 @@ export class TrackingService {
            p.apellido_paterno + ' ' + ISNULL(p.apellido_materno + ' ', '') + p.nombres AS nombreCompleto
          FROM membresias m JOIN personas p ON p.persona_id = m.persona_id
        ), registros AS (
-         SELECT DISTINCT m.persona_id, j.jornada_id, j.tipo_jornada,
+         SELECT DISTINCT m.persona_id, j.jornada_id,
+           CASE WHEN j.tipo_jornada = 'OBLIGATORIA'
+                  AND e.codigo IN ('POSTULANTE','ASPIRANTE_COMPANIA')
+                  AND (DATEDIFF(day, CONVERT(date, '19000107'), j.fecha) % 7) IN (0,3,5)
+                THEN 'OBLIGATORIA' ELSE 'VOLUNTARIA' END AS tipo_jornada,
            a.estado_asistencia, a.fecha_hora_entrada, a.fecha_hora_salida
          FROM membresias m
          JOIN jornadas j ON j.grupo_id = @0
@@ -55,6 +64,8 @@ export class TrackingService {
            AND j.fecha >= m.fecha_inicio
            AND (m.fecha_fin IS NULL OR j.fecha <= m.fecha_fin)
            AND j.estado IN ('PROGRAMADA','ABIERTA','CERRADA')
+         JOIN grupos_formacion g ON g.grupo_id = j.grupo_id
+         JOIN etapas_formacion e ON e.etapa_id = g.etapa_id
          LEFT JOIN asistencias a ON a.jornada_id = j.jornada_id
            AND a.persona_id = m.persona_id AND a.estado_asistencia <> 'ANULADO'
        )
@@ -119,22 +130,34 @@ export class TrackingService {
     if (!integrante) throw new NotFoundException('Integrante no aplicable en el periodo');
 
     const historial = await this.ds.query(
-      `SELECT DISTINCT j.jornada_id AS jornadaId, j.fecha, j.tipo_jornada AS tipo,
+      `SELECT DISTINCT j.jornada_id AS jornadaId, j.fecha,
+         CASE WHEN j.tipo_jornada = 'OBLIGATORIA'
+                AND e.codigo IN ('POSTULANTE','ASPIRANTE_COMPANIA')
+                AND (DATEDIFF(day, CONVERT(date, '19000107'), j.fecha) % 7) IN (0,3,5)
+              THEN 'OBLIGATORIA' ELSE 'VOLUNTARIA' END AS tipo,
          ISNULL(a.estado_asistencia, 'SIN_REGISTRO') AS estado,
          CONVERT(varchar(5), a.fecha_hora_entrada, 108) AS entrada,
          CONVERT(varchar(5), a.fecha_hora_salida, 108) AS salida,
          COALESCE(a.observacion, a.motivo_registro_manual) AS incidencia,
-         CASE WHEN j.tipo_jornada = 'VOLUNTARIA' AND a.fecha_hora_entrada IS NOT NULL AND a.fecha_hora_salida IS NOT NULL
+         CASE WHEN NOT (j.tipo_jornada = 'OBLIGATORIA'
+                         AND e.codigo IN ('POSTULANTE','ASPIRANTE_COMPANIA')
+                         AND (DATEDIFF(day, CONVERT(date, '19000107'), j.fecha) % 7) IN (0,3,5))
+                    AND a.fecha_hora_entrada IS NOT NULL AND a.fecha_hora_salida IS NOT NULL
               THEN ROUND(DATEDIFF(minute, a.fecha_hora_entrada, a.fecha_hora_salida) / 60.0, 1) ELSE 0 END AS horasAdicionales
        FROM grupo_integrantes gi
        JOIN jornadas j ON j.grupo_id = gi.grupo_id
          AND j.fecha BETWEEN @2 AND @3 AND j.fecha >= gi.fecha_inicio
          AND (gi.fecha_fin IS NULL OR j.fecha <= gi.fecha_fin)
          AND j.estado IN ('PROGRAMADA','ABIERTA','CERRADA')
+       JOIN grupos_formacion g ON g.grupo_id = j.grupo_id
+       JOIN etapas_formacion e ON e.etapa_id = g.etapa_id
        LEFT JOIN asistencias a ON a.jornada_id = j.jornada_id AND a.persona_id = gi.persona_id
          AND a.estado_asistencia <> 'ANULADO'
        WHERE gi.grupo_id = @0 AND gi.persona_id = @1
-         AND (j.tipo_jornada = 'OBLIGATORIA' OR a.asistencia_id IS NOT NULL)
+         AND ((j.tipo_jornada = 'OBLIGATORIA'
+               AND e.codigo IN ('POSTULANTE','ASPIRANTE_COMPANIA')
+               AND (DATEDIFF(day, CONVERT(date, '19000107'), j.fecha) % 7) IN (0,3,5))
+              OR a.asistencia_id IS NOT NULL)
        ORDER BY j.fecha DESC, j.jornada_id DESC`,
       [grupoId, personaId, desde, hasta],
     );

@@ -40,8 +40,10 @@ import { TodaySessionsComponent } from './today-sessions.component';
           [readonlyInput]="true"
           dateFormat="dd/mm/yy"
           [showIcon]="true"
+          iconDisplay="input"
+          icon="pi pi-calendar"
           placeholder="Seleccionar fecha o rango"
-          (onSelect)="alSeleccionarFecha()"
+          (onSelect)="alSeleccionarFecha($event)"
           (onClose)="alCerrarCalendario()" />
       </div>
     </header>
@@ -92,7 +94,6 @@ import { TodaySessionsComponent } from './today-sessions.component';
         <!-- BLOQUE ESTADO DE HOY (DailySummary) -->
         <app-daily-summary
           [resumen]="d.resumen"
-          [jornadaActiva]="jornadaActiva()"
           [modoMes]="esModoRango()"
         />
 
@@ -260,7 +261,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly errorCarga = signal(false);
 
   rangeDates: (Date | null)[] = [new Date()];
-  private debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private inicioSeleccionIso: string | null = this.toIsoDate(new Date());
   private refrescoPendiente: ReturnType<typeof setTimeout> | null = null;
 
   readonly hoyIso = new Date().toLocaleDateString('sv-SE');
@@ -286,10 +287,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     return `Estado de la formación para el ${this.formatearFechaLarga(d.fecha)}.`;
   });
 
-  readonly jornadaActiva = computed(() =>
-    this.datos()?.jornadas.some((jornada) => jornada.estado === 'ABIERTA') ?? false,
-  );
-
   ngOnInit(): void {
     this.cargar();
     this.realtime.conectar();
@@ -300,41 +297,41 @@ export class HomeComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.realtime.off('dashboard.actualizar');
     this.realtime.off('asistencia.registrada');
-    if (this.debounceTimer) clearTimeout(this.debounceTimer);
     if (this.refrescoPendiente) clearTimeout(this.refrescoPendiente);
   }
 
-  alSeleccionarFecha(): void {
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-      this.debounceTimer = null;
+  alSeleccionarFecha(fecha: Date): void {
+    const seleccionIso = this.toIsoDate(fecha);
+
+    if (this.inicioSeleccionIso === seleccionIso && !this.rangeDates?.[1]) {
+      this.rangeDates = [];
+      this.inicioSeleccionIso = null;
+      return;
     }
 
-    // Si ya seleccionó ambos extremos o si es sólo el primero
-    if (this.rangeDates && this.rangeDates[0] && this.rangeDates[1]) {
-      this.cargar();
-    } else if (this.rangeDates && this.rangeDates[0]) {
-      // Si sólo eligió un día, esperamos un momento por si va a elegir el segundo,
-      // o cargamos ese día si el usuario solo quería seleccionar una fecha.
-      this.debounceTimer = setTimeout(() => {
-        this.cargar();
-      }, 400);
+    if (!this.inicioSeleccionIso || !this.rangeDates?.[0]) {
+      this.rangeDates = [fecha];
+      this.inicioSeleccionIso = seleccionIso;
+      void this.cargar();
+      return;
+    }
+
+    if (this.inicioSeleccionIso !== seleccionIso) {
+      const inicio = new Date(`${this.inicioSeleccionIso}T00:00:00`);
+      this.rangeDates = inicio <= fecha ? [inicio, fecha] : [fecha, inicio];
+      this.inicioSeleccionIso = null;
+      void this.cargar();
     }
   }
 
   alCerrarCalendario(): void {
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-      this.debounceTimer = null;
-    }
-
     // Si cerró habiendo elegido sólo un día o ambos días iguales, normalizamos
     if (this.rangeDates && this.rangeDates[0]) {
       if (this.rangeDates[1] && this.toIsoDate(this.rangeDates[0]) === this.toIsoDate(this.rangeDates[1])) {
         this.rangeDates = [this.rangeDates[0]];
       }
     }
-    this.cargar();
+    if (this.rangeDates?.[0]) void this.cargar();
   }
 
   async cargar(): Promise<void> {

@@ -7,6 +7,7 @@ import {
   JornadaItem,
   PendienteItem,
   PizarraItem,
+  ResultadoEscaneoQr,
 } from './attendance.models';
 
 @Injectable({ providedIn: 'root' })
@@ -21,6 +22,10 @@ export class AttendanceApiService {
 
   pizarra(jornadaId: number) {
     return firstValueFrom(this.http.get<PizarraItem[]>(`${this.base}/attendance/board/${jornadaId}`));
+  }
+
+  abrirJornada(jornadaId: number) {
+    return firstValueFrom(this.http.post<JornadaItem>(`${this.base}/sessions/${jornadaId}/open`, {}));
   }
 
   entrada(jornadaId: number, personaId: number, geo: GeoPayload | null) {
@@ -78,6 +83,24 @@ export class AttendanceApiService {
   cerrarJornada(jornadaId: number, convertirPendientes = false) {
     return firstValueFrom(
       this.http.post(`${this.base}/attendance/sessions/${jornadaId}/close`, { convertirPendientes }),
+    );
+  }
+
+  escanearQr(jornadaId: number, qrCode: string, geo: GeoPayload | null) {
+    return firstValueFrom(
+      this.http.post<ResultadoEscaneoQr>(
+        `${this.base}/attendance/sessions/${jornadaId}/scan-qr`,
+        { qrCode, geo },
+      ),
+    );
+  }
+
+  observacionPersona(jornadaId: number, personaId: number, observacion: string) {
+    return firstValueFrom(
+      this.http.post(
+        `${this.base}/attendance/sessions/${jornadaId}/persons/${personaId}/observation`,
+        { observacion },
+      ),
     );
   }
 }

@@ -10,6 +10,7 @@ import { Asistencia } from '../entities/asistencia.entity';
 import { GrupoIntegrante } from '../../groups/entities/grupo-integrante.entity';
 import { AuditoriaService } from '../../audit/auditoria.service';
 import { RealtimeService } from '../../realtime/realtime.service';
+import { resolverReglaAsistencia } from '../../../common/domain/attendance-rule';
 
 export interface PendienteView {
   personaId: number;
@@ -35,6 +36,16 @@ export class CierreJornadaService {
 
   /** Personas del grupo sin registro (o con registro anulado) en la jornada */
   async pendientes(jornadaId: number): Promise<PendienteView[]> {
+    const [jornada] = await this.jornadaRepo.query(
+      `SELECT j.fecha, j.tipo_jornada AS tipoJornada, e.codigo AS etapaCodigo
+       FROM jornadas j
+       JOIN grupos_formacion g ON g.grupo_id = j.grupo_id
+       JOIN etapas_formacion e ON e.etapa_id = g.etapa_id
+       WHERE j.jornada_id = @0`,
+      [jornadaId],
+    );
+    if (!jornada) throw new NotFoundException('Jornada no encontrada');
+    if (jornada.tipoJornada !== 'OBLIGATORIA' || resolverReglaAsistencia(jornada.etapaCodigo, jornada.fecha).tipoJornada !== 'OBLIGATORIA') return [];
     return this.jornadaRepo.query(
       `SELECT gi.persona_id AS personaId,
               p.apellido_paterno + ' ' + ISNULL(p.apellido_materno + ' ', '') + p.nombres AS nombreCompleto
@@ -65,7 +76,17 @@ export class CierreJornadaService {
       throw new UnprocessableEntityException(`La jornada está ${jornada.estado}; debe estar ABIERTA`);
     }
 
-    const pendientes = await this.pendientes(jornadaId);
+    const [clasificacion] = await this.jornadaRepo.query(
+      `SELECT j.fecha, j.tipo_jornada AS tipoJornada, e.codigo AS etapaCodigo
+       FROM jornadas j JOIN grupos_formacion g ON g.grupo_id = j.grupo_id
+       JOIN etapas_formacion e ON e.etapa_id = g.etapa_id WHERE j.jornada_id = @0`,
+      [jornadaId],
+    );
+    const esObligatoria = clasificacion.tipoJornada === 'OBLIGATORIA' && resolverReglaAsistencia(
+      clasificacion.etapaCodigo,
+      clasificacion.fecha,
+    ).tipoJornada === 'OBLIGATORIA';
+    const pendientes = esObligatoria ? await this.pendientes(jornadaId) : [];
     if (pendientes.length > 0 && !convertirPendientes) {
       throw new UnprocessableEntityException({
         message: `Quedan ${pendientes.length} persona(s) sin registro`,
@@ -74,7 +95,7 @@ export class CierreJornadaService {
     }
 
     await this.jornadaRepo.manager.transaction(async (em) => {
-      if (convertirPendientes) {
+      if (esObligatoria && convertirPendientes) {
         for (const p of pendientes) {
           // UQ(jornada, persona): reactivar fila anulada o insertar una nueva
           await em.query(
@@ -113,7 +134,7 @@ export class CierreJornadaService {
       modulo: 'sessions',
       entidad: 'jornadas',
       entidadId: jornadaId,
-      valorNuevo: { estado: 'CERRADA', faltasConvertidas: convertirPendientes ? pendientes.length : 0 },
+      valorNuevo: { estado: 'CERRADA', faltasConvertidas: esObligatoria && convertirPendientes ? pendientes.length : 0 },
     });
 
     this.realtime.emitirJornada('jornada.cerrada', {

@@ -16,11 +16,15 @@ import {
   PendienteItem,
   SolicitudAccion,
   HoraManualResult,
+  ResultadoEscaneoQr,
 } from './attendance.models';
 import { AttendanceMemberRowComponent } from './attendance-member-row.component';
 import { MotivoDialogComponent } from './motivo-dialog.component';
 import { HoraManualDialogComponent } from './hora-manual-dialog.component';
 import { CierreDialogComponent } from './cierre-dialog.component';
+import { QrScannerDialogComponent } from './qr-scanner-dialog.component';
+import { MemberQrDialogComponent } from './member-qr-dialog.component';
+import { GroupQrPrintDialogComponent } from './group-qr-print-dialog.component';
 
 type DialogoActivo = 'motivo' | 'horaManual' | 'cierre' | null;
 
@@ -38,6 +42,9 @@ type DialogoActivo = 'motivo' | 'horaManual' | 'cierre' | null;
     MotivoDialogComponent,
     HoraManualDialogComponent,
     CierreDialogComponent,
+    QrScannerDialogComponent,
+    MemberQrDialogComponent,
+    GroupQrPrintDialogComponent,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './attendance.page.html',
@@ -56,7 +63,15 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
   readonly filtroBusqueda = signal<string>('');
   readonly procesandoId = signal<number | null>(null);
   readonly cargando = signal(true);
+  readonly errorCarga = signal('');
+  readonly fechaHoy = new Intl.DateTimeFormat('es-PE', {
+    weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+  }).format(new Date());
 
+  readonly escanerQrAbierto = signal(false);
+  readonly memberQrVisible = signal(false);
+  readonly memberQrItem = signal<PizarraItem | null>(null);
+  readonly groupQrPrintVisible = signal(false);
   readonly dialogo = signal<DialogoActivo>(null);
   readonly solicitud = signal<SolicitudAccion | null>(null);
   readonly pendientesCierre = signal<PendienteItem[]>([]);
@@ -67,8 +82,10 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
 
   readonly puedeAjustar = computed(() => this.auth.tienePermiso('attendance.update'));
   readonly puedeAnular = computed(() => this.auth.tienePermiso('attendance.cancel'));
+  readonly puedeRegistrar = computed(() => this.auth.tienePermiso('attendance.register'));
 
   readonly totalIntegrantes = computed(() => this.pizarra().length);
+  readonly esVoluntaria = computed(() => this.jornadaActual()?.tipoJornada === 'VOLUNTARIA');
 
   readonly presentesCount = computed(() => {
     return this.pizarra().filter(
@@ -76,7 +93,16 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
     ).length;
   });
 
+  readonly activosCount = computed(() =>
+    this.pizarra().filter((item) => item.estado === 'PRESENTE').length,
+  );
+
+  readonly finalizadosCount = computed(() =>
+    this.pizarra().filter((item) => item.estado === 'FINALIZADO').length,
+  );
+
   readonly pendientesCount = computed(() => {
+    if (this.esVoluntaria()) return 0;
     return this.pizarra().filter(
       (item) => !item.estado || item.estado === 'PENDIENTE',
     ).length;
@@ -124,14 +150,18 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
 
   async cargarJornadas(): Promise<void> {
     this.cargando.set(true);
+    this.errorCarga.set('');
     try {
       const jornadas = await this.api.jornadas();
       this.jornadas.set(jornadas);
-      const activa = jornadas.find((j) => j.estado === 'ABIERTA') ?? jornadas[0];
+      const activa = jornadas.find((j) => j.estado === 'ABIERTA' && j.tipoJornada === 'OBLIGATORIA')
+        ?? jornadas.find((j) => j.estado === 'ABIERTA' && j.tipoJornada === 'VOLUNTARIA')
+        ?? jornadas[0];
       const id = activa?.id ?? null;
       this.jornadaId.set(id);
       if (id) await this.recargarPizarra();
     } catch {
+      this.errorCarga.set('No se pudieron consultar las jornadas operativas.');
       this.messageService.add({
         severity: 'error',
         summary: 'Error de conexión',
@@ -154,7 +184,22 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
       const items = await this.api.pizarra(id);
       this.pizarra.set(items);
     } catch {
-      // Manejo en tiempo real silencioso
+      this.errorCarga.set('La jornada existe, pero no fue posible cargar sus integrantes.');
+    }
+  }
+
+  async abrirJornada(): Promise<void> {
+    const id = this.jornadaId();
+    if (!id) return;
+    this.procesandoId.set(0);
+    try {
+      await this.api.abrirJornada(id);
+      await this.cargarJornadas();
+      this.messageService.add({severity: 'success', summary: 'Jornada abierta', detail: 'Ya puedes registrar la asistencia'});
+    } catch (err: any) {
+      this.messageService.add({severity: 'error', summary: 'No se pudo abrir la jornada', detail: err?.error?.message ?? 'Verifica tus permisos'});
+    } finally {
+      this.procesandoId.set(null);
     }
   }
 
@@ -175,6 +220,9 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
       case 'anular':
         this.solicitud.set(sol);
         this.dialogo.set('motivo');
+        break;
+      case 'ver-qr':
+        this.abrirQrIndividual(sol.item);
         break;
     }
   }
@@ -290,7 +338,11 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
           });
           break;
         case 'observacion':
-          await this.api.observacion(asistenciaId, motivo);
+          if (asistenciaId && !isNaN(asistenciaId) && asistenciaId > 0) {
+            await this.api.observacion(asistenciaId, motivo);
+          } else {
+            await this.api.observacionPersona(jId, sol.item.personaId, motivo);
+          }
           this.messageService.add({
             severity: 'info',
             summary: 'Observación guardada',
@@ -363,7 +415,7 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
     const id = this.jornadaId();
     if (!id) return;
     try {
-      const pends = await this.api.pendientes(id);
+      const pends = this.esVoluntaria() ? [] : await this.api.pendientes(id);
       this.pendientesCierre.set(pends);
       this.dialogo.set('cierre');
     } catch {
@@ -411,6 +463,7 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
   }
 
   formatearHorario(j: JornadaItem): string {
+    if (j.tipoJornada === 'VOLUNTARIA') return 'Disponible todo el día';
     if (j.inicioProgramada && j.finProgramada) {
       const hi = new Date(j.inicioProgramada).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
       const hf = new Date(j.finProgramada).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -424,5 +477,60 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
     if (e === 'ABIERTA') return { texto: 'Estado: En curso', cssClass: 'status-en-curso' };
     if (e === 'CERRADA' || e === 'FINALIZADA') return { texto: 'Estado: Finalizada', cssClass: 'status-cerrada' };
     return { texto: 'Estado: Programada', cssClass: 'status-programada' };
+  }
+
+  tituloJornada(j: JornadaItem): string {
+    return j.tipoJornada === 'OBLIGATORIA' ? 'Instrucción obligatoria' : 'Participación voluntaria';
+  }
+
+  nombreGrupoVisible(j: JornadaItem): string {
+    const etapa = (j.etapa || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
+    const periodo = j.grupo.match(/\b\d{4}-(?:I|II)\b/i)?.[0] ?? '';
+    if (etapa.includes('ESBAS')) return `Aspirantes ESBAS${periodo ? ` ${periodo}` : ''}`;
+    if (etapa.includes('COMPANIA')) return `Aspirantes de compañía${periodo ? ` ${periodo}` : ''}`;
+    return j.grupo;
+  }
+
+  descripcionJornada(j: JornadaItem): string {
+    if (j.tipoJornada === 'VOLUNTARIA') return 'Disponible todo el día · no genera faltas';
+    if (j.estado === 'PROGRAMADA') return `Apertura automática · ${this.formatearHorario(j).split('—')[0].trim()}`;
+    if (j.estado === 'ABIERTA') return 'Registro obligatorio en curso';
+    return 'Jornada finalizada';
+  }
+
+  abrirEscanerQr(): void {
+    this.escanerQrAbierto.set(true);
+  }
+
+  cerrarEscanerQr(): void {
+    this.escanerQrAbierto.set(false);
+  }
+
+  onRegistroQrExitoso(res: ResultadoEscaneoQr): void {
+    this.messageService.add({
+      severity: res.resultado === 'ENTRADA' ? 'success' : 'info',
+      summary: res.resultado === 'ENTRADA' ? 'Entrada registrada' : 'Salida registrada',
+      detail: `${res.persona.nombreCompleto} · ${res.hora}${res.duracion ? ` (${res.duracion})` : ''}`,
+      life: 2500,
+    });
+    void this.recargarPizarra();
+  }
+
+  abrirQrIndividual(item: PizarraItem): void {
+    this.memberQrItem.set(item);
+    this.memberQrVisible.set(true);
+  }
+
+  cerrarQrIndividual(): void {
+    this.memberQrVisible.set(false);
+    this.memberQrItem.set(null);
+  }
+
+  abrirCarnetsGrupo(): void {
+    this.groupQrPrintVisible.set(true);
+  }
+
+  cerrarCarnetsGrupo(): void {
+    this.groupQrPrintVisible.set(false);
   }
 }

@@ -13,6 +13,7 @@ import { Justificacion } from './entities/justificacion.entity';
 import { Jornada } from '../sessions/entities/jornada.entity';
 import { GrupoIntegrante } from '../groups/entities/grupo-integrante.entity';
 import { Sede } from '../persons/entities/catalogos.entity';
+import { Persona } from '../persons/entities/persona.entity';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { Sede } from '../persons/entities/catalogos.entity';
       Jornada,
       GrupoIntegrante,
       Sede,
+      Persona,
     ]),
     GroupsModule,
     AuditModule,

@@ -5,6 +5,6 @@ import { RouterOutlet } from '@angular/router';
 @Component({
   imports: [RouterOutlet, TuiRoot],
   selector: 'app-root',
-  template: '<tui-root><router-outlet /></tui-root>',
+  template: '<tui-root tuiTheme="light"><router-outlet /></tui-root>',
 })
 export class App {}
