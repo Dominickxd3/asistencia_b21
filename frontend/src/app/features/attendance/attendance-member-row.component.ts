@@ -64,6 +64,18 @@ import { PizarraItem, AccionFila, SolicitudAccion } from './attendance.models';
           >{{ procesando() ? 'Procesando…' : ap.texto }}</button>
         }
 
+        <!-- Botón Ver QR asignado al integrante -->
+        <button
+          type="button"
+          class="btn-qr-action"
+          (click)="emitir('ver-qr')"
+          [disabled]="procesando()"
+          title="Ver código QR de {{ item().nombreCompleto }}"
+          aria-label="Ver código QR"
+        >
+          <i class="pi pi-qrcode"></i>
+        </button>
+
         <!-- Botón de Acciones Secundarias (Menú Contextual) -->
         @if (menuItems().length > 0) {
           <button
@@ -82,7 +94,7 @@ import { PizarraItem, AccionFila, SolicitudAccion } from './attendance.models';
   styles: [`
     .r21-attendance-row {
       display: grid;
-      grid-template-columns: var(--attendance-grid-cols, minmax(260px, 1fr) 100px 100px 105px 145px 160px);
+      grid-template-columns: var(--attendance-grid-cols, minmax(240px, 1fr) 95px 95px 105px 140px 185px);
       align-items: center;
       gap: var(--attendance-grid-gap, 16px);
       padding: var(--attendance-grid-padding, 12px 20px);
@@ -271,6 +283,36 @@ import { PizarraItem, AccionFila, SolicitudAccion } from './attendance.models';
       font-size: 12px;
       border-radius: 6px;
       cursor: pointer;
+    }
+
+    .btn-qr-action {
+      color: var(--r21-text-secondary);
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--r21-border);
+      background: #FFFFFF;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: all var(--r21-transition-fast);
+
+      i {
+        font-size: 15px;
+      }
+
+      &:hover:not(:disabled) {
+        background-color: #0F172A;
+        color: #FFFFFF;
+        border-color: #0F172A;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
     }
 
     .btn-context-menu {
