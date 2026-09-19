@@ -277,6 +277,7 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
         break;
       case 'hora-manual':
       case 'ajustar':
+      case 'historial':
         this.solicitud.set(sol);
         this.dialogo.set('horaManual');
         break;
@@ -347,6 +348,13 @@ export class AttendancePageComponent implements OnInit, OnDestroy {
     } finally {
       this.procesandoId.set(null);
     }
+  }
+
+  tituloDialogoHora(): string {
+    const accion = this.solicitud()?.accion;
+    if (accion === 'historial') return 'Historial de asistencia';
+    if (accion === 'ajustar') return 'Modificar horas';
+    return 'Registrar hora manual';
   }
 
   configMotivo(): { titulo: string; etiqueta: string; boton: string; destructivo: boolean } {

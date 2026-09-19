@@ -136,12 +136,18 @@
   (cancelar)="dialogo.set(null)"
 />
 
-<!-- Diálogo de hora manual (registro o ajuste) -->
+<!-- Diálogo de hora manual (registro o ajuste o historial) -->
 <app-hora-manual-dialog
   [visible]="dialogo() === 'horaManual'"
-  [titulo]="solicitud()?.accion === 'ajustar' ? 'Modificar horas' : 'Registrar hora manual'"
+  [titulo]="tituloDialogoHora()"
   [modoAjuste]="solicitud()?.accion === 'ajustar'"
+  [soloHistorial]="solicitud()?.accion === 'historial'"
   [persona]="solicitud()?.item?.nombreCompleto ?? ''"
+  [horaEntradaInicial]="solicitud()?.item?.fechaHoraEntrada ?? null"
+  [horaSalidaInicial]="solicitud()?.item?.fechaHoraSalida ?? null"
+  [estadoActual]="solicitud()?.item?.estado ?? null"
+  [tipoRegistroActual]="solicitud()?.item?.tipoRegistro ?? null"
+  [asistenciaId]="solicitud()?.item?.asistenciaId ?? null"
   [procesando]="procesandoId() !== null"
   (confirmado)="confirmarHoraManual($event)"
   (cancelar)="dialogo.set(null)"

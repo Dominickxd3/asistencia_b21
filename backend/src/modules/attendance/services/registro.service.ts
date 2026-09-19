@@ -251,6 +251,57 @@ export class RegistroService extends AsistenciaBaseService {
     return this.asistenciaRepo.findOne({ where: { id: asistenciaId } });
   }
 
+  /** Historial y trazabilidad completa de cambios/auditoría de una asistencia */
+  async historialAsistencia(asistenciaId: number, usuarioId: number) {
+    const asistencia = await this.obtenerAsistencia(asistenciaId, usuarioId);
+
+    const eventos = await this.asistenciaRepo.manager.query(
+      `SELECT a.auditoria_id AS id,
+              a.accion,
+              a.fecha_hora AS fechaHora,
+              ISNULL(p.apellido_paterno + ' ' + p.nombres, u.username) AS usuario,
+              a.valor_anterior_json AS valorAnterior,
+              a.valor_nuevo_json AS valorNuevo,
+              a.descripcion
+       FROM auditoria a
+       LEFT JOIN usuarios u ON u.usuario_id = a.usuario_id
+       LEFT JOIN personas p ON p.persona_id = u.persona_id
+       WHERE a.entidad = 'asistencias' AND a.entidad_id = @0
+       ORDER BY a.fecha_hora DESC`,
+      [String(asistenciaId)],
+    );
+
+    return {
+      asistenciaId: asistencia.id,
+      personaId: asistencia.personaId,
+      estadoActual: asistencia.estadoAsistencia,
+      tipoRegistro: asistencia.tipoRegistro,
+      fechaHoraEntrada: asistencia.fechaHoraEntrada,
+      fechaHoraSalida: asistencia.fechaHoraSalida,
+      motivoRegistroManual: asistencia.motivoRegistroManual,
+      observacion: asistencia.observacion,
+      eventos: eventos.map((ev: any) => {
+        let anterior = null;
+        let nuevo = null;
+        try {
+          if (ev.valorAnterior) anterior = JSON.parse(ev.valorAnterior);
+        } catch {}
+        try {
+          if (ev.valorNuevo) nuevo = JSON.parse(ev.valorNuevo);
+        } catch {}
+        return {
+          id: ev.id,
+          accion: ev.accion,
+          fechaHora: ev.fechaHora,
+          usuario: ev.usuario ?? 'Sistema',
+          valorAnterior: anterior,
+          valorNuevo: nuevo,
+          descripcion: ev.descripcion,
+        };
+      }),
+    };
+  }
+
   async agregarObservacion(asistenciaId: number, observacion: string, usuarioId: number) {
     const asistencia = await this.obtenerAsistencia(asistenciaId, usuarioId);
     await this.asistenciaRepo.query(

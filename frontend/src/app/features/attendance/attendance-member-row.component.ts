@@ -513,7 +513,7 @@ export class AttendanceMemberRowComponent {
     const estado = this.item().estado;
     const items: Array<{ label?: string; icon?: string; separator?: boolean; danger?: boolean; command?: () => void }> = [];
 
-    // 1. FINALIZADO: Agregar observación, Corregir horario, Escanear con cámara, Ver código QR, [separador], Anular asistencia
+    // 1. FINALIZADO: Agregar observación, Corregir horario, Ver historial, Escanear con cámara, Ver código QR, [separador], Anular asistencia
     if (estado === 'FINALIZADO') {
       items.push({
         label: 'Agregar observación',
@@ -522,9 +522,15 @@ export class AttendanceMemberRowComponent {
       if (this.puedeAjustar()) {
         items.push({
           label: 'Corregir horario',
+          icon: 'pi pi-pencil',
           command: () => this.emitir('ajustar'),
         });
       }
+      items.push({
+        label: 'Ver historial de cambios',
+        icon: 'pi pi-history',
+        command: () => this.emitir('historial'),
+      });
       items.push({
         label: 'Escanear con cámara',
         icon: 'pi pi-camera',
@@ -546,7 +552,7 @@ export class AttendanceMemberRowComponent {
       return items;
     }
 
-    // 2. PRESENTE: Agregar observación, Registrar salida anticipada, Corregir hora de entrada, Escanear con cámara, Ver código QR, [separador], Anular asistencia
+    // 2. PRESENTE: Agregar observación, Registrar salida anticipada, Corregir hora de entrada, Ver historial, Escanear con cámara, Ver código QR, [separador], Anular asistencia
     if (estado === 'PRESENTE') {
       items.push({
         label: 'Agregar observación',
@@ -559,9 +565,15 @@ export class AttendanceMemberRowComponent {
       if (this.puedeAjustar()) {
         items.push({
           label: 'Corregir hora de entrada',
+          icon: 'pi pi-pencil',
           command: () => this.emitir('ajustar'),
         });
       }
+      items.push({
+        label: 'Ver historial de cambios',
+        icon: 'pi pi-history',
+        command: () => this.emitir('historial'),
+      });
       items.push({
         label: 'Escanear con cámara',
         icon: 'pi pi-camera',
@@ -638,6 +650,11 @@ export class AttendanceMemberRowComponent {
       items.push({
         label: 'Agregar observación',
         command: () => this.emitir('observacion'),
+      });
+      items.push({
+        label: 'Ver historial de cambios',
+        icon: 'pi pi-history',
+        command: () => this.emitir('historial'),
       });
       items.push({
         label: 'Escanear con cámara',

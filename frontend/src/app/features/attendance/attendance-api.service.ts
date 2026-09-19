@@ -4,6 +4,7 @@ import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { GeoPayload } from '../../core/services/geo.service';
 import {
+  HistorialAsistenciaView,
   JornadaItem,
   PendienteItem,
   PizarraItem,
@@ -101,6 +102,12 @@ export class AttendanceApiService {
         `${this.base}/attendance/sessions/${jornadaId}/persons/${personaId}/observation`,
         { observacion },
       ),
+    );
+  }
+
+  historial(asistenciaId: number) {
+    return firstValueFrom(
+      this.http.get<HistorialAsistenciaView>(`${this.base}/attendance/${asistenciaId}/history`),
     );
   }
 }

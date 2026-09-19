@@ -131,6 +131,15 @@ export class AttendanceController {
     );
   }
 
+  @Get(':id/history')
+  @RequirePermissions(PermissionCode.ATTENDANCE_VIEW)
+  historial(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.registro.historialAsistencia(id, user.id);
+  }
+
   @Patch(':id/observation')
   @RequirePermissions(PermissionCode.ATTENDANCE_REGISTER)
   observacion(

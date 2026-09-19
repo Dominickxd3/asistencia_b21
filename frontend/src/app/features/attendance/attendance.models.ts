@@ -39,7 +39,30 @@ export type AccionFila =
   | 'ajustar'
   | 'anular'
   | 'ver-qr'
-  | 'escanear';
+  | 'escanear'
+  | 'historial';
+
+export interface EventoAuditoriaItem {
+  id: number;
+  accion: string;
+  fechaHora: string;
+  usuario: string;
+  valorAnterior: any;
+  valorNuevo: any;
+  descripcion?: string | null;
+}
+
+export interface HistorialAsistenciaView {
+  asistenciaId: number;
+  personaId: number;
+  estadoActual: string;
+  tipoRegistro: string;
+  fechaHoraEntrada: string | null;
+  fechaHoraSalida: string | null;
+  motivoRegistroManual: string | null;
+  observacion: string | null;
+  eventos: EventoAuditoriaItem[];
+}
 
 export interface SolicitudAccion {
   accion: AccionFila;
