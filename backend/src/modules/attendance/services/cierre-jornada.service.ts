@@ -11,6 +11,7 @@ import { AuthzService } from '../../roles/authz.service';
 import { AuditoriaService } from '../../audit/auditoria.service';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { PermissionCode } from '../../../common/constants/permissions.constants';
+import { ETIQUETA_ESTADO_JORNADA } from '../../../common/enums/attendance-status.enum';
 
 export interface PendienteView {
   personaId: number;
@@ -68,7 +69,7 @@ export class CierreJornadaService {
   ): Promise<{ id: number; estado: string; convertidas: number; salidasRegistradas: number }> {
     const jornada = await this.validarAcceso(jornadaId, usuarioId);
     if (jornada.estado !== 'ABIERTA') {
-      throw new UnprocessableEntityException(`La jornada está ${jornada.estado}; debe estar ABIERTA`);
+      throw new UnprocessableEntityException(`Solo se puede cerrar una jornada abierta; esta jornada está ${ETIQUETA_ESTADO_JORNADA[jornada.estado] ?? jornada.estado}`);
     }
 
     const resultado = await this.jornadaRepo.manager.transaction(async (em) => {

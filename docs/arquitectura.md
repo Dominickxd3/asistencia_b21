@@ -69,13 +69,17 @@ backend/src/
 
 ## Semillas (solo desarrollo)
 
-| Usuario | Clave | Rol |
+| Usuario | Rol | Se crea en producción |
 |---|---|---|
-| `admin` | `R21#Admin2026` | ADMIN_SISTEMA |
-| `jefe.instruccion` | `R21#Jefe2026` | JEFE_INSTRUCCION |
-| `encargado.postulantes` | `R21#Enc2026` | ENCARGADO_GRUPO (grupo Postulantes 2026-II) |
+| `admin` | ADMIN_SISTEMA | Sí |
+| `jefe.instruccion` | JEFE_INSTRUCCION | No (demo) |
+| `encargado.postulantes` | ENCARGADO_GRUPO (grupo Postulantes 2026-II) | No (demo) |
 
-Cambiar antes de producción. Ejecutar: `npm run seed` (idempotente).
+Ninguna contraseña está en el código. Al crear cada cuenta se usa
+`SEED_ADMIN_PASSWORD`, `SEED_JEFE_PASSWORD` o `SEED_ENCARGADO_PASSWORD` (mínimo
+12 caracteres) o, si no existe, se genera una aleatoria que se imprime una sola
+vez. Con `NODE_ENV=production` no se crean datos de demostración.
+Ejecutar: `npm run seed` (idempotente).
 
 ## Comandos
 

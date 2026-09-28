@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { useSearchParams } from 'react-router';
 import { environment } from '../../environments/environment';
 import { http, mensajeError } from '../../core/http/http';
+import { realtimeService } from '../../core/services/realtime.service';
 import { EmptyState } from '../../shared/components/EmptyState';
 import { Modal } from '../../shared/components/Modal';
 import { PageHeader } from '../../shared/components/PageHeader';
@@ -124,10 +125,35 @@ export function TrackingPage() {
       });
   }, []);
 
+  // Tiempo real: una asistencia o cierre del grupo visible recarga sin mostrar «Cargando…»
+  const [refresco, setRefresco] = useState(0);
+  const silencioso = useRef(false);
+  useEffect(() => {
+    if (!grupoId) return;
+    let temporizador: ReturnType<typeof setTimeout> | null = null;
+    const alCambiar = (e: { grupoId?: number }) => {
+      if (Number(e?.grupoId) !== grupoId || temporizador) return;
+      temporizador = setTimeout(() => {
+        temporizador = null;
+        silencioso.current = true;
+        setRefresco((n) => n + 1);
+      }, 800);
+    };
+    const quitar = [
+      realtimeService.on('asistencia.registrada', alCambiar),
+      realtimeService.on('jornada.cerrada', alCambiar),
+    ];
+    return () => {
+      quitar.forEach((q) => q());
+      if (temporizador) clearTimeout(temporizador);
+    };
+  }, [grupoId]);
+
   useEffect(() => {
     if (!grupoId || !desde || !hasta || rangoInvalido) return;
     let vigente = true;
-    setCargando(true);
+    if (!silencioso.current) setCargando(true);
+    silencioso.current = false;
     setError(null);
     http.get<{ integrantes: TrackingRow[]; cumplimientoAplica: boolean }>(
       `${environment.apiUrl}/tracking?grupoId=${grupoId}&desde=${desde}&hasta=${hasta}&orden=faltas_injustificadas`,
@@ -138,7 +164,7 @@ export function TrackingPage() {
     }).catch((err) => vigente && setError(mensajeError(err, 'No se pudo cargar el seguimiento')))
       .finally(() => vigente && setCargando(false));
     return () => { vigente = false; };
-  }, [grupoId, desde, hasta, rangoInvalido]);
+  }, [grupoId, desde, hasta, rangoInvalido, refresco]);
 
   const foto = useMemo(() => {
     const bien = filas.filter((f) => nivel(f) === 'bien').length;

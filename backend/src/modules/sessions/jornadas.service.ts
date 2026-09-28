@@ -1,9 +1,13 @@
 import {
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
+  OnApplicationBootstrap,
+  OnApplicationShutdown,
   UnprocessableEntityException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Jornada } from './entities/jornada.entity';
@@ -26,7 +30,11 @@ function horaDe(valor: Date | string | null): string | null {
 }
 
 @Injectable()
-export class JornadasService {
+export class JornadasService implements OnApplicationBootstrap, OnApplicationShutdown {
+  private readonly logger = new Logger(JornadasService.name);
+  private readonly automaticas: boolean;
+  private temporizador: NodeJS.Timeout | null = null;
+
   constructor(
     @InjectRepository(Jornada)
     private readonly jornadaRepo: Repository<Jornada>,
@@ -34,7 +42,42 @@ export class JornadasService {
     private readonly authz: AuthzService,
     private readonly auditoria: AuditoriaService,
     private readonly realtime: RealtimeService,
-  ) {}
+    config: ConfigService,
+  ) {
+    this.automaticas = config.get<boolean>('app.jornadasAutomaticas') ?? false;
+  }
+
+  /**
+   * Con JORNADAS_AUTOMATICAS=true las jornadas no dependen de que alguien abra
+   * Asistencia: se sincronizan al arrancar y cada medianoche.
+   */
+  onApplicationBootstrap(): void {
+    if (!this.automaticas) return;
+    void this.sincronizar();
+    this.programarMedianoche();
+  }
+
+  onApplicationShutdown(): void {
+    if (this.temporizador) clearTimeout(this.temporizador);
+  }
+
+  private programarMedianoche(): void {
+    const proxima = new Date();
+    proxima.setHours(24, 0, 5, 0); // 00:00:05 del día siguiente, hora local
+    this.temporizador = setTimeout(() => {
+      void this.sincronizar();
+      this.programarMedianoche();
+    }, proxima.getTime() - Date.now());
+  }
+
+  private async sincronizar(): Promise<void> {
+    try {
+      await this.asegurarJornadasProgramadas(await this.fechaHoy());
+      this.logger.log('Jornadas sincronizadas');
+    } catch (err) {
+      this.logger.error('No se pudieron sincronizar las jornadas', err as Error);
+    }
+  }
 
   /** Fecha de negocio de hoy (reloj de SQL Server, no UTC) */
   fechaHoy(): Promise<string> {
@@ -96,6 +139,41 @@ export class JornadasService {
    * mismo día como contextos independientes.
    */
   private async asegurarJornadasProgramadas(fecha: string): Promise<void> {
+    // Una fecha obligatoria genera falta aunque nadie haya abierto Asistencia ese
+    // día: se crean las obligatorias pasadas que falten desde el inicio de la
+    // programación (fecha de inicio del grupo), para que el cierre las procese.
+    if (this.automaticas) {
+      await this.jornadaRepo.query(
+        `;WITH n AS (
+           SELECT TOP (3660) ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS i
+           FROM sys.all_objects a CROSS JOIN sys.all_objects b
+         ),
+         dias AS (
+           SELECT pr.grupo_id, pd.programacion_detalle_id, pd.hora_inicio,
+                  CAST(DATEADD(DAY, n.i, pr.fecha_inicio) AS date) AS fecha, pd.dia_semana
+           FROM programaciones pr
+           JOIN programacion_detalles pd ON pd.programacion_id = pr.programacion_id
+           JOIN grupos_formacion g ON g.grupo_id = pr.grupo_id
+           JOIN n ON DATEADD(DAY, n.i, pr.fecha_inicio) < CAST(GETDATE() AS date)
+           WHERE pr.estado = 'ACTIVO' AND pd.estado = 'ACTIVO' AND g.estado = 'ACTIVO'
+             AND pd.tipo_jornada = 'OBLIGATORIA' AND pd.hora_inicio IS NOT NULL
+             AND (pr.fecha_fin IS NULL OR DATEADD(DAY, n.i, pr.fecha_inicio) <= pr.fecha_fin)
+         )
+         INSERT INTO jornadas
+           (grupo_id, programacion_detalle_id, fecha, fecha_hora_inicio_programada,
+            fecha_hora_fin_programada, tipo_jornada, origen, estado, fecha_creacion)
+         SELECT d.grupo_id, d.programacion_detalle_id, d.fecha,
+                DATEADD(SECOND, DATEDIFF(SECOND, CAST('00:00' AS time), d.hora_inicio), CAST(d.fecha AS datetime2)),
+                NULL, 'OBLIGATORIA', 'PROGRAMADA', 'ABIERTA', GETDATE()
+         FROM dias d
+         WHERE d.dia_semana = ((DATEDIFF(DAY, '19000101', d.fecha) % 7) + 1)
+           AND NOT EXISTS (
+             SELECT 1 FROM jornadas j
+             WHERE j.grupo_id = d.grupo_id AND j.fecha = d.fecha AND j.tipo_jornada = 'OBLIGATORIA'
+           )`,
+      );
+    }
+
     // El cierre diario es automático. En jornadas obligatorias, quienes no
     // registraron asistencia pasan a falta injustificada al terminar el día.
     await this.jornadaRepo.query(
@@ -121,7 +199,7 @@ export class JornadasService {
       `INSERT INTO asistencias
          (jornada_id, persona_id, estado_asistencia, tipo_registro,
           observacion, registrado_por_usuario_id)
-       SELECT j.jornada_id, gi.persona_id, 'FALTA_INJUSTIFICADA', 'AUTOMATICO',
+       SELECT j.jornada_id, p.persona_id, 'FALTA_INJUSTIFICADA', 'AUTOMATICO',
               'Falta generada automáticamente al cierre del día',
               COALESCE(j.abierta_por_usuario_id, g.creado_por_usuario_id,
                 (SELECT TOP 1 u.usuario_id
@@ -133,18 +211,24 @@ export class JornadasService {
        FROM jornadas j
        JOIN grupos_formacion g ON g.grupo_id = j.grupo_id
        JOIN etapas_formacion e ON e.etapa_id = g.etapa_id
-       JOIN grupo_integrantes gi ON gi.grupo_id = j.grupo_id
-       JOIN personas p ON p.persona_id = gi.persona_id
+       CROSS JOIN personas p
        WHERE j.fecha < CAST(GETDATE() AS date)
          AND j.tipo_jornada = 'OBLIGATORIA'
          AND j.estado IN ('ABIERTA', 'PROGRAMADA')
          AND e.codigo IN ('POSTULANTE', 'ASPIRANTE_COMPANIA')
          AND p.estado = 'ACTIVO'
-         AND gi.fecha_inicio <= j.fecha
-         AND (gi.fecha_fin IS NULL OR gi.fecha_fin >= j.fecha)
+         -- Membresía activa vigente en la fecha. EXISTS (no JOIN) para no
+         -- duplicar a quien tiene varias filas de membresía en el mismo grupo.
+         AND EXISTS (
+           SELECT 1 FROM grupo_integrantes gi
+           WHERE gi.grupo_id = j.grupo_id AND gi.persona_id = p.persona_id
+             AND gi.estado = 'ACTIVO'
+             AND gi.fecha_inicio <= j.fecha
+             AND (gi.fecha_fin IS NULL OR gi.fecha_fin >= j.fecha)
+         )
          AND NOT EXISTS (
            SELECT 1 FROM asistencias a
-           WHERE a.jornada_id = j.jornada_id AND a.persona_id = gi.persona_id
+           WHERE a.jornada_id = j.jornada_id AND a.persona_id = p.persona_id
          )`,
     );
 

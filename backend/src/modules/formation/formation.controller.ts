@@ -44,7 +44,8 @@ export class FormationController {
     @CurrentUser() user: CurrentUserData,
     @Req() req: Request,
   ) {
-    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? null;
+    // Con «trust proxy» configurado, req.ip ya es la IP real; X-Forwarded-For solo lo decide el proxy
+    const ip = req.ip ?? null;
     const userAgent = (req.headers['user-agent'] as string) ?? null;
     return this.formation.crearHistorial(dto, user.id, ip, userAgent);
   }
@@ -57,7 +58,8 @@ export class FormationController {
     @CurrentUser() user: CurrentUserData,
     @Req() req: Request,
   ) {
-    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? null;
+    // Con «trust proxy» configurado, req.ip ya es la IP real; X-Forwarded-For solo lo decide el proxy
+    const ip = req.ip ?? null;
     const userAgent = (req.headers['user-agent'] as string) ?? null;
     return this.formation.actualizarHistorial(id, dto, user.id, ip, userAgent);
   }
@@ -69,7 +71,8 @@ export class FormationController {
     @CurrentUser() user: CurrentUserData,
     @Req() req: Request,
   ) {
-    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? null;
+    // Con «trust proxy» configurado, req.ip ya es la IP real; X-Forwarded-For solo lo decide el proxy
+    const ip = req.ip ?? null;
     const userAgent = (req.headers['user-agent'] as string) ?? null;
     return this.formation.eliminarHistorial(id, user.id, ip, userAgent);
   }

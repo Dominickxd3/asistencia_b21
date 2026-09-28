@@ -35,8 +35,8 @@ function check(nombre, cond, extra = '') {
   `);
   await pool.close();
 
-  const TJ = (await req('POST', '/auth/login', null, { username: 'jefe.instruccion', password: 'R21#Jefe2026' })).data.accessToken;
-  const TE = (await req('POST', '/auth/login', null, { username: 'encargado.postulantes', password: 'R21#Enc2026' })).data.accessToken;
+  const TJ = (await req('POST', '/auth/login', null, { username: 'jefe.instruccion', password: process.env.E2E_JEFE_PASSWORD })).data.accessToken;
+  const TE = (await req('POST', '/auth/login', null, { username: 'encargado.postulantes', password: process.env.E2E_ENCARGADO_PASSWORD })).data.accessToken;
 
   // --- Tracking ---
   const tr = await req('GET', '/tracking?grupoId=1&orden=faltas_injustificadas', TJ);

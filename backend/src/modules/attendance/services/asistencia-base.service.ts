@@ -14,6 +14,7 @@ import { EvaluacionGeografica, GeocercaService } from '../../sedes/geocerca.serv
 import { GeoDto } from '../dto/asistencia.dto';
 import { PermissionCode } from '../../../common/constants/permissions.constants';
 import { fechaColumna, fechaHoraLocalIso } from '../../../common/utils/fecha.util';
+import { ETIQUETA_ESTADO_JORNADA, ETIQUETA_ESTADO_ASISTENCIA } from '../../../common/enums/attendance-status.enum';
 
 export type TipoEventoGeo = 'ENTRADA' | 'SALIDA' | 'MODIFICACION' | 'ANULACION';
 
@@ -96,7 +97,7 @@ export class AsistenciaBaseService {
     }
     if (jornada.estado !== 'ABIERTA') {
       throw new UnprocessableEntityException(
-        `La jornada está ${jornada.estado}; no se puede registrar asistencia`,
+        `La jornada está ${ETIQUETA_ESTADO_JORNADA[jornada.estado] ?? jornada.estado}; no se puede registrar asistencia`,
       );
     }
   }
@@ -115,7 +116,7 @@ export class AsistenciaBaseService {
   protected validarEstado(asistencia: Asistencia, permitidos: string[]): void {
     if (!permitidos.includes(asistencia.estadoAsistencia)) {
       throw new UnprocessableEntityException(
-        `Operación inválida: la asistencia está en estado ${asistencia.estadoAsistencia}`,
+        `No se puede realizar esta acción porque la asistencia figura como ${ETIQUETA_ESTADO_ASISTENCIA[asistencia.estadoAsistencia] ?? asistencia.estadoAsistencia}`,
       );
     }
   }
@@ -185,27 +186,34 @@ export class AsistenciaBaseService {
     const evaluacion = await this.geocerca.evaluarParaGrupo(grupoId, geo);
     if (!bloqueable) return evaluacion;
 
+    // Mensajes para personal no técnico: qué pasó y qué hacer, sin jerga
+    const sede = evaluacion.sedeNombre ?? 'la compañía';
     switch (evaluacion.estado) {
       case 'DENTRO_ZONA':
         return evaluacion;
-      case 'FUERA_ZONA':
+      case 'FUERA_ZONA': {
+        const m = Math.round(evaluacion.distanciaMetros ?? 0);
+        const distancia = m >= 1000 ? `${(m / 1000).toFixed(1).replace('.', ',')} km` : `${m} m`;
         throw new UnprocessableEntityException(
-          `No se permite registrar la asistencia fuera de ${evaluacion.sedeNombre ?? 'la sede'}. ` +
-            `El dispositivo está a ${Math.round(evaluacion.distanciaMetros ?? 0)} m del perímetro autorizado.`,
+          `Está fuera de ${sede} (a unos ${distancia}). ` +
+            'La asistencia solo se puede registrar dentro del local.',
         );
+      }
       case 'PRECISION_INSUFICIENTE':
         throw new UnprocessableEntityException(
-          `No se pudo confirmar que está dentro de ${evaluacion.sedeNombre ?? 'la sede'} porque la precisión ` +
-            `de la ubicación es insuficiente${evaluacion.precisionMetros != null ? ` (±${Math.round(evaluacion.precisionMetros)} m)` : ''}. ` +
-            'Active la ubicación precisa e inténtelo nuevamente.',
+          `No se pudo confirmar que está en ${sede}: la ubicación del equipo no es lo bastante exacta. ` +
+            'Registre desde un celular con el GPS encendido. Si ya lo hace, acérquese a una ventana ' +
+            'o salga a un espacio abierto y vuelva a intentarlo.',
         );
       case 'NO_DISPONIBLE':
         throw new UnprocessableEntityException(
-          'La ubicación es obligatoria para marcar asistencia. Active el permiso de ubicación del navegador e inténtelo nuevamente.',
+          'No se pudo obtener su ubicación. Cuando el navegador pregunte, pulse «Permitir» ' +
+            'y vuelva a intentarlo.',
         );
       case 'SIN_GEOCERCA':
         throw new UnprocessableEntityException(
-          'No se puede marcar asistencia porque la geocerca de la sede no está activa o no tiene un perímetro válido.',
+          'Aún no está configurada la zona de la compañía, por eso no se puede registrar asistencia. ' +
+            'Avise al Jefe de Instrucción para que la configure.',
         );
     }
     return evaluacion;

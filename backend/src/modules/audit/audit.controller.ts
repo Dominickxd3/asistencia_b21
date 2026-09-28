@@ -2,7 +2,7 @@ import { Controller, Get, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
-import { IsInt, IsOptional, IsString, Matches } from 'class-validator';
+import { IsInt, IsOptional, IsString, Matches, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { RequirePermissions } from '../auth/decorators/auth.decorators';
 import { PermissionCode } from '../../common/constants/permissions.constants';
@@ -13,7 +13,7 @@ class AuditQueryDto {
   @IsOptional() @Type(() => Number) @IsInt() usuarioId?: number;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) desde?: string;
   @IsOptional() @Matches(/^\d{4}-\d{2}-\d{2}$/) hasta?: string;
-  @IsOptional() @Type(() => Number) @IsInt() pagina?: number;
+  @IsOptional() @Type(() => Number) @IsInt() @Min(1) pagina?: number;
 }
 
 @ApiTags('audit')

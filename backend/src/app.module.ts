@@ -16,6 +16,7 @@ import { TrackingModule } from './modules/tracking/tracking.module';
 import { FormationModule } from './modules/formation/formation.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { SedesModule } from './modules/sedes/sedes.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { SedesModule } from './modules/sedes/sedes.module';
     FormationModule,
     ReportsModule,
     SedesModule,
+    UsersModule,
   ],
   controllers: [HealthController],
   providers: [

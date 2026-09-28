@@ -1,21 +1,4 @@
-import {
-  IsBoolean,
-  ArrayMaxSize,
-  ArrayUnique,
-  IsArray,
-  Max,
-  Min,
-  IsIn,
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Matches,
-  MaxLength,
-  MinLength,
-  ValidateIf,
-  ValidateNested,
-} from 'class-validator';
+import { ArrayMaxSize, ArrayUnique, IsArray, IsBoolean, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Max, MaxLength, Min, MinLength, ValidateIf, ValidateNested } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
 import { HORA_REGEX } from '../../../common/utils/fecha.util';
@@ -39,6 +22,7 @@ export class CreateGroupDto {
   @ApiProperty({ description: 'Id de etapa_formacion (1=Postulante, 2=Aspirante, 3=ESBAS)' })
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   etapaId: number;
 
   @ApiProperty({ example: 'ASP-2026-II' })
@@ -126,12 +110,14 @@ export class AssignManagerDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   usuarioId?: number;
 
   @ApiPropertyOptional({ description: 'Integrante del grupo: se usa su cuenta, se le otorga el rol o se le crea la cuenta' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   personaId?: number;
 
   @ApiPropertyOptional({ description: 'Usuario para la cuenta nueva (solo si la persona no tiene cuenta)', example: 'aldair.escobar' })
@@ -163,6 +149,7 @@ export class AddMemberDto {
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   personaId: number;
 
   @ApiPropertyOptional({

@@ -20,6 +20,8 @@ const JEFE = [
   PermissionCode.REPORTS_GENERATE,
   PermissionCode.AUDIT_VIEW_FULL,
   PermissionCode.SETTINGS_MANAGE,
+  // Cuentas del personal; el cargo de Administrador queda reservado al Administrador
+  PermissionCode.USERS_MANAGE,
 ];
 
 const SUBJEFE_ADJUNTO = [

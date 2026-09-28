@@ -42,9 +42,9 @@ function check(nombre, cond, extra = '') {
   await resetEscenario();
   console.log('escenario reseteado\n');
 
-  const TE = (await req('POST', '/auth/login', null, { username: 'encargado.postulantes', password: 'R21#Enc2026' })).data.accessToken;
-  const TJ = (await req('POST', '/auth/login', null, { username: 'jefe.instruccion', password: 'R21#Jefe2026' })).data.accessToken;
-  const TA = (await req('POST', '/auth/login', null, { username: 'admin', password: 'R21#Admin2026' })).data.accessToken;
+  const TE = (await req('POST', '/auth/login', null, { username: 'encargado.postulantes', password: process.env.E2E_ENCARGADO_PASSWORD })).data.accessToken;
+  const TJ = (await req('POST', '/auth/login', null, { username: 'jefe.instruccion', password: process.env.E2E_JEFE_PASSWORD })).data.accessToken;
+  const TA = (await req('POST', '/auth/login', null, { username: 'admin', password: process.env.E2E_ADMIN_PASSWORD })).data.accessToken;
   check('logins (encargado/jefe/admin)', !!TE && !!TJ && !!TA);
 
   // Escopo: encargado solo ve su grupo

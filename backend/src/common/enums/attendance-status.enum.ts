@@ -37,3 +37,21 @@ export enum JustificationStatus {
   APROBADA = 'APROBADA',
   RECHAZADA = 'RECHAZADA',
 }
+
+/** Texto para el usuario final; los mensajes de error nunca muestran el código interno */
+export const ETIQUETA_ESTADO_ASISTENCIA: Record<string, string> = {
+  PENDIENTE: 'pendiente',
+  PRESENTE: 'presente (con entrada)',
+  FINALIZADO: 'con entrada y salida',
+  FALTA_JUSTIFICADA: 'falta justificada',
+  FALTA_INJUSTIFICADA: 'falta sin justificar',
+  SALIDA_ANTICIPADA: 'salida anticipada',
+  ANULADO: 'anulado',
+};
+
+export const ETIQUETA_ESTADO_JORNADA: Record<string, string> = {
+  PROGRAMADA: 'programada (aún no empieza)',
+  ABIERTA: 'abierta',
+  CERRADA: 'cerrada',
+  CANCELADA: 'cancelada',
+};

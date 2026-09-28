@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, Matches } from 'class-validator';
+import { IsIn, IsInt, IsOptional, Matches, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -15,6 +15,7 @@ export class TrackingQueryDto {
   @ApiProperty({ description: 'Grupo de formación' })
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   grupoId: number;
 
   @ApiPropertyOptional({ example: '2026-09-01', description: 'YYYY-MM-DD, por defecto inicio de mes' })
@@ -37,11 +38,13 @@ export class TrackingDetailQueryDto {
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   grupoId: number;
 
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   personaId: number;
 
   @ApiProperty({ example: '2026-09-01' })

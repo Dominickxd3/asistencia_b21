@@ -114,7 +114,7 @@ export const geoService = {
           geo: null,
           error:
             permisoDespues === 'granted'
-              ? 'El navegador ya muestra el permiso habilitado, pero esta pestaña conserva el estado anterior. Pulse “Recargar y aplicar permiso” y vuelva a probar.'
+              ? 'El navegador tiene el permiso habilitado, pero la ubicación fue rechazada. Si usa una extensión de VPN o de privacidad, desactívela para este sitio; si no, pulse “Recargar y aplicar permiso” y vuelva a probar.'
               : 'El navegador bloqueó la ubicación para esta pestaña. Habilítela en la configuración del sitio, pulse “Recargar y aplicar permiso” y vuelva a probar.',
           codigo: 'PERMISO',
         };
@@ -151,7 +151,7 @@ export const geoService = {
     }
     return {
       geo: null,
-      error: mensajeSinCoordenadas(false),
+      error: `${mensajeSinCoordenadas(false)}${ultimoError.message ? ` (${ultimoError.message})` : ''}`,
       codigo: 'NO_DISPONIBLE',
     };
   },

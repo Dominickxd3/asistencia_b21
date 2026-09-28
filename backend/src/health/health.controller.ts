@@ -19,7 +19,8 @@ export class HealthController {
     }
     return {
       status: dbOk ? 'ok' : 'degraded',
-      database: dbName,
+      // El nombre de la base de datos no se publica en producción
+      ...(process.env.NODE_ENV === 'production' ? {} : { database: dbName }),
       timestamp: new Date().toISOString(),
     };
   }

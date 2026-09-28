@@ -1,6 +1,17 @@
 import { environment } from '../../environments/environment';
 import { authService } from '../auth/auth.service';
 
+/** Texto para el usuario cuando el servidor no envía un mensaje propio */
+function mensajePorEstado(status: number): string {
+  if (status === 400 || status === 422) return 'Los datos ingresados no son válidos. Revíselos e intente de nuevo.';
+  if (status === 401) return 'Su sesión ha terminado. Vuelva a iniciar sesión.';
+  if (status === 403) return 'No tiene permiso para realizar esta acción';
+  if (status === 404) return 'El recurso solicitado no existe';
+  if (status === 409) return 'La operación entra en conflicto con información ya registrada.';
+  if (status >= 500) return 'Ocurrió un problema en el servidor. Intente nuevamente en unos minutos.';
+  return 'No se pudo completar la operación';
+}
+
 /**
  * Error HTTP con la misma forma que usaba HttpErrorResponse:
  * `err.error` contiene el cuerpo de la respuesta (p. ej. `err.error.message`).
@@ -10,7 +21,11 @@ export class HttpError extends Error {
   readonly error: any;
 
   constructor(status: number, error: any) {
-    super(`HTTP ${status}`);
+    // `message` legible para quien lo muestre directamente; nunca "HTTP 422"
+    const m = error?.message;
+    super(
+      Array.isArray(m) ? m.join('. ') : typeof m === 'string' && m ? m : mensajePorEstado(status),
+    );
     this.status = status;
     this.error = error;
   }
@@ -122,9 +137,8 @@ export function mensajeError(
     const m = err.error?.message;
     if (Array.isArray(m)) return m.join('. ');
     if (typeof m === 'string' && m) return m;
-    if (err.status === 403) return 'No tiene permiso para realizar esta acción';
-    if (err.status === 404) return 'El recurso solicitado no existe';
-    return porDefecto;
+    if (err.status === 400 || err.status === 422) return porDefecto;
+    return mensajePorEstado(err.status);
   }
   if (err instanceof TypeError)
     return 'No se pudo conectar con el servidor. Verifique su conexión.';

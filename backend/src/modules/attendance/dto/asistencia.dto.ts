@@ -1,16 +1,4 @@
-import {
-  IsISO8601,
-  IsInt,
-  IsNotEmpty,
-  IsNumber,
-  IsOptional,
-  IsString,
-  Matches,
-  Max,
-  MaxLength,
-  Min,
-  ValidateNested,
-} from 'class-validator';
+import { IsISO8601, IsIn, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString, Matches, Max, MaxLength, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { HORA_REGEX } from '../../../common/utils/fecha.util';
@@ -45,11 +33,13 @@ export class RegistrarEntradaDto {
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   jornadaId: number;
 
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   personaId: number;
 
   @ApiPropertyOptional({ description: 'Geolocalización del dispositivo que registra' })
@@ -63,6 +53,7 @@ export class RegistrarQrDto {
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   jornadaId: number;
 
   @ApiProperty({ description: 'Contenido completo leído desde la credencial QR' })
@@ -73,7 +64,7 @@ export class RegistrarQrDto {
 
   @ApiPropertyOptional({ enum: ['ENTRADA', 'SALIDA', 'AUTO'], default: 'AUTO' })
   @IsOptional()
-  @IsString()
+  @IsIn(['ENTRADA', 'SALIDA', 'AUTO'], { message: 'Acción no válida' })
   accion?: 'ENTRADA' | 'SALIDA' | 'AUTO';
 
   @ApiPropertyOptional()
@@ -87,11 +78,13 @@ export class RotarQrDto {
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   grupoId: number;
 
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   personaId: number;
 }
 
@@ -99,6 +92,7 @@ export class RegistrarSalidaDto {
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   asistenciaId: number;
 
   @ApiPropertyOptional()
@@ -112,11 +106,13 @@ export class RegistrarManualDto {
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   jornadaId: number;
 
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   personaId: number;
 
   @ApiProperty({ example: '19:15', description: 'Hora manual de entrada (requiere motivo)' })
@@ -172,11 +168,13 @@ export class FaltaJustificadaDto {
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   jornadaId: number;
 
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   personaId: number;
 
   @ApiProperty({ example: 'Cita médica' })
@@ -196,6 +194,7 @@ export class SalidaAnticipadaDto {
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   asistenciaId: number;
 
   @ApiProperty({ example: 'Emergencia familiar' })

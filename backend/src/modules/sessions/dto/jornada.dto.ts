@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Matches, MaxLength, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { HORA_REGEX } from '../../../common/utils/fecha.util';
@@ -7,6 +7,7 @@ export class CreateJornadaDto {
   @ApiProperty()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   grupoId: number;
 
   @ApiProperty({ example: '2026-09-18' })

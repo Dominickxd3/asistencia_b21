@@ -18,6 +18,7 @@ import { AuditoriaService } from '../../audit/auditoria.service';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { GeoDto } from '../dto/asistencia.dto';
 import { fechaColumna } from '../../../common/utils/fecha.util';
+import { ETIQUETA_ESTADO_ASISTENCIA } from '../../../common/enums/attendance-status.enum';
 
 /**
  * Casos de uso de incidencias: falta justificada, salida anticipada,
@@ -85,7 +86,7 @@ export class IncidenciasService extends AsistenciaBaseService {
     }
     const existente = await this.asistenciaRepo.findOne({ where: { jornadaId, personaId } });
     if (existente && existente.estadoAsistencia !== 'ANULADO') {
-      throw new ConflictException(`Ya existe un registro (${existente.estadoAsistencia})`);
+      throw new ConflictException(`La persona ya tiene un registro en esta jornada: ${ETIQUETA_ESTADO_ASISTENCIA[existente.estadoAsistencia] ?? existente.estadoAsistencia}`);
     }
     // La falta se registra aunque el encargado esté fuera: solo se guarda la evidencia
     const evaluacion = await this.validarUbicacion(jornada.grupoId, geo, false);

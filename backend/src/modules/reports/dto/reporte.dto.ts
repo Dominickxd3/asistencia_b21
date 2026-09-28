@@ -1,4 +1,4 @@
-import { IsArray, IsIn, IsInt, IsOptional, Matches } from 'class-validator';
+import { ArrayMaxSize, IsArray, IsIn, IsInt, IsOptional, Matches, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
@@ -23,18 +23,22 @@ export class GenerarReporteDto {
   @ApiPropertyOptional({ type: [Number], description: 'Grupos del consolidado (obligatorio en ESTADO_GENERAL)' })
   @IsOptional()
   @IsArray()
+  @ArrayMaxSize(50)
   @IsInt({ each: true })
+  @Min(1, { each: true })
   grupoIds: number[] = [];
 
   @ApiPropertyOptional({ description: 'Solo para DETALLE_INDIVIDUAL' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   personaId?: number;
 
   @ApiPropertyOptional({ description: 'Solo para JORNADA' })
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   jornadaId?: number;
 }

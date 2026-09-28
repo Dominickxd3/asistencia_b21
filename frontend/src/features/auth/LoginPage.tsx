@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { InputText } from 'primereact/inputtext';
 import { Button } from 'primereact/button';
 import { Checkbox } from 'primereact/checkbox';
@@ -24,7 +24,14 @@ export function LoginPage() {
   });
   const [verClave, setVerClave] = useState<boolean>(false);
   const [cargando, setCargando] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [params] = useSearchParams();
+  // Motivo del último cierre automático de sesión
+  const [error, setError] = useState<string | null>(() => {
+    const motivo = params.get('motivo');
+    if (motivo === 'inactividad') return 'Su sesión se cerró tras 5 minutos sin uso. Vuelva a ingresar.';
+    if (motivo === 'otra-pestana') return 'Se cerró la sesión desde otra pestaña.';
+    return null;
+  });
   const [mostrarAyuda, setMostrarAyuda] = useState<boolean>(false);
 
   useEffect(() => {
@@ -77,7 +84,7 @@ export function LoginPage() {
           <div className="card-brand-header">
             <div className="brand-logo-container">
               <img
-                src="/assets/brand/logo.png"
+                src="/assets/brand/logo-192.png"
                 alt="Escudo Oficial Bomberos Rímac 21"
                 className="brand-logo"
               />

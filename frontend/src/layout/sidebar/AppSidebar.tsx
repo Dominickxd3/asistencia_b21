@@ -1,4 +1,5 @@
-import { Fragment, useEffect, useRef } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink } from 'react-router';
 import { Menu } from 'primereact/menu';
 import { Avatar } from 'primereact/avatar';
@@ -7,6 +8,7 @@ import { useAuth } from '../../core/auth/auth.service';
 import type { PerfilUsuario } from '../../core/models/api.models';
 import { cx } from '../../shared/utils/format';
 import { MENU, ROL_SIDEBAR_NOMBRE, type MenuItem } from '../menu.config';
+import { CambiarMiContrasena } from '../../features/auth/CambiarMiContrasena';
 
 const PRIORIDAD_ROLES = [
   'ADMIN_SISTEMA',
@@ -49,6 +51,7 @@ export function AppSidebar({
   const { perfil, tienePermiso } = useAuth();
   const userMenuRef = useRef<Menu>(null);
   const isFirstRender = useRef(true);
+  const [cambiandoContrasena, setCambiandoContrasena] = useState(false);
 
   const cerrarMenuUsuario = (e?: React.SyntheticEvent) => {
     try {
@@ -96,29 +99,12 @@ export function AppSidebar({
     }
   }
 
+  // El nombre y el cargo ya se ven en el botón del perfil; el menú solo ofrece acciones
   const userMenuItems: PrimeMenuItem[] = [
     {
-      template: () => (
-        <div className="r21-user-menu-header">
-          <div className="user-menu-avatar-row">
-            <Avatar
-              label={obtenerIniciales(perfil?.persona.nombreCompleto ?? '')}
-              shape="circle"
-              className="user-menu-avatar"
-            />
-            <div className="user-menu-info">
-              <span className="user-menu-name" title={perfil?.persona.nombreCompleto}>
-                {perfil?.persona.nombreCompleto}
-              </span>
-              <span className="user-menu-role">{perfil ? cargoPrincipal(perfil) : ''}</span>
-            </div>
-          </div>
-          <div className="user-menu-unit">
-            <i className="pi pi-shield" />
-            <span>Cía. Bomberos Rímac N.º 21</span>
-          </div>
-        </div>
-      ),
+      label: 'Cambiar mi contraseña',
+      icon: 'pi pi-key',
+      command: () => setCambiandoContrasena(true),
     },
     { separator: true },
     {
@@ -144,7 +130,7 @@ export function AppSidebar({
           title={colapsado ? 'Clic para expandir menú' : 'Clic para contraer menú'}
         >
           <img
-            src="/assets/brand/logo.png"
+            src="/assets/brand/logo-192.png"
             alt="Escudo Oficial Bomberos Rímac 21"
             className="brand-logo"
           />
@@ -240,6 +226,9 @@ export function AppSidebar({
           </button>
         </div>
       )}
+      {/* Portal: la barra lateral puede tener transformaciones que confinan un position: fixed */}
+      {cambiandoContrasena &&
+        createPortal(<CambiarMiContrasena onCerrar={() => setCambiandoContrasena(false)} />, document.body)}
     </aside>
   );
 }

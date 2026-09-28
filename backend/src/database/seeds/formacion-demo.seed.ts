@@ -14,6 +14,7 @@ import { Jornada } from "../../modules/sessions/entities/jornada.entity";
 import { Usuario } from "../../modules/users/entities/usuario.entity";
 import { COMPANIA_ID } from "./usuarios.seed";
 import { fechaLocalIso } from "../../common/utils/fecha.util";
+import { horarioReglamentario } from "../../common/business/reglas-asistencia";
 
 function hoy(): string {
   return fechaLocalIso();
@@ -61,18 +62,6 @@ const GRUPOS_SEED = [
   },
 ];
 
-/** La voluntaria puede coexistir con la obligatoria como jornada independiente. */
-const HORARIO_VOLUNTARIO = Array.from({ length: 7 }, (_, i) => ({
-  dia: i + 1,
-  tipo: "VOLUNTARIA",
-  inicio: "08:00:00",
-  fin: "18:30:00",
-}));
-const HORARIO_OBLIGATORIO = [
-  { dia: 3, tipo: "OBLIGATORIA", inicio: "19:30:00", fin: "22:30:00" },
-  { dia: 5, tipo: "OBLIGATORIA", inicio: "19:30:00", fin: "22:30:00" },
-  { dia: 7, tipo: "OBLIGATORIA", inicio: "07:30:00", fin: "11:30:00" },
-];
 
 export async function seedFormacionDemo(
   ds: DataSource,
@@ -138,9 +127,8 @@ export async function seedFormacionDemo(
       creadoPorUsuarioId: jefe?.id ?? null,
     });
 
-    const horario = g.etapaCodigo === "ASPIRANTE_ESBAS"
-      ? HORARIO_VOLUNTARIO
-      : [...HORARIO_VOLUNTARIO, ...HORARIO_OBLIGATORIO];
+    // Misma programación reglamentaria que un grupo creado desde la API
+    const horario = horarioReglamentario(g.etapaCodigo);
     // INSERT directo: el driver transforma incorrectamente cadenas TIME al
     // guardarlas mediante repository.save() en algunos entornos Windows.
     const detalles: ProgramacionDetalle[] = [];
@@ -220,8 +208,8 @@ export async function seedFormacionDemo(
             grupo.id,
             detalleHoy.id,
             fechaHoy,
-            `${fechaHoy}T${detalleHoy.horaInicio}`,
-            `${fechaHoy}T${detalleHoy.horaFin}`,
+            detalleHoy.horaInicio ? `${fechaHoy}T${detalleHoy.horaInicio}` : null,
+            detalleHoy.horaFin ? `${fechaHoy}T${detalleHoy.horaFin}` : null,
             detalleHoy.tipoJornada,
           ],
         );

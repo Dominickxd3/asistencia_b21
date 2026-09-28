@@ -14,6 +14,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { AuthService } from './services/auth.service';
 import { LoginDto } from './dto/login.dto';
+import { CambiarPasswordDto } from './dto/cambiar-password.dto';
 import { Public } from './decorators/auth.decorators';
 import { CurrentUser, CurrentUserData } from './decorators/current-user.decorator';
 import { REFRESH_COOKIE } from '../../common/constants/auth.constants';
@@ -35,7 +36,8 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? null;
+    // Con «trust proxy» configurado, req.ip ya es la IP real; X-Forwarded-For solo lo decide el proxy
+    const ip = req.ip ?? null;
     const userAgent = req.headers['user-agent'] ?? null;
 
     const { accessToken, refreshToken } = await this.authService.login(
@@ -56,7 +58,8 @@ export class AuthController {
     const refreshToken = req.cookies?.[REFRESH_COOKIE];
     if (!refreshToken) throw new UnauthorizedException('Sesión inválida o expirada');
 
-    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() ?? req.ip ?? null;
+    // Con «trust proxy» configurado, req.ip ya es la IP real; X-Forwarded-For solo lo decide el proxy
+    const ip = req.ip ?? null;
     const userAgent = req.headers['user-agent'] ?? null;
 
     const { accessToken, refreshToken: nuevoRefresh } = await this.authService.refresh(
@@ -88,6 +91,19 @@ export class AuthController {
     res.clearCookie(REFRESH_COOKIE, { path: '/api/auth' });
   }
 
+  /** Cualquier usuario autenticado cambia su propia contraseña */
+  @ApiBearerAuth()
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  @Post('cambiar-password')
+  @HttpCode(204)
+  async cambiarPassword(
+    @Body() dto: CambiarPasswordDto,
+    @Req() req: Request,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    await this.authService.cambiarPassword(user.id, dto.actual, dto.nueva, req.cookies?.[REFRESH_COOKIE]);
+  }
+
   @ApiBearerAuth()
   @Get('me')
   async me(@CurrentUser() user: CurrentUserData) {
@@ -95,13 +111,14 @@ export class AuthController {
   }
 
   private setRefreshCookie(res: Response, refreshToken: string) {
-    const dias = this.config.get<number>('app.jwt.refreshTtlDays') ?? 7;
+    // La cookie vive lo mismo que la sesión: inactividad + 1 minuto
+    const minutos = (this.config.get<number>('app.sesionInactividadMin') ?? 5) + 1;
     res.cookie(REFRESH_COOKIE, refreshToken, {
       httpOnly: true,
       secure: this.config.get<boolean>('app.cookieSecure') ?? false,
       sameSite: 'lax',
       path: '/api/auth',
-      maxAge: dias * 24 * 60 * 60 * 1000,
+      maxAge: minutos * 60 * 1000,
     });
   }
 }

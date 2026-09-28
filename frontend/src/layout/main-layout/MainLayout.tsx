@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router';
 import { Sidebar } from 'primereact/sidebar';
 import { authService } from '../../core/auth/auth.service';
+import { inactividad, useAvisoInactividad, type MotivoCierre } from '../../core/auth/inactividad';
+import { Modal } from '../../shared/components/Modal';
 import { realtimeService } from '../../core/services/realtime.service';
 import { AppSidebar } from '../sidebar/AppSidebar';
 
@@ -27,26 +29,40 @@ export function MainLayout() {
     return () => realtimeService.desconectar();
   }, []);
 
+  // Cierre automático tras 5 minutos sin uso (y cuando otra pestaña cierra sesión)
+  const segundosAviso = useAvisoInactividad();
+  useEffect(() => {
+    inactividad.iniciar((motivo) => void salir(motivo));
+    return () => inactividad.detener();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Cada navegación vuelve al inicio de la página
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
 
-  async function cerrarSesion(): Promise<void> {
+  async function salir(motivo?: MotivoCierre): Promise<void> {
+    inactividad.detener();
+    if (motivo !== 'otra-pestana') inactividad.anunciarCierre();
     realtimeService.desconectar();
     try {
       await authService.logout();
+    } catch {
+      // La sesión ya pudo haber expirado en el servidor
     } finally {
-      navigate('/login');
+      navigate(motivo ? `/login?motivo=${motivo}` : '/login', { replace: true });
     }
   }
+
+  const cerrarSesion = () => salir();
 
   return (
     <>
       {/* Barra superior compacta (exclusiva para móvil y tablet) */}
       <header className="r21-mobile-bar" aria-label="Cabecera móvil">
         <div className="mobile-brand">
-          <img src="/assets/brand/logo.png" alt="Escudo Rímac 21" />
+          <img src="/assets/brand/logo-192.png" alt="Escudo Rímac 21" />
           <span>Rímac 21 · Instrucción</span>
         </div>
         <button
@@ -96,6 +112,27 @@ export function MainLayout() {
           </main>
         </div>
       </div>
+
+      <Modal
+        titulo="¿Sigue ahí?"
+        visible={segundosAviso !== null}
+        onCerrar={() => inactividad.continuar()}
+        acciones={
+          <>
+            <button type="button" className="btn btn-sm btn-r21-ghost" onClick={cerrarSesion}>
+              Cerrar sesión
+            </button>
+            <button type="button" className="btn btn-sm btn-r21" onClick={() => inactividad.continuar()}>
+              Seguir conectado
+            </button>
+          </>
+        }
+      >
+        <p className="mb-0">
+          Por seguridad, su sesión se cerrará en <strong>{segundosAviso} segundos</strong> porque no ha usado el
+          sistema en los últimos minutos.
+        </p>
+      </Modal>
     </>
   );
 }

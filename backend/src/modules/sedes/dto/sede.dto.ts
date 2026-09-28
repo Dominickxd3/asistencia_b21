@@ -130,6 +130,7 @@ export class RegistrosGeograficosQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
+  @Min(1)
   sedeId?: number;
 
   @ApiPropertyOptional({

@@ -10,6 +10,8 @@ interface Props {
   /** Mientras procesa no se cierra con Escape ni con clic fuera */
   bloqueado?: boolean;
   ancho?: 'md' | 'lg';
+  /** false: un toque fuera del recuadro no cierra (solo la X o Escape). Útil con la cámara abierta */
+  cerrarAlTocarFuera?: boolean;
   children?: ReactNode;
 }
 
@@ -17,7 +19,16 @@ interface Props {
  * Diálogo modal institucional: cierra con Escape o clic fuera, bloquea el
  * scroll de la página y enfoca el primer campo al abrirse.
  */
-export function Modal({ titulo, visible = false, onCerrar, acciones, bloqueado = false, ancho = 'md', children }: Props) {
+export function Modal({
+  titulo,
+  visible = false,
+  onCerrar,
+  acciones,
+  bloqueado = false,
+  ancho = 'md',
+  cerrarAlTocarFuera = true,
+  children,
+}: Props) {
   const panel = useRef<HTMLDivElement>(null);
   const tituloId = useId();
 
@@ -47,11 +58,14 @@ export function Modal({ titulo, visible = false, onCerrar, acciones, bloqueado =
   const cerrar = () => {
     if (!bloqueado) onCerrar();
   };
+  const tocarFuera = () => {
+    if (cerrarAlTocarFuera) cerrar();
+  };
 
   return (
     <>
-      <div className="r21-modal-backdrop" onClick={cerrar}></div>
-      <div className="r21-modal-wrap" onClick={cerrar}>
+      <div className="r21-modal-backdrop" onClick={tocarFuera}></div>
+      <div className="r21-modal-wrap" onClick={tocarFuera}>
         <div
           ref={panel}
           className={cx('r21-modal', ancho === 'lg' && 'lg')}

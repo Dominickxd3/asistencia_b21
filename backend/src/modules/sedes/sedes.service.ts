@@ -29,6 +29,22 @@ interface ResultadoNominatim {
   boundingbox?: string[];
 }
 
+/** Abreviaturas de vías usadas en Perú, que Nominatim no reconoce */
+const ABREVIATURAS_VIA: [RegExp, string][] = [
+  [/^(jr|jir)\.?\s+/i, "Jirón "],
+  [/^av\.?\s+/i, "Avenida "],
+  [/^(ca|cl)\.?\s+/i, "Calle "],
+  [/^(psje|pje|pj)\.?\s+/i, "Pasaje "],
+  [/^(prolong|prol)\.?\s+/i, "Prolongación "],
+  [/^(urb)\.?\s+/i, "Urbanización "],
+];
+
+function normalizarDireccion(consulta: string): string {
+  let q = consulta.trim().replace(/\bN[°º.]?\s*(?=\d)/gi, "").replace(/#/g, "");
+  for (const [patron, nombre] of ABREVIATURAS_VIA) q = q.replace(patron, nombre);
+  return q.replace(/\s+/g, " ").trim();
+}
+
 /** Administración de sedes y de su geocerca poligonal */
 @Injectable()
 export class SedesService {
@@ -53,11 +69,45 @@ export class SedesService {
    * No se usa como autocompletado ni se ejecuta en segundo plano.
    */
   async buscarDirecciones(consulta: string) {
-    const q = consulta.trim();
+    const q = normalizarDireccion(consulta);
     const clave = q.toLocaleLowerCase("es");
     const cache = this.cacheDirecciones.get(clave);
     if (cache && cache.vence > Date.now()) return cache.resultados;
 
+    // OSM casi no tiene números de puerta en Lima: sin resultados, se reintenta
+    // solo con la vía. La sede principal prioriza resultados cercanos.
+    const sede = await this.sedeRepo.findOne({
+      where: { companiaId: COMPANIA_ID, esPrincipal: true, estado: "ACTIVO" },
+    });
+    const centro =
+      sede?.latitud != null && sede?.longitud != null
+        ? { lat: sede.latitud, lon: sede.longitud }
+        : null;
+    const viewbox = centro
+      ? [centro.lon - 0.15, centro.lat + 0.15, centro.lon + 0.15, centro.lat - 0.15].join(",")
+      : null;
+
+    let resultados = await this.consultarNominatim(q, viewbox);
+    const sinNumero = q.replace(/\b\d+[a-z]?\b/gi, "").replace(/\s+/g, " ").trim();
+    if (resultados.length === 0 && sinNumero !== q && sinNumero.length >= 3) {
+      resultados = await this.consultarNominatim(sinNumero, viewbox);
+    }
+    if (centro) {
+      // Distancia aproximada (equirectangular), suficiente para ordenar
+      const dist = (r: { latitud: number; longitud: number }) =>
+        Math.hypot(r.latitud - centro.lat, (r.longitud - centro.lon) * Math.cos((centro.lat * Math.PI) / 180));
+      resultados.sort((a, b) => dist(a) - dist(b));
+    }
+    resultados = resultados.slice(0, 5);
+    this.cacheDirecciones.set(clave, {
+      vence: Date.now() + CACHE_GEOCODIFICACION_MS,
+      resultados,
+    });
+    return resultados;
+  }
+
+  /** Una consulta a Nominatim, respetando el límite de una petición por segundo */
+  private async consultarNominatim(q: string, viewbox: string | null) {
     let resolver!: () => void;
     const turno = new Promise<void>((resolve) => {
       resolver = resolve;
@@ -78,10 +128,11 @@ export class SedesService {
       const url = new URL("/search", origen);
       url.searchParams.set("q", q);
       url.searchParams.set("format", "jsonv2");
-      url.searchParams.set("limit", "5");
+      url.searchParams.set("limit", "10");
       url.searchParams.set("countrycodes", "pe");
       url.searchParams.set("addressdetails", "1");
       url.searchParams.set("accept-language", "es");
+      if (viewbox) url.searchParams.set("viewbox", viewbox);
 
       this.ultimaConsultaNominatim = Date.now();
       const respuesta = await fetch(url, {
@@ -96,18 +147,13 @@ export class SedesService {
         throw new Error(`Nominatim respondió ${respuesta.status}`);
 
       const datos = (await respuesta.json()) as ResultadoNominatim[];
-      const resultados = (Array.isArray(datos) ? datos : []).map((r) => ({
+      return (Array.isArray(datos) ? datos : []).map((r) => ({
         id: String(r.place_id),
         nombre: r.display_name,
         latitud: Number(r.lat),
         longitud: Number(r.lon),
         limites: r.boundingbox?.length === 4 ? r.boundingbox.map(Number) : null,
       }));
-      this.cacheDirecciones.set(clave, {
-        vence: Date.now() + CACHE_GEOCODIFICACION_MS,
-        resultados,
-      });
-      return resultados;
     } catch {
       throw new ServiceUnavailableException(
         "OpenStreetMap no pudo completar la búsqueda. Intente nuevamente en unos segundos.",

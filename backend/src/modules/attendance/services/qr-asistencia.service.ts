@@ -14,6 +14,7 @@ import { AuthzService } from '../../roles/authz.service';
 import { AuditoriaService } from '../../audit/auditoria.service';
 import { PermissionCode } from '../../../common/constants/permissions.constants';
 import { GeoDto } from '../dto/asistencia.dto';
+import { ETIQUETA_ESTADO_ASISTENCIA } from '../../../common/enums/attendance-status.enum';
 
 const PREFIJO_QR = 'R21|ASISTENCIA|';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -126,7 +127,7 @@ export class QrAsistenciaService {
         );
       } else {
         throw new UnprocessableEntityException(
-          `${qr.persona.nombreCompleto} ya tiene registrado el estado '${asistencia.estadoAsistencia}' en esta jornada`,
+          `${qr.persona.nombreCompleto} ya figura como ${ETIQUETA_ESTADO_ASISTENCIA[asistencia.estadoAsistencia] ?? asistencia.estadoAsistencia} en esta jornada`,
         );
       }
     } else {

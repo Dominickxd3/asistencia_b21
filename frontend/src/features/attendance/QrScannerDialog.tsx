@@ -1,5 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Modal } from '../../shared/components/Modal';
+import { mensajeError as textoError } from '../../core/http/http';
+import { inactividad } from '../../core/auth/inactividad';
 
 export interface EscaneoResultado {
   accion: 'ENTRADA' | 'SALIDA';
@@ -21,6 +23,14 @@ export function QrScannerDialog({ visible, onCerrar, onEscaneado }: Props) {
   const [ultimoRegistro, setUltimoRegistro] = useState<EscaneoResultado | null>(null);
   const [mensajeError, setMensajeError] = useState<string | null>(null);
   const ocupado = useRef(false);
+
+  // Con la cámara abierta el encargado trabaja sin tocar la pantalla: no es inactividad
+  useEffect(() => {
+    if (!visible) return;
+    inactividad.marcar();
+    const t = setInterval(() => inactividad.marcar(), 60_000);
+    return () => clearInterval(t);
+  }, [visible]);
 
   useEffect(() => {
     if (!visible) return;
@@ -55,9 +65,7 @@ export function QrScannerDialog({ visible, onCerrar, onEscaneado }: Props) {
             setUltimoRegistro(resultado);
             setMensajeError(null);
           } catch (error) {
-            setMensajeError(
-              error instanceof Error ? error.message : 'No se pudo procesar el código QR',
-            );
+            setMensajeError(textoError(error, 'No se pudo procesar el código QR'));
           } finally {
             setProcesando(false);
             window.setTimeout(() => {
@@ -104,6 +112,7 @@ export function QrScannerDialog({ visible, onCerrar, onEscaneado }: Props) {
       visible={visible}
       onCerrar={onCerrar}
       bloqueado={procesando}
+      cerrarAlTocarFuera={false}
       ancho="md"
     >
       <div className="r21-qr-scanner-centered">

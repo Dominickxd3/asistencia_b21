@@ -1,10 +1,11 @@
 import {
   Injectable,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { verify } from 'argon2';
+import { hash, verify } from 'argon2';
 import { Usuario } from '../../users/entities/usuario.entity';
 import { TokenService } from './token.service';
 import { SesionesService } from './sesiones.service';
@@ -71,6 +72,49 @@ export class AuthService {
     return tokens;
   }
 
+  /**
+   * Cambio de la propia contraseña. Exige la actual y cierra la sesión en los
+   * demás equipos, conservando la del equipo desde el que se cambia.
+   */
+  async cambiarPassword(
+    usuarioId: number,
+    actual: string,
+    nueva: string,
+    refreshToken: string | undefined,
+  ): Promise<void> {
+    const usuario = await this.usuarioRepo.findOne({ where: { id: usuarioId } });
+    if (!usuario) throw new UnauthorizedException(AUTH_ERRORS.CUENTA_NO_ACTIVA);
+    // 422 y no 401: un 401 haría que el cliente intente renovar la sesión
+    if (!(await verify(usuario.passwordHash, actual).catch(() => false))) {
+      throw new UnprocessableEntityException('La contraseña actual no es correcta.');
+    }
+    if (actual === nueva) {
+      throw new UnprocessableEntityException('La contraseña nueva debe ser distinta de la actual.');
+    }
+    await this.usuarioRepo.query(
+      `UPDATE usuarios SET password_hash = @1, fecha_actualizacion = GETDATE() WHERE usuario_id = @0`,
+      [usuarioId, await hash(nueva)],
+    );
+
+    let sesionActual: string | null = null;
+    if (refreshToken) {
+      try {
+        sesionActual = this.tokenService.verificarRefreshToken(refreshToken).sid ?? null;
+      } catch {
+        sesionActual = null;
+      }
+    }
+    await this.sesionesService.revocarOtras(usuarioId, sesionActual);
+    await this.auditoria.registrar({
+      usuarioId,
+      accion: 'USER_UPDATED',
+      modulo: 'auth',
+      entidad: 'usuarios',
+      entidadId: usuarioId,
+      descripcion: 'Cambió su propia contraseña',
+    });
+  }
+
   async refresh(refreshToken: string, ip: string | null, userAgent: string | null): Promise<LoginResult> {
     let payload;
     try {
@@ -92,8 +136,8 @@ export class AuthService {
       throw new UnauthorizedException(AUTH_ERRORS.CUENTA_NO_ACTIVA);
     }
 
-    // Rotacion: la sesion anterior queda revocada
-    await this.sesionesService.revocar(sesion.id);
+    // Rotación: la sesión anterior vence en 30 s (margen por recargas que cortan la respuesta)
+    await this.sesionesService.reemplazar(sesion.id);
     await this.auditoria.registrar({
       usuarioId: usuario.id,
       accion: 'TOKEN_REFRESHED',

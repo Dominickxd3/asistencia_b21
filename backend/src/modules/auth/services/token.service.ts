@@ -45,7 +45,7 @@ export class TokenService {
     const payload: RefreshPayload = { sub: usuarioId, sid: sesionId };
     return this.jwt.sign(payload, {
       secret: this.config.getOrThrow<string>('app.jwt.refreshSecret'),
-      expiresIn: `${this.config.get<number>('app.jwt.refreshTtlDays') ?? 7}d`,
+      expiresIn: `${(this.config.get<number>('app.sesionInactividadMin') ?? 5) + 1}m`,
     });
   }
 

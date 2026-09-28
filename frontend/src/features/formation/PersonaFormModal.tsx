@@ -4,7 +4,7 @@ import { mensajeError } from '../../core/http/http';
 import { Modal } from '../../shared/components/Modal';
 import { useNotificar } from '../../shared/components/Notificaciones';
 import { StatusBadge } from '../../shared/components/StatusBadge';
-import { cx } from '../../shared/utils/format';
+import { cx, fechaLocalIso } from '../../shared/utils/format';
 import { gruposApi } from './grupos-api';
 
 const RESULTADO_QUITAR: Record<string, string> = {
@@ -311,7 +311,7 @@ export function PersonaFormModal({ visible, personaId, grupos, puedeAsignarGrupo
             <div className="col-6">{campo('apellidoMaterno', 'Apellido materno', { maxLength: 80 })}</div>
             <div className="col-6 col-md-4">{campo('telefono', 'Teléfono', { inputMode: 'tel', maxLength: 30 })}</div>
             <div className="col-6 col-md-5">{campo('correo', 'Correo', { type: 'email', maxLength: 150 })}</div>
-            <div className="col-12 col-md-3">{campo('fechaNacimiento', 'Nacimiento', { type: 'date' })}</div>
+            <div className="col-12 col-md-3">{campo('fechaNacimiento', 'Nacimiento', { type: 'date', max: fechaLocalIso() })}</div>
             {esNueva && puedeAsignarGrupo && (
               <div className="col-12">
                 <label className="form-label small fw-semibold" htmlFor="p-grupo">

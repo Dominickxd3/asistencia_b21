@@ -794,7 +794,7 @@ GO
 
 /* Defensa final: la obligación debe pertenecer a la programación vigente del
    grupo. Las jornadas extraordinarias siguen requiriendo una etapa habilitada. */
-+CREATE OR ALTER TRIGGER dbo.TR_jornadas_regla_obligatoria
+CREATE OR ALTER TRIGGER dbo.TR_jornadas_regla_obligatoria
 ON dbo.jornadas
 AFTER INSERT, UPDATE
 AS

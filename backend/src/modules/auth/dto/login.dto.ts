@@ -8,7 +8,7 @@ export class LoginDto {
   @MaxLength(80)
   username: string;
 
-  @ApiProperty({ example: 'R21#Jefe2026' })
+  @ApiProperty()
   @IsString()
   @IsNotEmpty()
   @MaxLength(100)

@@ -61,6 +61,20 @@ class AuthService {
     }
   }
 
+  /**
+   * Renueva la sesión sin recargar el perfil (mantenerla viva mientras se usa).
+   * Si ya expiró en el servidor, se trata como cierre de sesión.
+   */
+  async renovar(): Promise<void> {
+    try {
+      const res = await http.post<{ accessToken: string }>(`${this.base}/refresh`, {});
+      this.accessToken = res.accessToken;
+    } catch {
+      this.accessToken = null;
+      this.actualizar({ perfil: null });
+    }
+  }
+
   async logout(): Promise<void> {
     try {
       await http.post(`${this.base}/logout`, {});

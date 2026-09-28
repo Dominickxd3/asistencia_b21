@@ -3,7 +3,7 @@ GO
 
 /* La programación activa del grupo es la fuente de verdad. Los días y horas
    obligatorios pueden cambiar sin modificar código ni recrear el grupo. */
-+CREATE OR ALTER TRIGGER dbo.TR_jornadas_regla_obligatoria
+CREATE OR ALTER TRIGGER dbo.TR_jornadas_regla_obligatoria
 ON dbo.jornadas
 AFTER INSERT, UPDATE
 AS

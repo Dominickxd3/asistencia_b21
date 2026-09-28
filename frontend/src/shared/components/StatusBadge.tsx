@@ -32,6 +32,10 @@ const MAPA_ESTADOS: Record<string, EstadoConfig> = {
   CANCELADO: { severity: 'danger', texto: 'Cancelado', styleClass: 'tag-obligatoria' },
   RETIRADO: { severity: 'secondary', texto: 'Retirado', styleClass: 'tag-programada' },
   SUSPENDIDO: { severity: 'warning', texto: 'Suspendido', styleClass: 'tag-pendiente' },
+  // Cuentas de usuario
+  ACTIVA: { severity: 'success', texto: 'Activa', styleClass: 'tag-activa' },
+  INACTIVA: { severity: 'secondary', texto: 'Desactivada', styleClass: 'tag-programada' },
+  BLOQUEADA: { severity: 'danger', texto: 'Bloqueada', styleClass: 'tag-obligatoria' },
 };
 
 export function StatusBadge({ estado }: { estado: string }) {

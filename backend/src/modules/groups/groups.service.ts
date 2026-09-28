@@ -1,4 +1,3 @@
-import { randomInt } from 'crypto';
 import { hash } from 'argon2';
 import {
   BadRequestException,
@@ -31,6 +30,7 @@ import {
 } from './dto/group.dto';
 import { AuditoriaService } from '../audit/auditoria.service';
 import { fechaColumna, fechaServidor } from '../../common/utils/fecha.util';
+import { generarPasswordTemporal } from '../../common/utils/password.util';
 import {
   aplicaAsistenciaObligatoria,
   horarioReglamentario,
@@ -40,15 +40,6 @@ import { RoleCode } from '../../common/constants/roles.constants';
 import { AuthzService } from '../roles/authz.service';
 
 const COMPANIA_ID = 1;
-
-/** Contraseña temporal legible (sin 0/O, 1/l/I) para entregar al nuevo encargado */
-function generarPasswordTemporal(): string {
-  const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz';
-  const digitos = '23456789';
-  const elegir = (fuente: string, n: number) =>
-    Array.from({ length: n }, () => fuente[randomInt(fuente.length)]).join('');
-  return `R21-${elegir(letras, 4)}${elegir(digitos, 2)}${elegir(letras, 2)}`;
-}
 
 /** Nombre completo en SQL con el mismo formato que Persona.nombreCompleto */
 const NOMBRE_SQL = (p: string) =>

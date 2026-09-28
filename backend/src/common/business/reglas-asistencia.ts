@@ -38,7 +38,7 @@ export interface HorarioProgramado {
 
 /**
  * Programación semanal reglamentaria de un grupo nuevo:
- * contexto voluntario todos los días (08:00–18:30) y, solo para etapas con
+ * contexto voluntario disponible todo el día y, solo para etapas con
  * asistencia obligatoria, hora fija de entrada y salida libre hasta medianoche.
  */
 export function horarioReglamentario(
@@ -56,17 +56,16 @@ export function horarioReglamentario(
   }
 
   // Postulantes y Aspirantes de compañía:
-  // - Lunes, Martes, Jueves, Sábado: participación voluntaria (08:00 - 18:30)
+  // - Lunes a sábado: participación voluntaria desde el inicio del día (sin
+  //   horario fijo, corte a medianoche), independiente de la obligatoria.
   // - Miércoles y Viernes: citación obligatoria a las 19:30, con salida libre.
   // - Domingo: citación obligatoria a las 07:30, con salida libre.
-  const voluntarios: HorarioProgramado[] = [
-    { dia: 1, tipo: 'VOLUNTARIA', inicio: '08:00:00', fin: '18:30:00' },
-    { dia: 2, tipo: 'VOLUNTARIA', inicio: '08:00:00', fin: '18:30:00' },
-    { dia: 3, tipo: 'VOLUNTARIA', inicio: '08:00:00', fin: '18:30:00' },
-    { dia: 4, tipo: 'VOLUNTARIA', inicio: '08:00:00', fin: '18:30:00' },
-    { dia: 5, tipo: 'VOLUNTARIA', inicio: '08:00:00', fin: '18:30:00' },
-    { dia: 6, tipo: 'VOLUNTARIA', inicio: '08:00:00', fin: '18:30:00' },
-  ];
+  const voluntarios: HorarioProgramado[] = [1, 2, 3, 4, 5, 6].map((dia) => ({
+    dia,
+    tipo: 'VOLUNTARIA',
+    inicio: null,
+    fin: null,
+  }));
   const configurados = obligatorios ?? [
     { diaSemana: 3, horaInicio: '19:30' },
     { diaSemana: 5, horaInicio: '19:30' },

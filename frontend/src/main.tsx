@@ -53,6 +53,19 @@ addLocale('es', {
 });
 locale('es');
 
+// Tras un despliegue, una pestaña abierta con la versión anterior pide páginas que ya
+// no existen: se recarga una vez para tomar la versión nueva.
+window.addEventListener('vite:preloadError', (e) => {
+  e.preventDefault();
+  if (sessionStorage.getItem('r21_recarga_version') === '1') return;
+  sessionStorage.setItem('r21_recarga_version', '1');
+  window.location.reload();
+});
+// La marca se retira pasado un rato: si el error se repitiera enseguida, no hay bucle de recargas
+window.addEventListener('load', () =>
+  setTimeout(() => sessionStorage.removeItem('r21_recarga_version'), 10_000),
+);
+
 // Restaurar sesión (cookie HttpOnly) antes de pintar la app
 void authService.intentarRestaurar().finally(() => {
   createRoot(document.getElementById('root')!).render(
