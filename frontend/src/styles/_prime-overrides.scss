@@ -1,6 +1,6 @@
 /* ============================================================
-   Rímac 21 — PrimeNG v17 Overrides
-   Adaptación estricta de componentes PrimeNG al design system
+   Rímac 21 — PrimeReact v10 Overrides
+   Adaptación estricta de componentes PrimeReact al design system
    ============================================================ */
 
 /* --- Botones --- */
@@ -85,6 +85,11 @@
   align-items: center;
   gap: 4px;
 
+  /* PrimeReact agrega un <span> vacío para children: sin esto el gap ensancha el tag */
+  > span:empty:not(.p-tag-value) {
+    display: none;
+  }
+
   &.p-tag-danger,
   &.tag-obligatoria {
     background-color: var(--r21-red-light);
@@ -135,20 +140,22 @@
   }
 }
 
-/* --- Drawer / Sidebar Móvil PrimeNG --- */
+/* --- Drawer / Sidebar Móvil PrimeReact --- */
 .p-sidebar {
   background: var(--r21-sidebar);
-  color: #FFFFFF;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+  color: var(--r21-text-primary);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
 
   .p-sidebar-header {
     padding: 12px 16px;
     border-bottom: 1px solid var(--r21-sidebar-border);
+    justify-content: normal; /* botón de cierre a la izquierda */
 
     .p-sidebar-close {
-      color: #FFFFFF;
+      color: var(--r21-text-secondary);
       &:hover {
         background-color: var(--r21-sidebar-hover);
+        color: var(--r21-text-primary);
       }
     }
   }
@@ -161,6 +168,14 @@
 .r21-mobile-drawer {
   width: 260px !important;
   max-width: 85vw !important;
+
+  /* PrimeReact marca la raíz con .p-component: se hereda la tipografía institucional */
+  &.p-component {
+    font-family: inherit;
+    font-feature-settings: inherit;
+    font-size: inherit;
+    font-weight: inherit;
+  }
 
   .p-sidebar-content {
     height: 100%;
@@ -178,7 +193,7 @@
 .p-tooltip .p-tooltip-text {
   font-family: var(--r21-font);
   font-size: 12px;
-  background-color: var(--r21-sidebar);
+  background-color: #1E293B;
   color: #FFFFFF;
   border-radius: 4px;
   padding: 6px 10px;

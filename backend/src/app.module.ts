@@ -15,6 +15,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { TrackingModule } from './modules/tracking/tracking.module';
 import { FormationModule } from './modules/formation/formation.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { SedesModule } from './modules/sedes/sedes.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { ReportsModule } from './modules/reports/reports.module';
     TrackingModule,
     FormationModule,
     ReportsModule,
+    SedesModule,
   ],
   controllers: [HealthController],
   providers: [

@@ -10,6 +10,7 @@ import { Repository } from 'typeorm';
 import { TokenService } from '../services/token.service';
 import { Usuario } from '../../users/entities/usuario.entity';
 import { IS_PUBLIC_KEY } from '../decorators/auth.decorators';
+import { fechaLocalIso } from '../../../common/utils/fecha.util';
 
 /**
  * Valida el access token y recarga el usuario desde BD:
@@ -48,7 +49,7 @@ export class JwtAuthGuard implements CanActivate {
     });
     if (!usuario) throw new UnauthorizedException('La cuenta no está activa');
 
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = fechaLocalIso();
     request.user = {
       id: usuario.id,
       username: usuario.username,

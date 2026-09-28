@@ -11,9 +11,10 @@ export const REALTIME_EVENTS = {
 export interface AsistenciaEvento {
   jornadaId: number;
   grupoId: number;
+  tipoJornada: 'OBLIGATORIA' | 'VOLUNTARIA';
   asistenciaId: number;
   personaId: number;
-  accion: 'ENTRADA' | 'SALIDA';
+  accion: 'ENTRADA' | 'SALIDA' | 'FALTA' | 'MODIFICACION' | 'ANULACION';
   estado: string;
   fechaHora: Date;
 }
@@ -35,7 +36,10 @@ export class RealtimeService {
     this.emitir(REALTIME_EVENTS.DASHBOARD_ACTUALIZAR, { motivo: REALTIME_EVENTS.ASISTENCIA_REGISTRADA });
   }
 
-  emitirJornada(evento: 'jornada.abierta' | 'jornada.cerrada', data: { jornadaId: number; grupoId: number }): void {
+  emitirJornada(
+    evento: 'jornada.abierta' | 'jornada.cerrada',
+    data: { jornadaId: number; grupoId: number; tipoJornada: 'OBLIGATORIA' | 'VOLUNTARIA' },
+  ): void {
     this.emitir(evento, data);
     this.emitir(REALTIME_EVENTS.DASHBOARD_ACTUALIZAR, { motivo: evento });
   }

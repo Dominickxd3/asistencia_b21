@@ -11,6 +11,7 @@ import { SesionesService } from './sesiones.service';
 import { AuthzService } from '../../roles/authz.service';
 import { AuditoriaService } from '../../audit/auditoria.service';
 import { AUTH_ERRORS } from '../../../common/constants/auth.constants';
+import { fechaLocalIso } from '../../../common/utils/fecha.util';
 
 export interface LoginResult {
   accessToken: string;
@@ -121,7 +122,7 @@ export class AuthService {
       where: { id: usuarioId },
       relations: { persona: true, usuarioRoles: { rol: true } },
     });
-    const hoy = new Date().toISOString().slice(0, 10);
+    const hoy = fechaLocalIso();
     const rolesActivos = usuario.usuarioRoles
       .filter((ur) => ur.estado === 'ACTIVO' && (!ur.fechaFin || ur.fechaFin >= hoy))
       .map((ur) => ({ codigo: ur.rol.codigo, nombre: ur.rol.nombre }));

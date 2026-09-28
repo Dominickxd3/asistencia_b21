@@ -1,0 +1,462 @@
+/* ============================================================
+   Rímac 21 — Login Institucional Minimalista
+   Diseño Limpio, Blanco y Centrado
+   ============================================================ */
+
+.r21-login-screen {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%);
+  font-family: var(--r21-font, 'Inter', -apple-system, sans-serif);
+  overflow-x: hidden;
+
+  /* Contenedor centrado de la tarjeta */
+  .r21-login-card-wrapper {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 416px;
+    margin: 0 auto;
+    animation: card-appear 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Tarjeta de login: blanca, limpia, con bordes refinados y sombra suave */
+  .r21-login-card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 38px 34px 32px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 
+      0 12px 32px -4px rgba(15, 23, 42, 0.08),
+      0 4px 12px -2px rgba(15, 23, 42, 0.04);
+    position: relative;
+  }
+
+  /* Cabecera institucional: Escudo Oficial y Títulos */
+  .card-brand-header {
+    text-align: center;
+    margin-bottom: 26px;
+
+    .brand-logo-container {
+      width: 88px;
+      height: 88px;
+      margin: 0 auto 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      padding: 0;
+      transition: transform 250ms cubic-bezier(0.16, 1, 0.3, 1);
+
+      &:hover {
+        transform: scale(1.05);
+      }
+
+      .brand-logo {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.12));
+      }
+    }
+
+    .brand-title {
+      font-size: 16.5px;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.35;
+      margin: 0 0 5px 0;
+      letter-spacing: -0.01em;
+    }
+
+    .brand-subtitle {
+      font-size: 13px;
+      color: #64748b;
+      margin: 0;
+      font-weight: 500;
+    }
+  }
+
+  /* Grupos de campos del formulario */
+  .r21-form-group {
+    margin-bottom: 18px;
+
+    .field-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 6px;
+
+      i {
+        font-size: 13px;
+        color: #64748b;
+      }
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      width: 100%;
+
+      .input-left-icon {
+        position: absolute;
+        left: 14px;
+        color: #94a3b8;
+        font-size: 14px;
+        pointer-events: none;
+        z-index: 2;
+        transition: color 150ms ease;
+      }
+
+      .p-inputtext {
+        width: 100%;
+        height: 44px;
+        padding: 9px 14px 9px 40px;
+        border-radius: 9px;
+        border: 1px solid #cbd5e1;
+        font-size: 13.5px;
+        color: #0f172a;
+        background: #ffffff;
+        transition: border-color 150ms ease, box-shadow 150ms ease;
+
+        &::placeholder {
+          color: #94a3b8;
+          font-size: 13px;
+        }
+
+        &:hover {
+          border-color: #94a3b8;
+        }
+
+        &:focus {
+          outline: none;
+          border-color: #c8102e;
+          box-shadow: 0 0 0 3px rgba(200, 16, 46, 0.12);
+        }
+      }
+
+      &:focus-within .input-left-icon {
+        color: #c8102e;
+      }
+
+      .btn-toggle-password {
+        position: absolute;
+        right: 6px;
+        background: transparent;
+        border: none;
+        padding: 6px 8px;
+        color: #64748b;
+        font-size: 14px;
+        cursor: pointer;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 150ms ease, background-color 150ms ease;
+
+        &:hover {
+          color: #0f172a;
+          background-color: #f1f5f9;
+        }
+
+        &:focus-visible {
+          outline: 2px solid #c8102e;
+          outline-offset: 1px;
+        }
+      }
+
+      &.has-toggle .p-inputtext {
+        padding-right: 42px;
+      }
+    }
+  }
+
+  /* Fila auxiliar: Recordar usuario y ¿Necesita ayuda? */
+  .form-aux-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 24px;
+    font-size: 12.5px;
+
+    .remember-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+
+      .p-checkbox {
+        width: 17px;
+        height: 17px;
+
+        .p-checkbox-box {
+          width: 17px;
+          height: 17px;
+          border-radius: 4px;
+          border-color: #cbd5e1;
+
+          &.p-highlight {
+            background-color: #c8102e;
+            border-color: #c8102e;
+          }
+
+          &:focus-visible {
+            box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px rgba(200, 16, 46, 0.25);
+          }
+        }
+      }
+
+      .remember-label {
+        color: #475569;
+        font-weight: 500;
+        cursor: pointer;
+      }
+    }
+
+    .btn-help-link {
+      background: transparent;
+      border: none;
+      padding: 0;
+      color: #c8102e;
+      font-weight: 600;
+      font-size: 12px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: color 150ms ease, text-decoration 150ms ease;
+
+      &:hover {
+        color: #9f0b24;
+        text-decoration: underline;
+      }
+    }
+  }
+
+  /* Alerta de error estilizada */
+  .r21-login-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 12px;
+    border-radius: 9px;
+    margin-bottom: 18px;
+    font-size: 12.5px;
+    line-height: 1.4;
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    animation: alert-shake 300ms ease-in-out;
+
+    i {
+      font-size: 15px;
+      color: #dc2626;
+      margin-top: 1px;
+      flex-shrink: 0;
+    }
+
+    .alert-msg {
+      flex: 1;
+      font-weight: 500;
+    }
+  }
+
+  /* Botón de ingreso PrimeReact en rojo institucional */
+  .btn-login-submit {
+    width: 100%;
+    height: 46px;
+    border-radius: 9px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    background-color: #c8102e;
+    border: 1px solid #b30e29;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(200, 16, 46, 0.28);
+    cursor: pointer;
+    transition: all 180ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:not(:disabled):hover {
+      background-color: #b30e29;
+      border-color: #9f0b24;
+      box-shadow: 0 6px 16px rgba(200, 16, 46, 0.38);
+      transform: translateY(-1px);
+    }
+
+    &:not(:disabled):active {
+      transform: translateY(0);
+      background-color: #9f0b24;
+      box-shadow: 0 2px 6px rgba(200, 16, 46, 0.28);
+    }
+
+    &:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      box-shadow: none;
+      transform: none;
+    }
+
+    .p-button-icon {
+      font-size: 14px;
+    }
+  }
+}
+
+/* ============================================================
+   Animaciones
+   ============================================================ */
+
+@keyframes card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes alert-shake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+/* ============================================================
+   Modal de Asistencia / Ayuda
+   ============================================================ */
+
+.r21-help-dialog {
+  .p-dialog-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #e2e8f0;
+
+    .p-dialog-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      i {
+        color: #c8102e;
+      }
+    }
+  }
+
+  .p-dialog-content {
+    padding: 20px;
+    font-size: 13px;
+    color: #334155;
+    line-height: 1.5;
+
+    .help-intro {
+      margin-bottom: 14px;
+      color: #475569;
+    }
+
+    .help-steps {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+
+      li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+
+        i {
+          color: #c8102e;
+          font-size: 15px;
+          margin-top: 2px;
+          flex-shrink: 0;
+        }
+
+        strong {
+          color: #0f172a;
+        }
+      }
+    }
+
+    .help-whatsapp-card {
+      background-color: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 4px;
+
+      .whatsapp-info {
+        display: flex;
+        flex-direction: column;
+
+        .whatsapp-label {
+          font-size: 11.5px;
+          color: #166534;
+          font-weight: 500;
+        }
+
+        .whatsapp-number {
+          font-size: 17px;
+          font-weight: 800;
+          color: #14532d;
+          letter-spacing: 0.04em;
+        }
+      }
+
+      .btn-whatsapp {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        background-color: #25d366;
+        color: #ffffff;
+        font-weight: 700;
+        font-size: 13px;
+        padding: 9px 14px;
+        border-radius: 8px;
+        text-decoration: none;
+        box-shadow: 0 2px 6px rgba(37, 211, 102, 0.35);
+        transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+
+        i {
+          font-size: 16px;
+        }
+
+        &:hover {
+          background-color: #20ba5a;
+          color: #ffffff;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 10px rgba(37, 211, 102, 0.45);
+        }
+      }
+    }
+  }
+
+  .p-dialog-footer {
+    padding: 10px 20px 14px;
+    border-top: 1px solid #e2e8f0;
+  }
+}

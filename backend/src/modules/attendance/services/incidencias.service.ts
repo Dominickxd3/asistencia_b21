@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,10 +13,11 @@ import { GrupoIntegrante } from '../../groups/entities/grupo-integrante.entity';
 import { AsistenciaBaseService } from './asistencia-base.service';
 import { GroupsService } from '../../groups/groups.service';
 import { AuthzService } from '../../roles/authz.service';
-import { GeoService } from './geo.service';
+import { GeocercaService } from '../../sedes/geocerca.service';
 import { AuditoriaService } from '../../audit/auditoria.service';
 import { RealtimeService } from '../../realtime/realtime.service';
 import { GeoDto } from '../dto/asistencia.dto';
+import { fechaColumna } from '../../../common/utils/fecha.util';
 
 /**
  * Casos de uso de incidencias: falta justificada, salida anticipada,
@@ -33,11 +35,11 @@ export class IncidenciasService extends AsistenciaBaseService {
     private readonly integranteRepo: Repository<GrupoIntegrante>,
     groups: GroupsService,
     authz: AuthzService,
-    geo: GeoService,
+    geocerca: GeocercaService,
     private readonly auditoria: AuditoriaService,
     private readonly realtime: RealtimeService,
   ) {
-    super(jornadaRepo, asistenciaRepo, ubicacionRepo, groups, authz, geo);
+    super(jornadaRepo, asistenciaRepo, ubicacionRepo, groups, authz, geocerca);
   }
 
   /** Falta justificada: sin hora de entrada; no cuenta como asistencia efectiva. */
@@ -49,18 +51,44 @@ export class IncidenciasService extends AsistenciaBaseService {
     geo?: GeoDto,
   ) {
     const jornada = await this.validarAccesoJornada(jornadaId, usuarioId);
-    this.validarJornadaAbierta(jornada);
+    await this.validarJornadaAbierta(jornada);
 
-    const integrante = await this.integranteRepo.findOne({
-      where: { grupoId: jornada.grupoId, personaId, estado: 'ACTIVO' },
-    });
+    if (jornada.tipoJornada !== 'OBLIGATORIA') {
+      throw new UnprocessableEntityException(
+        'Las jornadas voluntarias no generan faltas ni requieren justificación.',
+      );
+    }
+
+    const [contexto] = await this.integranteRepo.query(
+      `SELECT e.codigo AS etapaCodigo
+       FROM grupos_formacion g
+       JOIN etapas_formacion e ON e.etapa_id = g.etapa_id
+       WHERE g.grupo_id = @0`,
+      [jornada.grupoId],
+    );
+    if (!contexto || contexto.etapaCodigo === 'ASPIRANTE_ESBAS') {
+      throw new UnprocessableEntityException(
+        'ESBAS solo registra participación voluntaria y no genera faltas justificadas.',
+      );
+    }
+
+    const [integrante] = await this.integranteRepo.query(
+      `SELECT TOP 1 grupo_integrante_id
+       FROM grupo_integrantes
+       WHERE grupo_id = @0 AND persona_id = @1
+         AND fecha_inicio <= @2
+         AND (fecha_fin IS NULL OR fecha_fin >= @2)`,
+      [jornada.grupoId, personaId, fechaColumna(jornada.fecha)],
+    );
     if (!integrante) {
-      throw new ConflictException('La persona no es integrante activo del grupo');
+      throw new UnprocessableEntityException('La persona no pertenecía al grupo en la fecha de esta jornada');
     }
     const existente = await this.asistenciaRepo.findOne({ where: { jornadaId, personaId } });
     if (existente && existente.estadoAsistencia !== 'ANULADO') {
       throw new ConflictException(`Ya existe un registro (${existente.estadoAsistencia})`);
     }
+    // La falta se registra aunque el encargado esté fuera: solo se guarda la evidencia
+    const evaluacion = await this.validarUbicacion(jornada.grupoId, geo, false);
 
     let asistenciaId: number;
     const reactivada = await this.reactivarSiAnulada(jornadaId, personaId, {
@@ -102,19 +130,20 @@ export class IncidenciasService extends AsistenciaBaseService {
       entidadId: asistenciaId,
       valorNuevo: { jornadaId, personaId, motivo },
     });
-    await this.capturarUbicacion(asistenciaId, usuarioId, 'MODIFICACION', geo);
+    const ubicacion = await this.guardarUbicacion(asistenciaId, usuarioId, 'MODIFICACION', jornadaId, evaluacion);
 
     this.realtime.emitirAsistenciaRegistrada({
       jornadaId,
       grupoId: jornada.grupoId,
+      tipoJornada: jornada.tipoJornada as 'OBLIGATORIA' | 'VOLUNTARIA',
       asistenciaId,
       personaId,
-      accion: 'ENTRADA',
+      accion: 'FALTA',
       estado: 'FALTA_JUSTIFICADA',
       fechaHora: new Date(),
     });
 
-    return this.asistenciaRepo.findOne({ where: { id: asistenciaId } });
+    return { ...(await this.asistenciaRepo.findOne({ where: { id: asistenciaId } })), ubicacion };
   }
 
   /** Salida anticipada: solo si la persona está presente (con entrada). */
@@ -126,14 +155,21 @@ export class IncidenciasService extends AsistenciaBaseService {
   ) {
     const asistencia = await this.obtenerAsistencia(asistenciaId, usuarioId);
     this.validarEstado(asistencia, ['PRESENTE']);
+    const evaluacion = await this.validarUbicacion(asistencia.jornada.grupoId, geo, true);
 
-    await this.asistenciaRepo.query(
+    const actualizados: { id: number }[] = await this.asistenciaRepo.query(
       `UPDATE asistencias
        SET fecha_hora_salida = GETDATE(), estado_asistencia = 'SALIDA_ANTICIPADA',
            observacion = @1, fecha_actualizacion = GETDATE()
-       WHERE asistencia_id = @0 AND fecha_hora_entrada <= GETDATE()`,
+       OUTPUT INSERTED.asistencia_id AS id
+       WHERE asistencia_id = @0 AND estado_asistencia = 'PRESENTE' AND fecha_hora_entrada <= GETDATE()`,
       [asistenciaId, motivo],
     );
+    if (actualizados.length === 0) {
+      throw new UnprocessableEntityException(
+        'La hora de entrada registrada es posterior a la hora actual; corrija la entrada antes de registrar la salida',
+      );
+    }
 
     await this.justificacionRepo.save(
       this.justificacionRepo.create({
@@ -153,11 +189,18 @@ export class IncidenciasService extends AsistenciaBaseService {
       entidadId: asistenciaId,
       valorNuevo: { estado: 'SALIDA_ANTICIPADA', motivo },
     });
-    await this.capturarUbicacion(asistenciaId, usuarioId, 'SALIDA', geo);
+    const ubicacion = await this.guardarUbicacion(
+      asistenciaId,
+      usuarioId,
+      'SALIDA',
+      Number(asistencia.jornadaId),
+      evaluacion,
+    );
 
     this.realtime.emitirAsistenciaRegistrada({
       jornadaId: Number(asistencia.jornadaId),
       grupoId: asistencia.jornada.grupoId,
+      tipoJornada: asistencia.jornada.tipoJornada as 'OBLIGATORIA' | 'VOLUNTARIA',
       asistenciaId,
       personaId: asistencia.personaId,
       accion: 'SALIDA',
@@ -165,7 +208,7 @@ export class IncidenciasService extends AsistenciaBaseService {
       fechaHora: new Date(),
     });
 
-    return this.asistenciaRepo.findOne({ where: { id: asistenciaId } });
+    return { ...(await this.asistenciaRepo.findOne({ where: { id: asistenciaId } })), ubicacion };
   }
 
   /**
@@ -182,6 +225,7 @@ export class IncidenciasService extends AsistenciaBaseService {
       'FALTA_INJUSTIFICADA',
       'SALIDA_ANTICIPADA',
     ]);
+    const evaluacion = await this.validarUbicacion(asistencia.jornada.grupoId, geo, false);
 
     await this.asistenciaRepo.query(
       `UPDATE asistencias
@@ -200,14 +244,15 @@ export class IncidenciasService extends AsistenciaBaseService {
       valorAnterior: { estado: asistencia.estadoAsistencia },
       valorNuevo: { estado: 'ANULADO', motivo },
     });
-    await this.capturarUbicacion(asistenciaId, usuarioId, 'ANULACION', geo);
+    await this.guardarUbicacion(asistenciaId, usuarioId, 'ANULACION', Number(asistencia.jornadaId), evaluacion);
 
     this.realtime.emitirAsistenciaRegistrada({
       jornadaId: Number(asistencia.jornadaId),
       grupoId: asistencia.jornada.grupoId,
+      tipoJornada: asistencia.jornada.tipoJornada as 'OBLIGATORIA' | 'VOLUNTARIA',
       asistenciaId,
       personaId: asistencia.personaId,
-      accion: 'ENTRADA',
+      accion: 'ANULACION',
       estado: 'ANULADO',
       fechaHora: new Date(),
     });

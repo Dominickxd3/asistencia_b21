@@ -32,3 +32,23 @@ export class TrackingQueryDto {
   @IsIn(TRACKING_ORDER as unknown as string[])
   orden?: TrackingOrder;
 }
+
+export class TrackingDetailQueryDto {
+  @ApiProperty()
+  @Type(() => Number)
+  @IsInt()
+  grupoId: number;
+
+  @ApiProperty()
+  @Type(() => Number)
+  @IsInt()
+  personaId: number;
+
+  @ApiProperty({ example: '2026-09-01' })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  desde: string;
+
+  @ApiProperty({ example: '2026-09-30' })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  hasta: string;
+}

@@ -5,6 +5,7 @@ import { Usuario, UsuarioRol } from '../../modules/users/entities/usuario.entity
 import { Rol } from '../../modules/roles/entities/rol.entity';
 import { RoleCode } from '../../common/constants/roles.constants';
 import { ROLE_PERMISSION_MATRIX } from './role-permissions.data';
+import { fechaLocalIso } from '../../common/utils/fecha.util';
 
 export const COMPANIA_ID = 1;
 
@@ -59,7 +60,7 @@ export async function seedUsuarios(ds: DataSource): Promise<Map<string, Usuario>
       await ds.getRepository(UsuarioRol).save({
         usuarioId: usuario.id,
         rolId: rol.id,
-        fechaInicio: new Date().toISOString().slice(0, 10),
+        fechaInicio: fechaLocalIso(),
         estado: 'ACTIVO',
       });
     }

@@ -1,0 +1,44 @@
+.home-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.error-card-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 20px;
+  gap: 14px;
+
+  .error-circle-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background-color: var(--r21-red-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    i {
+      font-size: 22px;
+      color: var(--r21-red);
+    }
+  }
+
+  .error-heading {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--r21-text-primary);
+    margin: 0;
+  }
+
+  .error-paragraph {
+    font-size: 13px;
+    color: var(--r21-text-secondary);
+    margin: 4px 0 0;
+    max-width: 440px;
+  }
+}

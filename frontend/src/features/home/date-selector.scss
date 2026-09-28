@@ -1,0 +1,295 @@
+.r21-date-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  background-color: var(--r21-surface);
+  border: 1px solid var(--r21-border);
+  border-radius: var(--r21-radius-md);
+  box-shadow: var(--r21-shadow-sm);
+
+  .nav-date-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: var(--r21-radius-sm);
+    color: var(--r21-text-secondary);
+    cursor: pointer;
+    transition: background-color var(--r21-transition-fast), color var(--r21-transition-fast);
+
+    i {
+      font-size: 12px;
+    }
+
+    &:hover {
+      background-color: var(--r21-bg);
+      color: var(--r21-text-primary);
+    }
+  }
+
+  .calendar-picker-box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--r21-bg);
+    border: 1px solid transparent;
+    border-radius: var(--r21-radius-sm);
+    padding: 0 10px;
+    height: 30px;
+    cursor: pointer;
+    transition: border-color var(--r21-transition-fast), background-color var(--r21-transition-fast);
+
+    &:hover {
+      background-color: #FFFFFF;
+      border-color: var(--r21-border);
+    }
+
+    .date-lead-icon {
+      font-size: 13px;
+      color: var(--r21-red);
+      margin-right: 8px;
+      flex-shrink: 0;
+    }
+
+    .date-trail-icon {
+      font-size: 9px;
+      color: var(--r21-text-muted);
+      margin-left: 6px;
+      flex-shrink: 0;
+    }
+  }
+
+  .r21-calendar-control {
+    display: inline-flex;
+    align-items: center;
+
+    &.p-component {
+      font-family: inherit;
+      font-feature-settings: inherit;
+      font-size: inherit;
+      font-weight: inherit;
+    }
+
+    .r21-calendar-text {
+      font-family: var(--r21-font);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--r21-text-primary);
+      background: transparent;
+      border: none;
+      padding: 0;
+      width: 140px;
+      text-align: center;
+      cursor: pointer;
+      font-variant-numeric: tabular-nums;
+      box-shadow: none;
+
+      &:focus {
+        outline: none;
+        box-shadow: none;
+      }
+    }
+  }
+
+  .btn-today-pill {
+    font-family: var(--r21-font);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--r21-red);
+    background-color: var(--r21-red-light);
+    border: none;
+    border-radius: var(--r21-radius-sm);
+    padding: 5px 10px;
+    cursor: pointer;
+    margin-left: 2px;
+    transition: background-color var(--r21-transition-fast);
+
+    &:hover {
+      background-color: #F8D7DA;
+    }
+  }
+}
+
+/* ============================================================
+   PrimeReact Calendar Popup — Rímac 21 Override
+   Se renderiza en document.body con panelClassName="r21-calendar-popup"
+   ============================================================ */
+.r21-calendar-popup.p-datepicker {
+  font-family: var(--r21-font);
+  border: 1px solid var(--r21-border);
+  border-radius: var(--r21-radius-md);
+  box-shadow: 0 12px 32px rgba(16, 24, 40, 0.14);
+  background: var(--r21-surface);
+  padding: 12px;
+  min-width: 280px;
+
+  /* --- Navegación mes/año --- */
+  .p-datepicker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 0 10px;
+    border-bottom: 1px solid var(--r21-border-subtle);
+    margin-bottom: 8px;
+
+    .p-datepicker-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      .p-datepicker-month,
+      .p-datepicker-year {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--r21-text-primary);
+        padding: 4px 6px;
+        border-radius: var(--r21-radius-sm);
+        transition: background-color var(--r21-transition-fast);
+
+        &:hover {
+          background-color: var(--r21-bg);
+        }
+      }
+    }
+
+    .p-datepicker-prev,
+    .p-datepicker-next {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: transparent;
+      border-radius: var(--r21-radius-sm);
+      color: var(--r21-text-secondary);
+      cursor: pointer;
+      transition: background-color var(--r21-transition-fast), color var(--r21-transition-fast);
+
+      &:hover {
+        background-color: var(--r21-bg);
+        color: var(--r21-text-primary);
+      }
+
+      .p-icon {
+        width: 12px;
+        height: 12px;
+      }
+    }
+  }
+
+  /* --- Grilla de días --- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+      padding: 6px 0;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--r21-text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      text-align: center;
+    }
+
+    td {
+      padding: 2px;
+      text-align: center;
+
+      span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        margin: 0 auto;
+        border-radius: 50%;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--r21-text-primary);
+        cursor: pointer;
+        transition: background-color var(--r21-transition-fast), color var(--r21-transition-fast);
+
+        &:hover {
+          background-color: var(--r21-bg);
+        }
+
+        &.p-highlight {
+          background-color: var(--r21-red);
+          color: #FFFFFF;
+          font-weight: 700;
+
+          &:hover {
+            background-color: var(--r21-red-dark);
+          }
+        }
+
+        &.p-datepicker-today {
+          font-weight: 700;
+          color: var(--r21-red);
+
+          &:not(.p-highlight) {
+            background-color: var(--r21-red-light);
+          }
+        }
+
+        &.p-disabled {
+          color: var(--r21-text-muted);
+          opacity: 0.4;
+          cursor: default;
+        }
+      }
+    }
+  }
+
+  /* --- Vista de meses (selección) --- */
+  .p-monthpicker,
+  .p-yearpicker {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    padding: 8px 0;
+
+    .p-monthpicker-month,
+    .p-yearpicker-year {
+      padding: 8px;
+      border-radius: var(--r21-radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      text-align: center;
+      cursor: pointer;
+      color: var(--r21-text-primary);
+      transition: background-color var(--r21-transition-fast);
+
+      &:hover {
+        background-color: var(--r21-bg);
+      }
+
+      &.p-highlight {
+        background-color: var(--r21-red);
+        color: #FFFFFF;
+        font-weight: 700;
+      }
+    }
+  }
+
+  /* --- Barra de hoy --- */
+  .p-datepicker-buttonbar {
+    display: flex;
+    justify-content: center;
+    padding-top: 8px;
+    border-top: 1px solid var(--r21-border-subtle);
+    margin-top: 8px;
+
+    .p-button {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 12px;
+    }
+  }
+}

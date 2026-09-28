@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Post, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ReportsService } from './reports.service';
@@ -13,15 +13,21 @@ import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.de
 export class ReportsController {
   constructor(private readonly reports: ReportsService) {}
 
+  @Get('recent')
+  @RequirePermissions(PermissionCode.REPORTS_VIEW)
+  recientes() {
+    return this.reports.recientes();
+  }
+
   @Post('generate')
   @RequirePermissions(PermissionCode.REPORTS_GENERATE)
   async generar(@Body() dto: GenerarReporteDto, @CurrentUser() user: CurrentUserData, @Res() res: Response) {
-    const { pdf, nombre } = await this.reports.generar(dto, user.id);
+    const { archivo, nombre, mime } = await this.reports.generar(dto, user.id);
     res.set({
-      'Content-Type': 'application/pdf',
+      'Content-Type': mime,
       'Content-Disposition': `attachment; filename="${nombre}"`,
-      'Content-Length': pdf.length,
+      'Content-Length': archivo.length,
     });
-    res.send(pdf);
+    res.send(archivo);
   }
 }

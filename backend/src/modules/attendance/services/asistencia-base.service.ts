@@ -10,13 +10,25 @@ import { Asistencia } from '../entities/asistencia.entity';
 import { AsistenciaUbicacion } from '../entities/asistencia-ubicacion.entity';
 import { GroupsService } from '../../groups/groups.service';
 import { AuthzService } from '../../roles/authz.service';
-import { GeoService } from './geo.service';
+import { EvaluacionGeografica, GeocercaService } from '../../sedes/geocerca.service';
 import { GeoDto } from '../dto/asistencia.dto';
 import { PermissionCode } from '../../../common/constants/permissions.constants';
+import { fechaColumna, fechaHoraLocalIso } from '../../../common/utils/fecha.util';
+
+export type TipoEventoGeo = 'ENTRADA' | 'SALIDA' | 'MODIFICACION' | 'ANULACION';
+
+/** Resumen geográfico que se devuelve al frontend tras cada acción */
+export interface ResumenUbicacion {
+  estado: EvaluacionGeografica['estado'];
+  sede: string | null;
+  distanciaMetros: number | null;
+  precisionMetros: number | null;
+}
 
 /**
- * Reglas compartidas de los casos de uso de asistencia:
- * acceso a la jornada (alcance por grupo) y captura geográfica.
+ * Reglas compartidas de los casos de uso de asistencia, en este orden:
+ * acceso a la jornada (alcance por grupo) → estado de la jornada →
+ * validación geográfica (geocerca de la sede) → registro → evidencia.
  */
 @Injectable()
 export class AsistenciaBaseService {
@@ -29,7 +41,7 @@ export class AsistenciaBaseService {
     protected readonly ubicacionRepo: Repository<AsistenciaUbicacion>,
     protected readonly groups: GroupsService,
     protected readonly authz: AuthzService,
-    protected readonly geo: GeoService,
+    protected readonly geocerca: GeocercaService,
   ) {}
 
   /**
@@ -59,12 +71,44 @@ export class AsistenciaBaseService {
     return asistencia;
   }
 
-  /** Solo sobre jornadas abiertas */
-  validarJornadaAbierta(jornada: Jornada): void {
+  /**
+   * Asegura que la jornada esté ABIERTA. Si estaba PROGRAMADA, se abre
+   * automáticamente al registrar sin exigir apertura manual al usuario.
+   */
+  async validarJornadaAbierta(jornada: Jornada): Promise<void> {
+    const [reloj] = await this.jornadaRepo.query(
+      `SELECT CONVERT(char(10), GETDATE(), 126) AS hoy`,
+    );
+    if (fechaColumna(jornada.fecha) !== reloj.hoy) {
+      throw new UnprocessableEntityException(
+        `La jornada corresponde al ${fechaColumna(jornada.fecha)}. El día operativo terminó a medianoche; seleccione la jornada de hoy.`,
+      );
+    }
+    if (jornada.estado === 'PROGRAMADA') {
+      await this.jornadaRepo.query(
+        `UPDATE jornadas
+         SET estado = 'ABIERTA', fecha_apertura = ISNULL(fecha_apertura, GETDATE())
+         WHERE jornada_id = @0 AND estado = 'PROGRAMADA'`,
+        [jornada.id],
+      );
+      jornada.estado = 'ABIERTA';
+      return;
+    }
     if (jornada.estado !== 'ABIERTA') {
       throw new UnprocessableEntityException(
-        `La jornada está ${jornada.estado}; debe estar ABIERTA para registrar`,
+        `La jornada está ${jornada.estado}; no se puede registrar asistencia`,
       );
+    }
+  }
+
+  /** Una hora registrada a mano nunca puede quedar en el futuro (reloj de SQL Server) */
+  protected async validarNoFutura(fechaHoraIso: string, etiqueta: string): Promise<void> {
+    const [row] = await this.asistenciaRepo.query(
+      `SELECT CASE WHEN CAST(@0 AS datetime2) > GETDATE() THEN 1 ELSE 0 END AS futura`,
+      [fechaHoraIso],
+    );
+    if (Number(row?.futura) === 1) {
+      throw new UnprocessableEntityException(`La ${etiqueta} no puede ser posterior a la hora actual`);
     }
   }
 
@@ -127,29 +171,85 @@ export class AsistenciaBaseService {
     return rows[0]?.id ?? null;
   }
 
-  /** Registra la captura geográfica del dispositivo (una por evento) */
-  async capturarUbicacion(
+  /**
+   * Validación geográfica en backend, ANTES de escribir la asistencia.
+   * En modo BLOQUEAR solo DENTRO_ZONA puede crear un movimiento físico.
+   * Sin GPS, sin una geocerca activa o con precisión insuficiente tampoco se
+   * puede demostrar la presencia en sede y el movimiento se rechaza.
+   */
+  protected async validarUbicacion(
+    grupoId: number,
+    geo: GeoDto | undefined,
+    bloqueable: boolean,
+  ): Promise<EvaluacionGeografica> {
+    const evaluacion = await this.geocerca.evaluarParaGrupo(grupoId, geo);
+    if (!bloqueable) return evaluacion;
+
+    switch (evaluacion.estado) {
+      case 'DENTRO_ZONA':
+        return evaluacion;
+      case 'FUERA_ZONA':
+        throw new UnprocessableEntityException(
+          `No se permite registrar la asistencia fuera de ${evaluacion.sedeNombre ?? 'la sede'}. ` +
+            `El dispositivo está a ${Math.round(evaluacion.distanciaMetros ?? 0)} m del perímetro autorizado.`,
+        );
+      case 'PRECISION_INSUFICIENTE':
+        throw new UnprocessableEntityException(
+          `No se pudo confirmar que está dentro de ${evaluacion.sedeNombre ?? 'la sede'} porque la precisión ` +
+            `de la ubicación es insuficiente${evaluacion.precisionMetros != null ? ` (±${Math.round(evaluacion.precisionMetros)} m)` : ''}. ` +
+            'Active la ubicación precisa e inténtelo nuevamente.',
+        );
+      case 'NO_DISPONIBLE':
+        throw new UnprocessableEntityException(
+          'La ubicación es obligatoria para marcar asistencia. Active el permiso de ubicación del navegador e inténtelo nuevamente.',
+        );
+      case 'SIN_GEOCERCA':
+        throw new UnprocessableEntityException(
+          'No se puede marcar asistencia porque la geocerca de la sede no está activa o no tiene un perímetro válido.',
+        );
+    }
+    return evaluacion;
+  }
+
+  /**
+   * Evidencia geográfica del movimiento: coordenadas originales, precisión,
+   * resultado, sede, usuario, tipo de acción, jornada, hora del dispositivo
+   * y hora del servidor.
+   */
+  protected async guardarUbicacion(
     asistenciaId: number,
     usuarioId: number,
-    tipoEvento: 'ENTRADA' | 'SALIDA' | 'MODIFICACION' | 'ANULACION',
-    geo?: GeoDto,
-  ): Promise<void> {
-    const evaluacion = await this.geo.evaluar(geo);
+    tipoEvento: TipoEventoGeo,
+    jornadaId: number,
+    evaluacion: EvaluacionGeografica,
+  ): Promise<ResumenUbicacion> {
+    const capturado = evaluacion.capturadoEn ? new Date(evaluacion.capturadoEn) : null;
     await this.ubicacionRepo.query(
       `INSERT INTO asistencia_ubicaciones
          (asistencia_id, usuario_id, tipo_evento, latitud, longitud, precision_metros,
-          distancia_sede_metros, estado_geografico, fecha_captura)
-       VALUES (@0, @1, @2, @3, @4, @5, @6, @7, GETDATE())`,
+          distancia_sede_metros, tolerancia_aplicada_metros, estado_geografico,
+          sede_id, jornada_id, fecha_captura_dispositivo, fecha_captura)
+       VALUES (@0, @1, @2, @3, @4, @5, @6, @7, @8, @9, @10, @11, GETDATE())`,
       [
         asistenciaId,
         usuarioId,
         tipoEvento,
-        geo?.latitud ?? null,
-        geo?.longitud ?? null,
-        geo?.precisionMetros ?? null,
+        evaluacion.latitud,
+        evaluacion.longitud,
+        evaluacion.precisionMetros,
         evaluacion.distanciaMetros,
+        evaluacion.toleranciaMetros,
         evaluacion.estado,
+        evaluacion.sedeId,
+        jornadaId,
+        capturado && !Number.isNaN(capturado.getTime()) ? fechaHoraLocalIso(capturado) : null,
       ],
     );
+    return {
+      estado: evaluacion.estado,
+      sede: evaluacion.sedeNombre,
+      distanciaMetros: evaluacion.distanciaMetros,
+      precisionMetros: evaluacion.precisionMetros,
+    };
   }
 }

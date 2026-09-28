@@ -19,6 +19,7 @@ const JEFE = [
   PermissionCode.REPORTS_VIEW,
   PermissionCode.REPORTS_GENERATE,
   PermissionCode.AUDIT_VIEW_FULL,
+  PermissionCode.SETTINGS_MANAGE,
 ];
 
 const SUBJEFE_ADJUNTO = [
@@ -40,7 +41,8 @@ const ENCARGADO = [
 ];
 
 export const ROLE_PERMISSION_MATRIX: Record<RoleCode, string[]> = {
-  [RoleCode.ADMIN]: TODOS,
+  // Promover de etapa es decisión exclusiva de la Jefatura de Instrucción
+  [RoleCode.ADMIN]: TODOS.filter((p) => p !== PermissionCode.FORMATION_PROMOTE),
   [RoleCode.JEFE_INSTRUCCION]: JEFE,
   [RoleCode.SUBJEFE_INSTRUCCION]: SUBJEFE_ADJUNTO,
   [RoleCode.ADJUNTO_INSTRUCCION]: SUBJEFE_ADJUNTO,

@@ -1,0 +1,71 @@
+/* Personas: filtros por grupo, tabla paginada y ficha */
+.r21-personas {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+
+  .personas-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--r21-border);
+
+    .form-control {
+      flex: 1 1 240px;
+      max-width: 360px;
+    }
+
+    .form-select {
+      width: auto;
+    }
+
+    .select-categoria {
+      min-width: 240px;
+    }
+  }
+
+  tbody.cargando {
+    opacity: 0.55;
+    transition: opacity var(--r21-transition-fast);
+  }
+
+  tr.inactiva td {
+    color: var(--r21-text-muted);
+  }
+
+  .enlace-grupo {
+    color: var(--r21-text-primary);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--r21-red);
+      text-decoration: underline;
+    }
+  }
+
+  /* Ficha */
+  .r21-persona-situacion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 16px;
+    padding: 10px 12px;
+    border-radius: var(--r21-radius-sm);
+    background-color: var(--r21-bg);
+    font-size: 12.5px;
+  }
+
+  @media (max-width: 575.98px) {
+    .personas-filtros {
+      .form-control,
+      .form-select {
+        max-width: none;
+        width: 100%;
+        flex: 1 1 100%;
+      }
+    }
+  }
+}

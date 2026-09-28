@@ -1,6 +1,7 @@
 import { IsIn, IsInt, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { HORA_REGEX } from '../../../common/utils/fecha.util';
 
 export class CreateJornadaDto {
   @ApiProperty()
@@ -23,12 +24,12 @@ export class CreateJornadaDto {
 
   @ApiPropertyOptional({ example: '19:00' })
   @IsOptional()
-  @Matches(/^\d{2}:\d{2}$/)
+  @Matches(HORA_REGEX, { message: 'Hora inválida (formato HH:mm)' })
   horaInicio?: string;
 
   @ApiPropertyOptional({ example: '22:00' })
   @IsOptional()
-  @Matches(/^\d{2}:\d{2}$/)
+  @Matches(HORA_REGEX, { message: 'Hora inválida (formato HH:mm)' })
   horaFin?: string;
 
   @ApiPropertyOptional()

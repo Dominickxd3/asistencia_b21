@@ -1,0 +1,33 @@
+.r21-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  padding-bottom: 4px;
+
+  .title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+
+  .header-subtitulo {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--r21-text-secondary);
+  }
+
+  .header-descripcion {
+    margin: 4px 0 0;
+    font-size: 13.5px;
+    color: var(--r21-text-secondary);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+}

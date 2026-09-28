@@ -33,31 +33,3 @@ export class EtapaFormacion {
   @Column({ name: 'estado', type: 'varchar', length: 20 })
   estado: string;
 }
-
-@Entity('sedes')
-export class Sede {
-  @PrimaryGeneratedColumn({ name: 'sede_id' })
-  id: number;
-
-  @Column({ name: 'compania_id', type: 'int' })
-  companiaId: number;
-
-  @Column({ name: 'nombre', type: 'nvarchar', length: 150 })
-  nombre: string;
-
-  @Column({ name: 'latitud', type: 'decimal', precision: 10, scale: 7, nullable: true })
-  latitud: number | null;
-
-  @Column({ name: 'longitud', type: 'decimal', precision: 10, scale: 7, nullable: true })
-  longitud: number | null;
-
-  @Column({ name: 'radio_geocerca_metros', type: 'decimal', precision: 10, scale: 2, nullable: true })
-  radioGeocercaMetros: number | null;
-
-  /** BLOQUEAR | JUSTIFICAR | ADVERTIR */
-  @Column({ name: 'politica_fuera_zona', type: 'varchar', length: 30 })
-  politicaFueraZona: string;
-
-  @Column({ name: 'estado', type: 'varchar', length: 20 })
-  estado: string;
-}

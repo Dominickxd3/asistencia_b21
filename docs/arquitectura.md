@@ -5,7 +5,7 @@
 Monolito modular:
 
 ```
-Angular (frontend/)  →  REST + WebSocket  →  NestJS (backend/)  →  TypeORM  →  SQL Server
+React + Vite (frontend/)  →  REST + WebSocket  →  NestJS (backend/)  →  TypeORM  →  SQL Server
 ```
 
 Base de datos: **Rimac21Instruccion** (SQL Server, esquema administrado por scripts en `/database/scripts`).
@@ -84,7 +84,7 @@ Cambiar antes de producción. Ejecutar: `npm run seed` (idempotente).
 cd backend; npm run start:dev        # API en http://localhost:3000/api (Swagger en /api/docs)
 
 # frontend
-cd frontend; npx ng serve            # http://localhost:4200
+cd frontend; npm start                # http://localhost:4200 (Vite)
 ```
 
 ## Estado Fase 1
@@ -139,15 +139,82 @@ Pruebas E2E: `backend/fase3-e2e.js` (12/12 PASS).
 | `POST /formation/promote` | Promueve persona a etapa superior (sin duplicar; cierra etapa activa y crea nueva fila) |
 | `GET /formation/personas/:id/historial` | Toda la trayectoria de etapas de una persona |
 | `GET /formation/historial` | Historial general |
-| `POST /reports/generate` | PDF descargable (estado general / detalle individual / jornada) + registro en `reportes_generados` + hash SHA-256 |
+| `POST /reports/generate` | PDF o Excel (estado general / detalle individual / jornada) + registro en `reportes_generados` + hash SHA-256 |
 | `GET /audit?modulo&accion&desde&hasta&pagina` | Auditoría paginada, solo `audit.view_full` |
 
 ### Frontend
 - `/seguimiento`, `/formacion/personas` (con historial + promover), `/formacion/grupos`, `/formacion/historial`, `/reportes`, `/auditoria` — todas **datos reales, sin mocks**.
 
+## Reglas de negocio reforzadas (migración a React)
+
+- **Fecha de negocio**: nunca `toISOString().slice(0, 10)` (es UTC: en Lima ya es "mañana" desde las 19:00). Backend usa `fechaServidor()` / `fechaLocalIso()` de `common/utils/fecha.util.ts`; el frontend, `fechaLocalIso()` de `shared/utils/format.ts`.
+- **Horas programadas**: se insertan con SQL directo y cadena ISO. `repository.save()` con cadena ISO las guarda +5 h. Para corregir datos existentes: `database/scripts/correccion_horarios_jornadas.sql`.
+- **Apertura**: solo jornadas `PROGRAMADA` de hoy o anteriores; emite `jornada.abierta`.
+- **Horas manuales**: formato `HH:mm` válido, nunca futuras; en un ajuste la salida debe quedar después de la entrada, y agregar salida a un `PRESENTE` lo deja `FINALIZADO`.
+- **Salida / salida anticipada**: si la entrada registrada es posterior a la hora actual se rechaza con 422 (antes fallaba en silencio).
+- **Cierre**: valida que el usuario sea encargado del grupo (o tenga vista global); pendientes → `FALTA_INJUSTIFICADA`; quienes siguen `PRESENTE` reciben su salida (hora de fin programada o la actual, la menor). `GET /attendance/sessions/:id/close-summary` anticipa ambos grupos.
+- **Dashboard**: `GET /dashboard/today?fecha=YYYY-MM-DD`; incluye jornadas sin abrir/sin cerrar, justificaciones por revisar, próxima jornada e indicadores reales del mes por grupo.
+- **Reportes**: `formato` acepta `PDF` o `EXCEL`; los grupos solo son obligatorios en `ESTADO_GENERAL`; `GET /reports/recent` lista los últimos generados y su formato.
+- **Promoción**: el grupo destino debe estar activo y pertenecer a la etapa destino.
+- **Integrantes de un grupo**: sin vista global, solo el encargado activo del grupo.
+
+## Gestión de grupos (CRUD)
+
+Pantallas: `/formacion/grupos` (lista con filtros por estado/etapa y búsqueda) y `/formacion/grupos/:id` (detalle: integrantes, encargado, datos, ex integrantes). Los grupos no eligen sede: siempre usan la sede principal (Rímac 21) para la geocerca (`grupos_formacion.sede_id` queda en NULL).
+
+| Permiso (vía rol) | Qué habilita |
+| --- | --- |
+| `formation.view` | Ver lista y detalle (modo consulta) |
+| `formation.manage_groups` | Crear, editar, cerrar/cancelar, reactivar, eliminar, asignar o quitar encargado |
+| `formation.manage_groups` + `formation.manage_people` | Agregar, transferir y dar de baja integrantes |
+| `attendance.view_assigned_group` | Requisito para **ser designado** encargado (rol «Encargado de grupo») |
+
+Endpoints (`/groups`): `GET /`, `GET /catalogos`, `GET /:id`, `GET /:id/candidatos?q=`, `POST /`, `PATCH /:id`, `POST /:id/estado`, `POST /:id/reactivar`, `DELETE /:id`, `POST /:id/managers`, `POST /:id/managers/finalizar`, `POST /:id/members`, `POST /:id/members/:personaId/retirar`.
+
+Reglas:
+
+- **Crear** genera la programación reglamentaria: voluntaria diaria 08:00–18:30 y, para Postulante y Aspirante de compañía, obligatorias miércoles/viernes 19:30 y domingo 07:30 (`horarioReglamentario()` en `reglas-asistencia.ts`). Código único por compañía, normalizado a mayúsculas; fin ≥ inicio.
+- **Editar** solo grupos `ACTIVO`. La **etapa** solo cambia mientras el grupo no tenga historia (integrantes o asistencias); al cambiarla se regenera la programación.
+- **Cerrar** (fin del periodo) o **cancelar**: exige motivo y que no haya jornadas `ABIERTA`. Finaliza integrantes activos (conservan su etapa), encargado y programación, y cancela las jornadas `PROGRAMADA` desde hoy.
+- **Reactivar** (cerrado/cancelado → activo): exige motivo; quita la fecha de fin, genera una programación nueva desde hoy, repone las jornadas futuras que canceló el cierre y, opcionalmente, reincorpora a quienes salieron en el último cierre salvo que hoy estén en otro grupo, en otra etapa o retirados (se informan como omitidos). El encargado se asigna de nuevo.
+- **Eliminar** (borrado físico) solo si el grupo nunca tuvo integrantes, asistencias ni reportes (grupo creado por error); si no, usar cerrar/cancelar.
+- **Encargado**: un usuario encarga un solo grupo activo; moverlo desde otro grupo requiere `reasignar: true`. Las asignaciones anteriores quedan en el historial con su motivo.
+- **Elegir encargado entre los integrantes**: `GET /:id/candidatos-encargado` lista primero a los integrantes activos del grupo (con o sin cuenta) y luego a otros usuarios ya habilitados. Al asignar un integrante (`personaId`): si tiene cuenta con el rol se usa; si no tiene el rol se le otorga **solo** `ENCARGADO_GRUPO` (`ROLE_GRANTED`); si no tiene cuenta se crea con el usuario indicado y una contraseña temporal (argon2) que se devuelve una sola vez (`USER_CREATED`). Solo se crean cuentas u otorgan roles a integrantes activos del grupo, y se invalida la caché de permisos del usuario. Pendiente: que el usuario pueda cambiar su contraseña desde la UI.
+- **Integrantes**: una persona integra un solo grupo activo y siempre de su etapa vigente. Sin etapa → se abre la del grupo; misma etapa en otro grupo → `transferir: true` (cierra el tramo anterior en `persona_etapas`); otra etapa → se rechaza (usar «Promover»).
+- **Baja**: `QUITAR` (error de registro o reubicación) o `RETIRO` (abandona la formación: su etapa pasa a `RETIRADO`). Con `QUITAR`, si la etapa vigente **nació al ingresar a ese grupo** (observación «Ingreso al grupo…»: no tenía etapa antes) se cierra y la persona queda **sin etapa**; si ya la tenía (promoción, transferencia, «Cambio al grupo…») se cierra ese tramo y sigue en la etapa **sin grupo**. Siempre queda constancia en `persona_etapas.observacion` («Quitado del grupo X: motivo») y en los ex integrantes. Las asistencias se conservan. También se puede quitar desde la ficha de la persona.
+- Auditoría: `GROUP_CREATED/UPDATED/CLOSED/CANCELLED/REACTIVATED/DELETED`, `MANAGER_ASSIGNED/REMOVED`, `MEMBER_ADDED/TRANSFERRED/REMOVED/RETIRED`.
+- `jornadas` tiene un trigger: en SQL Server no admite `UPDATE … OUTPUT` sin `INTO` (se usa `@@ROWCOUNT`).
+
+## Gestión de personas (CRUD)
+
+Pantalla `/formacion/personas`: búsqueda, combo de **categoría** con conteo (Todas las personas · Postulante · Aspirante de compañía · Aspirante en formación ESBAS · **Instrucción**) y estado (por defecto **todos**), columna Estado siempre visible, tabla paginada con **filas por página 10/25/50/100** (se recuerda por navegador) y filtros en la URL. Ficha única para crear/editar con acciones de desactivar, reactivar y eliminar.
+
+**Instrucción** = personal del sistema: tiene cuenta con rol y no tiene etapa ni grupo como integrante (jefatura, encargados, administración). Un encargado **no** es integrante del grupo que encarga: la grilla lo muestra como «Encargado · grupo».
+
+| Permiso (vía rol) | Qué habilita |
+| --- | --- |
+| `formation.view` | Listar, filtrar por grupo y ver historial |
+| `formation.manage_people` | Registrar, editar, desactivar/reactivar y eliminar |
+| `+ formation.manage_groups` | Incorporar a un grupo al registrar |
+| `formation.promote` | Promover de etapa: **solo Jefe de Instrucción** (ni el administrador) |
+
+Endpoints (`/persons`): `GET /?q&pagina&tamano&grupoId&etapa&estado` (`etapa=INSTRUCCION` = personal, `etapa=SIN_ETAPA` = alumnos sin etapa; `grupoId=0` sin grupo, `-1` personal; `estado` por defecto `TODOS`), `GET /resumen?estado` (conteo por etapa, Instrucción y grupos activos), `GET /:id`, `POST /`, `PATCH /:id`, `POST /:id/estado`, `DELETE /:id`.
+
+Reglas:
+
+- DNI de 8 dígitos y único; teléfono y correo validados; en la edición `''`/`null` borra el dato.
+- **Desactivar** (motivo obligatorio): se rechaza si está PRESENTE en una jornada abierta; sale de su grupo (`RETIRADO`), su etapa vigente queda `RETIRADO`, y si tiene cuenta esta pasa a `INACTIVA` y deja de ser encargado.
+- **Reactivar**: vuelve a `ACTIVO`; el grupo se reasigna desde Grupos y la cuenta la reactiva un administrador.
+- **Eliminar** solo sin etapas, grupos, asistencias ni cuenta (borra también su QR).
+- `personas` tiene trigger (crea el QR): los INSERT usan `SCOPE_IDENTITY()`, no `OUTPUT`.
+- `UQ_personas_compania_dni` admite **una sola** persona sin DNI; la API lo informa. Script opcional: `database/scripts/20260927_personas_dni_opcional.sql` (índice único filtrado).
+- Promover solo aplica a personas con etapa vigente (no al personal de Instrucción).
+- Script `database/scripts/20260927_promover_solo_jefe_y_quitar_integrante.sql` (aplicado): deja `formation.promote` solo en `JEFE_INSTRUCCION` y corrige etapas que quedaron ligadas a un grupo del que se quitó a la persona.
+- Auditoría: `PERSON_CREATED/UPDATED/DEACTIVATED/REACTIVATED/DELETED`.
+
 ## Pendiente / Fase 4
 
 - Administración de usuarios desde la UI (crear usuario, asignar roles) hoy solo vía seed/API
-- Despliegue en Windows Server: nest como servicio, Angular compilado + IIS proxy
+- Despliegue en Windows Server: nest como servicio, frontend compilado (`npm run build` → `frontend/dist`) + IIS proxy
 - Configuración de sede (geocerca) desde UI
 - Aprobación de justificaciones en la UI del Jefe

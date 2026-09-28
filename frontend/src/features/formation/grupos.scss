@@ -1,0 +1,320 @@
+/* Grupos: lista, detalle y diálogos de gestión */
+.r21-grupos {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+
+  .min-w-0 {
+    min-width: 0;
+  }
+
+  .r21-volver {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    align-self: flex-start;
+    margin-bottom: -12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--r21-text-secondary);
+    text-decoration: none;
+
+    &:hover {
+      color: var(--r21-red);
+    }
+  }
+
+  /* ---------- Barra de filtros ---------- */
+  .grupos-toolbar .r21-card-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+  }
+
+  .grupos-filtros {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 3px;
+    background-color: var(--r21-bg);
+    border-radius: var(--r21-radius-md);
+  }
+
+  .filtro-estado {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border: none;
+    border-radius: var(--r21-radius-sm);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--r21-text-secondary);
+    transition: background-color var(--r21-transition-fast), color var(--r21-transition-fast);
+
+    &:hover {
+      color: var(--r21-text-primary);
+    }
+
+    &.activo {
+      background-color: var(--r21-surface);
+      color: var(--r21-text-primary);
+      box-shadow: var(--r21-shadow-sm);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--r21-red);
+      outline-offset: 1px;
+    }
+  }
+
+  .filtro-conteo {
+    min-width: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background-color: var(--r21-gray-badge);
+    color: var(--r21-gray-badge-text);
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 18px;
+    text-align: center;
+  }
+
+  .grupos-busqueda {
+    display: flex;
+    gap: 8px;
+    flex: 1 1 320px;
+    justify-content: flex-end;
+
+    .form-select {
+      width: auto;
+      max-width: 220px;
+    }
+
+    .form-control {
+      max-width: 280px;
+    }
+  }
+
+  /* ---------- Tarjetas de grupo ---------- */
+  .grupo-card {
+    &:hover {
+      border-color: #d0d5dd;
+      box-shadow: var(--r21-shadow-card);
+    }
+
+    &.inactivo {
+      background-color: #fcfcfd;
+
+      .grupo-card-titulo a {
+        color: var(--r21-text-secondary);
+      }
+    }
+
+    .r21-card-header {
+      align-items: flex-start;
+    }
+  }
+
+  .grupo-card-titulo {
+    font-size: 14px;
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    a {
+      color: var(--r21-text-primary);
+      text-decoration: none;
+
+      &:hover {
+        color: var(--r21-red);
+      }
+    }
+  }
+
+  .grupo-codigo {
+    font-size: 11.5px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color: var(--r21-text-muted);
+  }
+
+  /* ---------- Detalle ---------- */
+  .grupos-filtro-integrantes {
+    width: 160px;
+  }
+
+  .grupo-encargado {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .encargado-avatar {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background-color: var(--r21-red-light);
+    color: var(--r21-red);
+  }
+
+  .grupo-historial summary {
+    cursor: pointer;
+    color: var(--r21-text-secondary);
+
+    &:hover {
+      color: var(--r21-text-primary);
+    }
+  }
+
+  .r21-desplegable {
+    > summary {
+      cursor: pointer;
+      list-style: none;
+      border-bottom: none;
+
+      &::-webkit-details-marker {
+        display: none;
+      }
+
+      > i {
+        color: var(--r21-text-secondary);
+        transition: transform var(--r21-transition-fast);
+      }
+    }
+
+    &[open] > summary {
+      border-bottom: 1px solid var(--r21-border);
+
+      > i {
+        transform: rotate(180deg);
+      }
+    }
+  }
+
+  /* ---------- Opciones (radio en tarjeta) de los diálogos ---------- */
+  .r21-opciones {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  .r21-opcion {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--r21-border);
+    border-radius: var(--r21-radius-md);
+    cursor: pointer;
+    transition: border-color var(--r21-transition-fast), background-color var(--r21-transition-fast);
+
+    input {
+      flex: none;
+      accent-color: var(--r21-red);
+    }
+
+    &:hover {
+      border-color: #d0d5dd;
+    }
+
+    &.activa {
+      border-color: var(--r21-red);
+      background-color: #fffafa;
+    }
+
+    &.deshabilitada {
+      cursor: default;
+      opacity: 0.7;
+    }
+
+    .opcion-cuerpo {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .opcion-titulo {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--r21-text-primary);
+    }
+
+    .opcion-detalle {
+      font-size: 12px;
+      color: var(--r21-text-secondary);
+    }
+  }
+
+  .r21-opciones-titulo {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--r21-text-secondary);
+  }
+
+  .r21-credenciales {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 24px;
+    padding: 14px 16px;
+    border: 1px dashed var(--r21-border);
+    border-radius: var(--r21-radius-md);
+    background-color: var(--r21-bg);
+
+    > div {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .etiqueta {
+      font-size: 11.5px;
+      color: var(--r21-text-secondary);
+    }
+
+    code {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--r21-text-primary);
+    }
+
+    .btn {
+      margin-left: auto;
+    }
+  }
+
+  .tabla-candidatos td {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  @media (max-width: 575.98px) {
+    .grupos-busqueda {
+      flex-direction: column;
+
+      .form-select,
+      .form-control {
+        max-width: none;
+        width: 100%;
+      }
+    }
+
+    .r21-page-header .header-actions {
+      flex-wrap: wrap;
+    }
+  }
+}

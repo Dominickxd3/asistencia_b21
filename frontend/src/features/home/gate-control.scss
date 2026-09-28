@@ -1,0 +1,184 @@
+.r21-gate-control {
+  position: relative;
+  background-color: var(--r21-surface);
+  border: 1px solid var(--r21-border);
+  border-radius: var(--r21-radius-md);
+  box-shadow: var(--r21-shadow-card);
+  overflow: hidden;
+  padding: 22px 24px 16px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  .gate-accent {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: 4px;
+    background-color: var(--r21-red);
+  }
+
+  /* ---------- Cabecera ---------- */
+  .gate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .gate-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .gate-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 750;
+    color: var(--r21-text-primary);
+    letter-spacing: -0.02em;
+  }
+
+  .gate-subtitle {
+    font-size: 12.5px;
+    color: var(--r21-text-secondary);
+    font-weight: 500;
+  }
+
+  .gate-status-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--r21-border);
+    background-color: var(--r21-bg);
+    color: var(--r21-text-secondary);
+
+    .gate-status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--r21-text-muted);
+    }
+
+    &.online {
+      border-color: rgba(20, 128, 74, 0.2);
+      background-color: var(--r21-green-bg);
+      color: var(--r21-green);
+
+      .gate-status-dot {
+        background-color: var(--r21-green);
+        box-shadow: 0 0 0 2px rgba(20, 128, 74, 0.18);
+      }
+    }
+
+    &.offline {
+      border-color: rgba(183, 110, 0, 0.2);
+      background-color: var(--r21-amber-bg);
+      color: var(--r21-amber);
+
+      .gate-status-dot {
+        background-color: var(--r21-amber);
+      }
+    }
+  }
+
+  /* ---------- Métricas (3 cards) ---------- */
+  .gate-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .gate-metric-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 16px 10px;
+    border-radius: var(--r21-radius-sm);
+    background-color: var(--r21-bg);
+    border: 1px solid var(--r21-border-subtle);
+    transition: background-color var(--r21-transition-fast), border-color var(--r21-transition-fast);
+    gap: 4px;
+
+    &:hover {
+      background-color: #fff;
+      border-color: var(--r21-border);
+    }
+
+    &.primary {
+      background-color: var(--r21-green-bg);
+      border-color: rgba(20, 128, 74, 0.15);
+
+      .metric-value {
+        color: var(--r21-green);
+      }
+    }
+  }
+
+  .metric-value {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--r21-text-primary);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+  }
+
+  .metric-label {
+    font-size: 11.5px;
+    color: var(--r21-text-secondary);
+    line-height: 1.3;
+    font-weight: 500;
+  }
+
+  /* ---------- Pie ---------- */
+  .gate-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 14px;
+    border-top: 1px solid var(--r21-border-subtle);
+  }
+
+  .gate-footer-info {
+    font-size: 12px;
+    color: var(--r21-text-secondary);
+  }
+
+  .gate-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--r21-red);
+    text-decoration: none;
+    transition: color var(--r21-transition-fast);
+
+    &:hover {
+      color: var(--r21-red-dark);
+    }
+
+    i {
+      font-size: 11px;
+    }
+  }
+}
+
+/* Responsive: en pantallas muy pequeñas, stack las métricas */
+@media (max-width: 480px) {
+  .r21-gate-control .gate-metrics {
+    grid-template-columns: 1fr;
+  }
+}

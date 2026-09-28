@@ -18,9 +18,12 @@ import {
   ObservacionDto,
   RegistrarEntradaDto,
   RegistrarManualDto,
+  RegistrarQrDto,
   RegistrarSalidaDto,
+  RotarQrDto,
   SalidaAnticipadaDto,
 } from './dto/asistencia.dto';
+import { QrAsistenciaService } from './services/qr-asistencia.service';
 import { RequirePermissions } from '../auth/decorators/auth.decorators';
 import { PermissionCode } from '../../common/constants/permissions.constants';
 import { CurrentUser, CurrentUserData } from '../auth/decorators/current-user.decorator';
@@ -33,6 +36,7 @@ export class AttendanceController {
     private readonly registro: RegistroService,
     private readonly incidencias: IncidenciasService,
     private readonly cierre: CierreJornadaService,
+    private readonly qr: QrAsistenciaService,
   ) {}
 
   // ---------- Consulta ----------
@@ -45,8 +49,21 @@ export class AttendanceController {
 
   @Get('sessions/:jornadaId/pending')
   @RequirePermissions(PermissionCode.ATTENDANCE_VIEW)
-  pendientes(@Param('jornadaId', ParseIntPipe) jornadaId: number) {
-    return this.cierre.pendientes(jornadaId);
+  async pendientes(
+    @Param('jornadaId', ParseIntPipe) jornadaId: number,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return (await this.cierre.resumen(jornadaId, user.id)).pendientes;
+  }
+
+  /** Qué ocurrirá al cerrar: pendientes (→ falta injustificada) y presentes (→ salida automática) */
+  @Get('sessions/:jornadaId/close-summary')
+  @RequirePermissions(PermissionCode.ATTENDANCE_VIEW)
+  resumenCierre(
+    @Param('jornadaId', ParseIntPipe) jornadaId: number,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.cierre.resumen(jornadaId, user.id);
   }
 
   // ---------- Registro normal ----------
@@ -55,6 +72,44 @@ export class AttendanceController {
   @RequirePermissions(PermissionCode.ATTENDANCE_REGISTER)
   entrada(@Body() dto: RegistrarEntradaDto, @CurrentUser() user: CurrentUserData) {
     return this.registro.registrarEntrada(dto.jornadaId, dto.personaId, user.id, dto.geo);
+  }
+
+  /**
+   * Integración para lector QR. El QR identifica a la persona, mientras que
+   * la pantalla aporta la jornada concreta; usa exactamente el mismo caso de
+   * uso, geocerca, unicidad y clasificación que la entrada normal.
+   */
+  @Post('qr-entry')
+  @RequirePermissions(PermissionCode.ATTENDANCE_REGISTER)
+  entradaQr(@Body() dto: RegistrarEntradaDto, @CurrentUser() user: CurrentUserData) {
+    return this.registro.registrarEntrada(dto.jornadaId, dto.personaId, user.id, dto.geo);
+  }
+
+  @Get('qr/group/:grupoId')
+  @RequirePermissions(PermissionCode.ATTENDANCE_REGISTER)
+  credencialesQr(
+    @Param('grupoId', ParseIntPipe) grupoId: number,
+    @CurrentUser() user: CurrentUserData,
+  ) {
+    return this.qr.credencialesGrupo(grupoId, user.id);
+  }
+
+  @Post('qr/rotate')
+  @RequirePermissions(PermissionCode.ATTENDANCE_REGISTER)
+  rotarQr(@Body() dto: RotarQrDto, @CurrentUser() user: CurrentUserData) {
+    return this.qr.rotar(dto.grupoId, dto.personaId, user.id);
+  }
+
+  @Post('qr/scan')
+  @RequirePermissions(PermissionCode.ATTENDANCE_REGISTER)
+  escanearQr(@Body() dto: RegistrarQrDto, @CurrentUser() user: CurrentUserData) {
+    return this.qr.registrar(
+      dto.jornadaId,
+      dto.codigoQr,
+      dto.accion ?? 'AUTO',
+      user.id,
+      dto.geo,
+    );
   }
 
   @Post('exit')

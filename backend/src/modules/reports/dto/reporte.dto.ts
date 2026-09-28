@@ -1,8 +1,13 @@
-import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Matches } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsOptional, Matches } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class GenerarReporteDto {
+  @ApiPropertyOptional({ enum: ['PDF', 'EXCEL'], default: 'PDF' })
+  @IsOptional()
+  @IsIn(['PDF', 'EXCEL'])
+  formato: 'PDF' | 'EXCEL' = 'PDF';
+
   @ApiProperty({ enum: ['ESTADO_GENERAL', 'DETALLE_INDIVIDUAL', 'JORNADA'] })
   @IsIn(['ESTADO_GENERAL', 'DETALLE_INDIVIDUAL', 'JORNADA'])
   tipo: string;
@@ -15,9 +20,11 @@ export class GenerarReporteDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/)
   hasta: string;
 
-  @ApiProperty({ type: [Number], description: 'Grupos incluidos en el consolidado' })
+  @ApiPropertyOptional({ type: [Number], description: 'Grupos del consolidado (obligatorio en ESTADO_GENERAL)' })
+  @IsOptional()
+  @IsArray()
   @IsInt({ each: true })
-  grupoIds: number[];
+  grupoIds: number[] = [];
 
   @ApiPropertyOptional({ description: 'Solo para DETALLE_INDIVIDUAL' })
   @IsOptional()

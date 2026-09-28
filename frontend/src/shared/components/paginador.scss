@@ -1,0 +1,64 @@
+.r21-paginador {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+  padding: 10px 18px;
+  border-top: 1px solid var(--r21-border);
+  font-size: 12.5px;
+  color: var(--r21-text-secondary);
+
+  .paginador-controles {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .paginador-tamano {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+
+    .form-select {
+      width: auto;
+      padding-top: 2px;
+      padding-bottom: 2px;
+    }
+  }
+
+  .paginador-paginas {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .paginador-num {
+    min-width: 30px;
+    height: 30px;
+    padding: 0 6px;
+    border: 1px solid transparent;
+    border-radius: var(--r21-radius-sm);
+    background: transparent;
+    font-size: 12.5px;
+    color: var(--r21-text-secondary);
+
+    &:hover {
+      background-color: var(--r21-bg);
+      color: var(--r21-text-primary);
+    }
+
+    &.activa {
+      border-color: var(--r21-red);
+      background-color: var(--r21-red-light);
+      color: var(--r21-red);
+      font-weight: 600;
+    }
+  }
+
+  .paginador-elipsis {
+    padding: 0 4px;
+  }
+}

@@ -7,11 +7,15 @@
   /* Paleta base institucional */
   --r21-bg: #F5F6F8;
   --r21-surface: #FFFFFF;
-  --r21-sidebar: #171B21;
-  --r21-sidebar-hover: #222831;
-  --r21-sidebar-border: rgba(255, 255, 255, 0.08);
-  --r21-sidebar-text: #9AA0A8;
-  --r21-sidebar-text-active: #FFFFFF;
+  --r21-dark: #171B21;
+  --r21-dark-hover: #222831;
+
+  /* Barra lateral (Estilo Blanco Minimalista) */
+  --r21-sidebar: #FFFFFF;
+  --r21-sidebar-hover: #F8FAFC;
+  --r21-sidebar-border: #E2E8F0;
+  --r21-sidebar-text: #64748B;
+  --r21-sidebar-text-active: #C8102E;
 
   /* Textos */
   --r21-text-primary: #181C23;
@@ -37,6 +41,7 @@
 
   /* Dimensiones y estructura */
   --r21-sidebar-width: 240px;
+  --r21-sidebar-width-collapsed: 68px;
   --r21-radius-sm: 6px;
   --r21-radius-md: 8px;
   --r21-radius-lg: 10px;

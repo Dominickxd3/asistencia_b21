@@ -21,6 +21,10 @@ export class GrupoFormacion {
   @Column({ name: 'compania_id', type: 'int' })
   companiaId: number;
 
+  /** Sede donde se instruye; NULL = sede principal de la compañía */
+  @Column({ name: 'sede_id', type: 'int', nullable: true })
+  sedeId: number | null;
+
   @ManyToOne(() => Compania)
   @JoinColumn({ name: 'compania_id' })
   compania: Compania;
